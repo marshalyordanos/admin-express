@@ -30,8 +30,8 @@ const RevokeManager = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   // Dropdown states
-  const [managers, setManagers] = useState(demoManagers);
-  const [branches, setBranches] = useState(demoBranches);
+  const [managers] = useState(demoManagers); // YW- setManagers removed
+  const [branches] = useState(demoBranches); // YW- removed setBranches as it caused build errors
   const [managerSearch, setManagerSearch] = useState("");
   const [branchSearch, setBranchSearch] = useState("");
   const [showManagerDropdown, setShowManagerDropdown] = useState(false);
@@ -101,7 +101,11 @@ const RevokeManager = () => {
   const { values, handleSubmit, errors, touched, setFieldValue } = formik;
 
   // Select manager handler
-  const selectManager = (manager) => {
+  const selectManager = (manager: {
+    id: string;
+    name: string;
+    email: string;
+  }) => {
     setFieldValue("managerID", manager.id);
     setFieldValue("managerName", manager.name);
     setManagerSearch(`${manager.name} (${manager.id})`);
@@ -109,7 +113,7 @@ const RevokeManager = () => {
   };
 
   // Select branch handler
-  const selectBranch = (branch) => {
+  const selectBranch = (branch: { id: string; name: string }) => {
     setFieldValue("branchID", branch.id);
     setFieldValue("branchName", branch.name);
     setBranchSearch(`${branch.name} (${branch.id})`);

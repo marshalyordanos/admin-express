@@ -5,8 +5,6 @@ import {
   Search,
   Download,
   ArrowUpDown,
-  Copy,
-  Archive,
   TrendingUp,
   TrendingDown,
   Calendar,

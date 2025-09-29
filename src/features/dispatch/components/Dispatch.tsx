@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -23,22 +22,17 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   IoLocation,
-  IoTime,
   IoPerson,
-  IoCar,
   IoMap,
   IoRefresh,
   IoCheckmarkCircle,
-  IoAlertCircle,
   IoPlay,
   IoPause,
-  IoStop,
   IoTrendingUp,
   IoTrendingDown,
   IoStatsChart,
   IoNavigate,
   IoRadio,
-  IoShield,
 } from "react-icons/io5";
 
 // Mock data for demonstration

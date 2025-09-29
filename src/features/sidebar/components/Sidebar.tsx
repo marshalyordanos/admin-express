@@ -4,15 +4,32 @@ import { FaChevronDown, FaCrown } from "react-icons/fa";
 import menuItems from "../../../constants/AdminSidebar";
 import { useAppSelector } from "../../../store/hooks";
 
+// Types
+interface SubSubItem {
+  name: string;
+  path: string;
+}
+
+interface SubItem {
+  name: string;
+  path: string;
+  subsubItems?: SubSubItem[];
+}
+
+interface MenuItem {
+  name: string;
+  path: string;
+  icon?: React.ReactNode;
+  subItems?: SubItem[];
+}
+
 export default function Sidebar() {
   const location = useLocation();
   const isCollapsed = useAppSelector((state) => state.sidebar.isCollapsed);
 
-  // track expanded parent + sub
   const [expandedParent, setExpandedParent] = useState<string | null>(null);
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
 
-  // reset on collapse
   useEffect(() => {
     if (isCollapsed) {
       setExpandedParent(null);
@@ -22,7 +39,7 @@ export default function Sidebar() {
 
   const toggleParent = (name: string) => {
     setExpandedParent((prev) => (prev === name ? null : name));
-    setExpandedSub(null); // close sub when switching parent
+    setExpandedSub(null);
   };
 
   const toggleSub = (parent: string, sub: string) => {
@@ -30,12 +47,12 @@ export default function Sidebar() {
     setExpandedSub((prev) => (prev === key ? null : key));
   };
 
-  const isMenuItemActive = (itemPath: string, subItems?: any[]) => {
+  const isMenuItemActive = (itemPath: string, subItems?: SubItem[]) => {
     if (location.pathname === itemPath) return true;
     return subItems?.some(
       (s) =>
         location.pathname === s.path ||
-        s.subsubItems?.some((ss: any) => location.pathname === ss.path)
+        s.subsubItems?.some((ss) => location.pathname === ss.path)
     );
   };
 
@@ -61,7 +78,8 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className={`flex flex-col gap-2 ${isCollapsed ? "p-2" : "p-4"}`}>
-        {menuItems.map(({ name, path, icon, subItems }) => {
+        {menuItems.map((item: MenuItem) => {
+          const { name, path, icon, subItems } = item;
           const isActive = isMenuItemActive(path, subItems);
           const isExpanded = expandedParent === name;
 
@@ -116,13 +134,13 @@ export default function Sidebar() {
                 >
                   <div className="ml-6 mt-2 flex flex-col gap-1">
                     {subItems.map((sub) => {
-                      const hasSubsub = sub.subsubItems?.length > 0;
+                      const hasSubsub = Array.isArray(sub.subsubItems) && sub.subsubItems.length > 0;
                       const subKey = `${name}-${sub.name}`;
                       const isSubExpanded = expandedSub === subKey;
                       const isSubActive =
                         location.pathname === sub.path ||
                         sub.subsubItems?.some(
-                          (ss: any) => location.pathname === ss.path
+                          (ss) => location.pathname === ss.path
                         );
 
                       return (
@@ -167,7 +185,7 @@ export default function Sidebar() {
                               }`}
                             >
                               <div className="ml-4 mt-2 flex flex-col gap-1">
-                                {sub.subsubItems.map((ss: any) => {
+                                {sub.subsubItems!.map((ss) => {
                                   const isSSActive =
                                     location.pathname === ss.path;
                                   return (
