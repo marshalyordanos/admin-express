@@ -9,6 +9,8 @@ import AssignBranch from "./pages/Branch/AssignManagerPage";
 import RevokeManager from "./pages/Branch/RevokeManagerPage";
 import AllStaffPage from "./pages/Staff/AllStaffPage";
 import CreateStaffPage from "./pages/Staff/CreateStaffPage";
+import OrdersPage from "./pages/orders/OrdersPage";
+import OrderForm from "./features/orders/components/OrdersForm";
 
 const App = () => {
   return (
@@ -25,6 +27,8 @@ const App = () => {
             <Route path="/branch/revoke-manager" element={<RevokeManager />} />
             <Route path="/staff/all" element={<AllStaffPage />} />
             <Route path="/staff/create" element={<CreateStaffPage />} />
+            <Route path="/order" element={<OrdersPage />} />
+            <Route path="/order/new" element={<OrderForm />} />
           </Route>
         </Route>
       </Routes>
