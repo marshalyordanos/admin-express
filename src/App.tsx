@@ -11,6 +11,8 @@ import AllStaffPage from "./pages/Staff/AllStaffPage";
 import CreateStaffPage from "./pages/Staff/CreateStaffPage";
 import OrdersPage from "./pages/orders/OrdersPage";
 import OrderForm from "./features/orders/components/OrdersForm";
+import OrderDetails from "./features/orders/components/OrderDetails";
+import DispatchPage from "./pages/DispatchPage";
 
 const App = () => {
   return (
@@ -29,6 +31,8 @@ const App = () => {
             <Route path="/staff/create" element={<CreateStaffPage />} />
             <Route path="/order" element={<OrdersPage />} />
             <Route path="/order/new" element={<OrderForm />} />
+            <Route path="/order/details/:id" element={<OrderDetails />} />
+            <Route path="/dispatch" element={<DispatchPage />} />
           </Route>
         </Route>
       </Routes>

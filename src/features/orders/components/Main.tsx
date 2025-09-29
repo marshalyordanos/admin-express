@@ -331,13 +331,21 @@ export default function Main() {
               {orders.map((order, index) => (
                 <TableRow
                   key={index}
-                  className="border-gray-100 hover:bg-gray-50"
+                  className="border-gray-100 hover:bg-gray-50 cursor-pointer"
+                  onClick={() =>
+                    navigate(`/order/details/${order.id.replace("#", "")}`)
+                  }
                 >
                   <TableCell>
                     <Checkbox />
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
-                    {order.id}
+                    <Button
+                      variant="ghost"
+                      className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
+                    >
+                      {order.id}
+                    </Button>
                   </TableCell>
                   <TableCell className="text-gray-600">{order.date}</TableCell>
                   <TableCell className="text-gray-900">

@@ -56,13 +56,13 @@ export default function OrderForm() {
               <div className="flex gap-5 items-center">
                 <Button
                   type="button"
-                  className=" !text-white !size-[40px] !rounded-full !p-0 !py-0 flex items-center justify-center !cursor-pointer"
+                  className="!text-white !size-[40px] bg-blue-500 hover:bg-blue-400 !rounded-full !p-0 !py-0 flex items-center justify-center !cursor-pointer"
                   onClick={() => navigate(-1)}
                 >
-                  <IoArrowBack className="text-white text-2xl" />
+                  <IoArrowBack className="text-white text-lg" />
                 </Button>
                 <div className="flex gap-2 items-center">
-                  <IoLogoDropbox className="text-lg" />
+                  <IoLogoDropbox className="text-xl text-blue-500" />
                   <h1 className="text-2xl font-medium text-gray-700">
                     Place New Order
                   </h1>
@@ -70,7 +70,7 @@ export default function OrderForm() {
               </div>
               <Button
                 type="submit"
-                className="!w-fit font-semibold !cursor-pointer"
+                className="!cursor-pointer !bg-blue-500 hover:!bg-blue-400 !w-fit"
               >
                 Submit Order
               </Button>
