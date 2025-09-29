@@ -15,7 +15,7 @@ import DeletePopup from "../../../components/DeletePopup";
 import Th from "../../../components/common/Th";
 import Td from "../../../components/common/Td";
 import StatCard from "../../../components/StateCard";
-import type { Staff, Branch, PaginationType } from "../types";
+import type { Branch, PaginationType } from "../types";
 
 const AllBranches = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
