@@ -34,6 +34,7 @@ const orders = [
     delivery: "N/A",
     items: "2 Items",
     fulfillment: "Unfulfilled",
+    destination: "Town",
   },
   {
     id: "#1004",
@@ -44,6 +45,7 @@ const orders = [
     delivery: "N/A",
     items: "3 Items",
     fulfillment: "Fulfilled",
+    destination: "Regional",
   },
   {
     id: "#1007",
@@ -54,6 +56,7 @@ const orders = [
     delivery: "N/A",
     items: "1 Items",
     fulfillment: "Unfulfilled",
+    destination: "International",
   },
   {
     id: "#1009",
@@ -64,6 +67,7 @@ const orders = [
     delivery: "N/A",
     items: "5 Items",
     fulfillment: "Fulfilled",
+    destination: "Town",
   },
   {
     id: "#1011",
@@ -74,6 +78,7 @@ const orders = [
     delivery: "N/A",
     items: "4 Items",
     fulfillment: "Unfulfilled",
+    destination: "Regional",
   },
   {
     id: "#1013",
@@ -84,6 +89,7 @@ const orders = [
     delivery: "N/A",
     items: "3 Items",
     fulfillment: "Fulfilled",
+    destination: "International",
   },
   {
     id: "#1015",
@@ -94,6 +100,7 @@ const orders = [
     delivery: "N/A",
     items: "2 Items",
     fulfillment: "Unfulfilled",
+    destination: "Town",
   },
   {
     id: "#1018",
@@ -104,6 +111,7 @@ const orders = [
     delivery: "N/A",
     items: "1 Items",
     fulfillment: "Fulfilled",
+    destination: "Regional",
   },
   {
     id: "#1019",
@@ -114,6 +122,7 @@ const orders = [
     delivery: "N/A",
     items: "2 Items",
     fulfillment: "Unfulfilled",
+    destination: "International",
   },
 ];
 
@@ -318,6 +327,9 @@ export default function Main() {
                   Items
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
+                  Destination
+                </TableHead>
+                <TableHead className="text-gray-600 font-medium">
                   Fulfillment
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
@@ -370,6 +382,9 @@ export default function Main() {
                     {order.delivery}
                   </TableCell>
                   <TableCell className="text-gray-600">{order.items}</TableCell>
+                  <TableCell className="text-gray-600">
+                    {order.destination}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       variant={
@@ -391,16 +406,9 @@ export default function Main() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="p-0 px-3 text-green-600 bg-gray-100 hover:text-green-600 cursor-pointer "
+                        className="p-0 px-3 text-green-600 bg-gray-100 hover:bg-gray-200 hover:text-green-600 cursor-pointer "
                       >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-0 px-3 text-red-600 bg-gray-100 hover:text-red-600 cursor-pointer"
-                      >
-                        Reject
+                        Request Approval
                       </Button>
                     </div>
                   </TableCell>

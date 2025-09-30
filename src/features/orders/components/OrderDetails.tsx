@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Formik, Form, Field } from "formik";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -301,7 +301,7 @@ export default function OrderDetails() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="In-town">In-town</SelectItem>
+                            <SelectItem value="In-town">Town</SelectItem>
                             <SelectItem value="Regional">Regional</SelectItem>
                             <SelectItem value="International">
                               International
