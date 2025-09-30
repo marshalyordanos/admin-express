@@ -406,7 +406,7 @@ export default function Main() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="p-0 px-3 text-green-600 bg-gray-100 hover:bg-gray-200 hover:text-green-600 cursor-pointer "
+                        className="p-0 px-3 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
                       >
                         Request Approval
                       </Button>
