@@ -18,26 +18,8 @@ const menuItems = [
   },
   {
     name: "Branch Management",
-    path: "/branch/add",
+    path: "/branch",
     icon: <FaCodeBranch />,
-    subItems: [
-      {
-        name: "Create Branch",
-        path: "/branch/create",
-      },
-      {
-        name: "List All Branch",
-        path: "/branch/all",
-      },
-      {
-        name: "Manager",
-        path: "/branch/manager",
-        subsubItems: [
-          { name: "Assign Manager", path: "/branch/assign-manager" },
-          { name: "Revoke Manager", path: "/branch/revoke-manager" },
-        ],
-      },
-    ],
   },
   {
     name: "Staff Management",

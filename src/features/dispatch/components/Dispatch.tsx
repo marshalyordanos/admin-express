@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import DispatchModal from "@/components/common/DispatchModal";
 import DriversMapView from "@/components/common/DriversMapView";
 import CreateDriverModal from "@/components/common/CreateDriverModal";
+import TablePagination from "@/components/common/TablePagination";
 
 // Mock data for demonstration
 // const drivers = [
@@ -358,6 +359,8 @@ export default function Dispatch() {
   // const [selectedDriver, setSelectedDriver] = useState("");
   // const [selectedDeliveries, setSelectedDeliveries] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("orders");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
   const [isCreateDriverModalOpen, setIsCreateDriverModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{
@@ -371,6 +374,22 @@ export default function Dispatch() {
     fulfillment: string;
     destination: string;
   } | null>(null);
+
+  // Calculate pagination
+  const totalItems = orders.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedOrders = orders.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
 
   // const handleDriverSelection = (driverId: string) => {
   //   setSelectedDriver(driverId);
@@ -594,7 +613,7 @@ export default function Dispatch() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order, index) => (
+                {paginatedOrders.map((order, index) => (
                   <TableRow
                     key={index}
                     className="border-gray-100 hover:bg-gray-50 cursor-pointer"
@@ -694,6 +713,14 @@ export default function Dispatch() {
                 ))}
               </TableBody>
             </Table>
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
           </Card>
         )}
 
