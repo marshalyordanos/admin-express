@@ -195,7 +195,7 @@ const CreateBranch = () => {
                 <Button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-600 cursor-pointer !text-black border border-gray-300"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 cursor-pointer !text-black border border-gray-300"
                 >
                   Cancel
                 </Button>
