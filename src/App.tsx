@@ -7,6 +7,7 @@ import CreateBranch from "./pages/Branch/CreateBranchPage";
 import UpdateBranch from "./pages/Branch/UpdateBranchPage";
 import AssignBranch from "./pages/Branch/AssignManagerPage";
 import RevokeManager from "./pages/Branch/RevokeManagerPage";
+import StaffPage from "./pages/Staff/StaffPage";
 import AllStaffPage from "./pages/Staff/AllStaffPage";
 import CreateStaffPage from "./pages/Staff/CreateStaffPage";
 import OrdersPage from "./pages/orders/OrdersPage";
@@ -27,6 +28,7 @@ const App = () => {
             <Route path="/branch/update/:id" element={<UpdateBranch />} />
             <Route path="/branch/assign-manager" element={<AssignBranch />} />
             <Route path="/branch/revoke-manager" element={<RevokeManager />} />
+            <Route path="/staff" element={<StaffPage />} />
             <Route path="/staff/all" element={<AllStaffPage />} />
             <Route path="/staff/create" element={<CreateStaffPage />} />
             <Route path="/order" element={<OrdersPage />} />

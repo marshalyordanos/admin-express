@@ -10,8 +10,13 @@ export interface Branch {
   name: string;
   location: string;
   managerId: string | null;
-  orders: any[];
+  orders: Order[];
   staff: Staff[];
+}
+
+export interface Order {
+  id: string;
+  // Add other relevant fields for Order here
 }
 
 export interface PaginationType {

@@ -7,9 +7,10 @@ import {
   ArrowUpDown,
   TrendingUp,
   TrendingDown,
-  MapPin,
   Users,
-  Package,
+  UserCheck,
+  UserX,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,116 +28,116 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import TablePagination from "@/components/common/TablePagination";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
-import { IoAdd, IoPerson, IoPersonAdd, IoPersonRemove } from "react-icons/io5";
+import { IoAdd, IoPerson } from "react-icons/io5";
 
-const branches = [
+const staff = [
   {
-    id: "1",
-    name: "Addis Ababa Central",
-    location: "Bole, Addis Ababa",
-    manager: "John Doe",
-    managerStatus: "Assigned",
-    totalOrders: 1200,
-    activeOrders: 85,
-    staff: 25,
-    revenue: "$85,000",
-    efficiency: 96,
+    id: "STF-001",
+    name: "Abebe Kebede",
+    email: "abebe.k@company.com",
+    phone: "+251 911 234 567",
+    role: "Driver",
+    branch: "Addis Ababa Central",
+    branchId: "1",
     status: "Active",
+    assignedOrders: 12,
+    completedOrders: 145,
+    rating: 4.8,
   },
   {
-    id: "2",
-    name: "Dire Dawa Branch",
-    location: "City Center, Dire Dawa",
-    manager: "Not Assigned",
-    managerStatus: "Vacant",
-    totalOrders: 950,
-    activeOrders: 62,
-    staff: 18,
-    revenue: "$60,000",
-    efficiency: 97,
+    id: "STF-002",
+    name: "Tigist Hailu",
+    email: "tigist.h@company.com",
+    phone: "+251 911 345 678",
+    role: "Manager",
+    branch: "Dire Dawa Branch",
+    branchId: "2",
     status: "Active",
+    assignedOrders: 0,
+    completedOrders: 0,
+    rating: 4.9,
   },
   {
-    id: "3",
-    name: "Mekelle Branch",
-    location: "Downtown, Mekelle",
-    manager: "Jane Smith",
-    managerStatus: "Assigned",
-    totalOrders: 780,
-    activeOrders: 45,
-    staff: 15,
-    revenue: "$40,000",
-    efficiency: 94,
+    id: "STF-003",
+    name: "Dawit Alemu",
+    email: "dawit.a@company.com",
+    phone: "+251 911 456 789",
+    role: "Driver",
+    branch: "Mekelle Branch",
+    branchId: "3",
     status: "Active",
+    assignedOrders: 8,
+    completedOrders: 98,
+    rating: 4.7,
   },
   {
-    id: "4",
-    name: "Bahir Dar Branch",
-    location: "Lake Side, Bahir Dar",
-    manager: "Not Assigned",
-    managerStatus: "Vacant",
-    totalOrders: 670,
-    activeOrders: 38,
-    staff: 12,
-    revenue: "$38,000",
-    efficiency: 96,
+    id: "STF-004",
+    name: "Marta Tadesse",
+    email: "marta.t@company.com",
+    phone: "+251 911 567 890",
+    role: "Dispatcher",
+    branch: "Addis Ababa Central",
+    branchId: "1",
     status: "Active",
+    assignedOrders: 0,
+    completedOrders: 0,
+    rating: 4.6,
   },
   {
-    id: "5",
-    name: "Hawassa Branch",
-    location: "Main Street, Hawassa",
-    manager: "Mike Johnson",
-    managerStatus: "Assigned",
-    totalOrders: 800,
-    activeOrders: 55,
-    staff: 16,
-    revenue: "$42,000",
-    efficiency: 95,
-    status: "Active",
+    id: "STF-005",
+    name: "Yohannes Desta",
+    email: "yohannes.d@company.com",
+    phone: "+251 911 678 901",
+    role: "Driver",
+    branch: "Hawassa Branch",
+    branchId: "5",
+    status: "On Leave",
+    assignedOrders: 5,
+    completedOrders: 67,
+    rating: 4.5,
   },
 ];
 
 const metrics = [
   {
-    title: "Total Branches",
-    value: "5",
-    change: "2 new this month",
+    title: "Total Staff",
+    value: "86",
+    change: "8 new this month",
     trend: "up",
-    icon: <MapPin className="h-5 w-5" />,
+    icon: <Users className="h-5 w-5" />,
     color: "blue",
   },
   {
-    title: "Active Orders",
-    value: "285",
-    change: "15% increase",
+    title: "Active Staff",
+    value: "82",
+    change: "95% active rate",
     trend: "up",
-    icon: <Package className="h-5 w-5" />,
+    icon: <UserCheck className="h-5 w-5" />,
     color: "green",
   },
   {
-    title: "Total Staff",
-    value: "86",
-    change: "8 new hires",
-    trend: "up",
-    icon: <Users className="h-5 w-5" />,
-    color: "purple",
+    title: "On Leave",
+    value: "4",
+    change: "2 less than last week",
+    trend: "down",
+    icon: <UserX className="h-5 w-5" />,
+    color: "orange",
   },
   {
-    title: "Manager Vacancies",
-    value: "2",
-    change: "Need assignment",
-    trend: "down",
-    icon: <IoPerson className="h-5 w-5" />,
-    color: "orange",
+    title: "Branches Covered",
+    value: "5",
+    change: "All branches staffed",
+    trend: "up",
+    icon: <Building2 className="h-5 w-5" />,
+    color: "purple",
   },
 ];
 
-export default function BranchMain() {
+export default function StaffMain() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [branchToDelete, setBranchToDelete] = useState<{
+  const [staffToDelete, setStaffToDelete] = useState<{
     id: string;
     name: string;
   } | null>(null);
@@ -145,11 +146,11 @@ export default function BranchMain() {
   const navigate = useNavigate();
 
   // Calculate pagination
-  const totalItems = branches.length;
+  const totalItems = staff.length;
   const totalPages = Math.ceil(totalItems / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const paginatedBranches = branches.slice(startIndex, endIndex);
+  const paginatedStaff = staff.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -160,24 +161,24 @@ export default function BranchMain() {
     setCurrentPage(1);
   };
 
-  const handleDeleteClick = (branch: { id: string; name: string }) => {
-    setBranchToDelete(branch);
+  const handleDeleteClick = (staff: { id: string; name: string }) => {
+    setStaffToDelete(staff);
     setDeleteModalOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!branchToDelete) return;
+    if (!staffToDelete) return;
 
     setIsDeleting(true);
     try {
       // Simulate API call - replace with actual API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Deleting branch:", branchToDelete);
+      console.log("Deleting staff:", staffToDelete);
       // Handle successful deletion
       setDeleteModalOpen(false);
-      setBranchToDelete(null);
+      setStaffToDelete(null);
     } catch (error) {
-      console.error("Error deleting branch:", error);
+      console.error("Error deleting staff:", error);
     } finally {
       setIsDeleting(false);
     }
@@ -185,7 +186,7 @@ export default function BranchMain() {
 
   const handleDeleteCancel = () => {
     setDeleteModalOpen(false);
-    setBranchToDelete(null);
+    setStaffToDelete(null);
   };
 
   return (
@@ -196,7 +197,7 @@ export default function BranchMain() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-semibold text-gray-900">
-              Branch Management
+              Staff Management
             </h1>
           </div>
           <div className="flex items-center space-x-3">
@@ -206,32 +207,12 @@ export default function BranchMain() {
             </Button>
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-              onClick={() => navigate("/branch/create")}
+              onClick={() => navigate("/staff/create")}
             >
               <IoAdd className="h-4 w-4 mr-2" />
-              Create Branch
+              Add New Staff
             </Button>
           </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="flex items-center space-x-3 mb-6">
-          <Button
-            variant="outline"
-            className="text-gray-600 bg-white cursor-pointer"
-            onClick={() => navigate("/branch/assign-manager")}
-          >
-            <IoPersonAdd className="h-4 w-4 mr-2" />
-            Assign Manager
-          </Button>
-          <Button
-            variant="outline"
-            className="text-gray-600 bg-white cursor-pointer"
-            onClick={() => navigate("/branch/revoke-manager")}
-          >
-            <IoPersonRemove className="h-4 w-4 mr-2" />
-            Revoke Manager
-          </Button>
         </div>
 
         {/* Metrics Cards */}
@@ -289,12 +270,12 @@ export default function BranchMain() {
         <div className="relative w-80 mb-6">
           <Search className="absolute left-3 top-4 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search branches..."
+            placeholder="Search staff..."
             className="pl-10 pr-3 w-full py-6"
           />
         </div>
 
-        {/* Branches Table */}
+        {/* Staff Table */}
         <Card className="bg-white">
           <Table>
             <TableHeader>
@@ -303,31 +284,34 @@ export default function BranchMain() {
                   <Checkbox />
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
-                  Branch Name
+                  Staff ID
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
                   <div className="flex items-center">
-                    Location
+                    Name
                     <ArrowUpDown className="h-3 w-3 ml-1" />
                   </div>
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
-                  Manager
+                  Email
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
-                  Total Orders
+                  Phone
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
-                  Active Orders
+                  Role
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
-                  Staff
+                  Branch
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
-                  Revenue
+                  Assigned Orders
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
-                  Efficiency
+                  Completed
+                </TableHead>
+                <TableHead className="text-gray-600 font-medium">
+                  Rating
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
                   Status
@@ -338,11 +322,11 @@ export default function BranchMain() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedBranches.map((branch, index) => (
+              {paginatedStaff.map((member, index) => (
                 <TableRow
                   key={index}
                   className="border-gray-100 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/branch/details/${branch.id}`)}
+                  onClick={() => navigate(`/staff/details/${member.id}`)}
                 >
                   <TableCell>
                     <Checkbox />
@@ -352,67 +336,71 @@ export default function BranchMain() {
                       variant="ghost"
                       className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
                     >
-                      {branch.name}
+                      {member.id}
                     </Button>
                   </TableCell>
-                  <TableCell className="text-gray-600">
-                    {branch.location}
-                  </TableCell>
                   <TableCell>
-                    {branch.managerStatus === "Assigned" ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <IoPerson className="h-4 w-4 text-green-600" />
-                        </div>
-                        <span className="text-sm text-gray-900">
-                          {branch.manager}
-                        </span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <IoPerson className="h-4 w-4 text-blue-600" />
                       </div>
-                    ) : (
-                      <Badge
-                        variant="secondary"
-                        className="bg-orange-100 text-orange-700"
-                      >
-                        Vacant
-                      </Badge>
-                    )}
+                      <span className="font-medium text-gray-900">
+                        {member.name}
+                      </span>
+                    </div>
                   </TableCell>
-                  <TableCell className="font-medium text-gray-900">
-                    {branch.totalOrders.toLocaleString()}
+                  <TableCell className="text-gray-600">
+                    {member.email}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {member.phone}
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className="bg-blue-100 text-blue-700"
+                      className={
+                        member.role === "Manager"
+                          ? "bg-purple-100 text-purple-700"
+                          : member.role === "Driver"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-green-100 text-green-700"
+                      }
                     >
-                      {branch.activeOrders}
+                      {member.role}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {branch.staff}
-                  </TableCell>
-                  <TableCell className="font-medium text-gray-900">
-                    {branch.revenue}
+                    {member.branch}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${branch.efficiency}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm font-medium">
-                        {branch.efficiency}%
+                    <Badge
+                      variant="secondary"
+                      className="bg-orange-100 text-orange-700"
+                    >
+                      {member.assignedOrders}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-medium text-gray-900">
+                    {member.completedOrders}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-500">★</span>
+                      <span className="font-medium text-gray-900">
+                        {member.rating}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className="bg-green-100 text-green-700"
+                      className={
+                        member.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }
                     >
-                      ● {branch.status}
+                      ● {member.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -423,7 +411,7 @@ export default function BranchMain() {
                         className="p-0 px-3 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/branch/update/${branch.id}`);
+                          navigate(`/staff/edit/${member.id}`);
                         }}
                       >
                         Edit
@@ -435,8 +423,8 @@ export default function BranchMain() {
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteClick({
-                            id: branch.id,
-                            name: branch.name,
+                            id: member.id,
+                            name: member.name,
                           });
                         }}
                       >
@@ -465,7 +453,7 @@ export default function BranchMain() {
           onConfirm={handleDeleteConfirm}
           title="Confirm Deletion"
           description={`Are you sure you want to delete ${
-            branchToDelete?.name || "this branch"
+            staffToDelete?.name || "this staff member"
           }? This action cannot be undone.`}
           confirmText="Delete"
           cancelText="Cancel"

@@ -25,12 +25,6 @@ const menuItems = [
     name: "Staff Management",
     path: "/staff",
     icon: <FaUsersCog />,
-    subItems: [
-      { name: "Create Staff", path: "/staff/create" },
-      { name: "List All Staff", path: "/staff/all" },
-      { name: "Role Change", path: "/staff/role" },
-      { name: "Assign Branch to Staff", path: "/staff/assign-branch" },
-    ],
   },
   {
     name: "Order Management",

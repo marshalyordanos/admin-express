@@ -47,20 +47,20 @@ export default function Header() {
               alt="Admin Avatar"
               className="w-8 h-8 rounded-full border-2 border-gray hover:border-darkblue transition-colors cursor-pointer"
             />
-            <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="p-3 border-b border-slate-600">
-                <p className="text-sm font-medium text-white">Admin</p>
-                <p className="text-xs text-slate-400">admin@horizontech.com</p>
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="p-3 border-b border-gray-200 text-black">
+                <p className="text-sm font-medium text-black">Admin</p>
+                <p className="text-xs text-gray-400">admin@horizontech.com</p>
               </div>
               <div className="p-2">
-                <button className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 rounded-md">
+                <button className="w-full text-left px-3 py-2 text-xs text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
                   Profile Settings
                 </button>
-                <button className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 rounded-md">
+                <button className="w-full text-left px-3 py-2 text-xs text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
                   Account Settings
                 </button>
-                <div className="border-t border-slate-600 my-1"></div>
-                <button className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 rounded-md">
+                <div className="border-t border-gray-200 my-1"></div>
+                <button className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-gray-100 rounded-md cursor-pointer">
                   Sign Out
                 </button>
               </div>
