@@ -63,7 +63,7 @@ const Agent = () => {
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse rounded-lg">
           <thead>
-            <tr className="bg-gray text-black text-sm">
+            <tr className="bg-gray-100 text-black text-sm">
               <th className="py-3 px-4">Agent ID</th>
               <th className="py-3 px-4">Region</th>
               <th className="py-3 px-4">Avg. Delivery Time</th>

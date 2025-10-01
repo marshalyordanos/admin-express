@@ -87,21 +87,23 @@ export default function Sidebar() {
             <div key={name}>
               {/* Parent */}
               <div
-                className={`flex items-center justify-between cursor-pointer rounded-lg transition-all ${
-                  isActive ? "bg-blue-200" : "hover:bg-blue-200"
-                } ${isCollapsed ? "justify-center py-4" : "p-3"}`}
+                className={`flex items-center justify-between cursor-pointer rounded-lg transition-all group ${
+                  isActive ? "bg-blue-500" : "hover:bg-blue-500"
+                } ${isCollapsed ? "justify-center py-4" : ""}`}
                 onClick={() => (subItems ? toggleParent(name) : null)}
               >
                 <NavLink
                   to={path}
                   onClick={(e) => subItems && e.preventDefault()}
-                  className={`flex items-center gap-3 flex-1 ${
+                  className={`flex items-center gap-3 h-full w-full flex-1 p-3 ${
                     isCollapsed ? "justify-center" : ""
                   }`}
                 >
                   <span
                     className={`text-2xl ${
-                      isActive ? "text-darkblue" : "text-black"
+                      isActive
+                        ? "text-white"
+                        : "text-black group-hover:text-white"
                     }`}
                   >
                     {icon}
@@ -109,7 +111,9 @@ export default function Sidebar() {
                   {!isCollapsed && (
                     <span
                       className={`${
-                        isActive ? "text-darkblue" : "text-black"
+                        isActive
+                          ? "text-white"
+                          : "text-black group-hover:text-white"
                       } text-sm`}
                     >
                       {name}
@@ -118,7 +122,7 @@ export default function Sidebar() {
                 </NavLink>
                 {!isCollapsed && subItems && (
                   <FaChevronDown
-                    className={`text-xs transition-transform ${
+                    className={`text-xs transition-transform group-hover:text-white r-2 ${
                       isExpanded ? "rotate-180" : ""
                     }`}
                   />
@@ -134,7 +138,9 @@ export default function Sidebar() {
                 >
                   <div className="ml-6 mt-2 flex flex-col gap-1">
                     {subItems.map((sub) => {
-                      const hasSubsub = Array.isArray(sub.subsubItems) && sub.subsubItems.length > 0;
+                      const hasSubsub =
+                        Array.isArray(sub.subsubItems) &&
+                        sub.subsubItems.length > 0;
                       const subKey = `${name}-${sub.name}`;
                       const isSubExpanded = expandedSub === subKey;
                       const isSubActive =
@@ -146,8 +152,10 @@ export default function Sidebar() {
                       return (
                         <div key={sub.name}>
                           <div
-                            className={`flex items-center justify-between p-2 rounded-lg cursor-pointer ${
-                              isSubActive ? "bg-blue-200" : "hover:bg-blue-200"
+                            className={`flex items-center justify-between rounded-lg cursor-pointer ${
+                              isSubActive
+                                ? "bg-blue-500"
+                                : "hover:bg-blue-500 hover:text-white group-hover:text-white"
                             }`}
                             onClick={() =>
                               hasSubsub && toggleSub(name, sub.name)
@@ -156,11 +164,13 @@ export default function Sidebar() {
                             <NavLink
                               to={sub.path}
                               onClick={(e) => hasSubsub && e.preventDefault()}
-                              className="flex-1 text-sm"
+                              className="flex-1 text-sm h-full w-full p-2"
                             >
                               <span
                                 className={
-                                  isSubActive ? "text-darkblue" : "text-black"
+                                  isSubActive
+                                    ? "text-white"
+                                    : "text-black group-hover:text-white"
                                 }
                               >
                                 {sub.name}
@@ -168,7 +178,7 @@ export default function Sidebar() {
                             </NavLink>
                             {hasSubsub && (
                               <FaChevronDown
-                                className={`text-xs transition-transform ${
+                                className={`text-xs transition-transform group-hover:text-white mr-2${
                                   isSubExpanded ? "rotate-180" : ""
                                 }`}
                               />
@@ -184,7 +194,7 @@ export default function Sidebar() {
                                   : "max-h-0 opacity-0"
                               }`}
                             >
-                              <div className="ml-4 mt-2 flex flex-col gap-1">
+                              <div className="ml-4 mt-2 flex flex-col gap-1 groupp">
                                 {sub.subsubItems!.map((ss) => {
                                   const isSSActive =
                                     location.pathname === ss.path;
@@ -192,10 +202,10 @@ export default function Sidebar() {
                                     <NavLink
                                       key={ss.name}
                                       to={ss.path}
-                                      className={`p-2 text-sm rounded-lg ${
+                                      className={`text-sm rounded-lg h-full w-full p-2 ${
                                         isSSActive
-                                          ? "bg-blue-200 text-darkblue"
-                                          : "hover:bg-blue-200"
+                                          ? "bg-blue-500 text-white"
+                                          : "hover:bg-blue-500 hover:text-white groupp-hover:text-white"
                                       }`}
                                     >
                                       {ss.name}
