@@ -17,6 +17,7 @@ import SuccessModal from "@/components/common/SuccessModal";
 import { IoArrowBack, IoLogoDropbox } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 // import { useOrders } from "@/hooks/useOrders"; // custom hook
 
 export default function OrderForm() {
@@ -38,9 +39,8 @@ export default function OrderForm() {
     width: 0,
     height: 0,
     pickupAddress: "",
-    pickupDate: "",
-    deliveryAddress: "",
-    deliveryDate: "",
+    pickupLatitude: 0,
+    pickupLongitude: 0,
     cost: 0,
     senderEntity: "",
     unUsualItem: false,
@@ -159,6 +159,20 @@ export default function OrderForm() {
                     name="phone"
                     placeholder="Phone"
                     className={`py-7`}
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1">Pickup Address</Label>
+                  <MapAddressSelector
+                    onAddressSelect={(addressData) => {
+                      setFieldValue("pickupAddress", addressData.address);
+                      setFieldValue("pickupLatitude", addressData.latitude);
+                      setFieldValue("pickupLongitude", addressData.longitude);
+                    }}
+                    initialAddress={values.pickupAddress}
+                    initialLat={values.pickupLatitude}
+                    initialLng={values.pickupLongitude}
+                    height="300px"
                   />
                 </div>
               </div>
@@ -445,10 +459,14 @@ export default function OrderForm() {
                 </Button>
 
                 <Input
-                  className="py-7 font-bold !text-lg"
+                  className="py-7 font-bold !text-2xl border-gray-300"
                   disabled={true}
                   value={estimatePrice}
                 />
+                <div className="flex items-center gap-2">
+                  <Label className="mb-1">Requirement Checklist</Label>
+                  <Checkbox className="accent-blue-500" />
+                </div>
 
                 <Button
                   type="submit"

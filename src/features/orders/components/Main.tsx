@@ -35,6 +35,7 @@ const orders = [
     items: "2 Items",
     fulfillment: "Unfulfilled",
     destination: "Town",
+    status: "Pending Approval",
   },
   {
     id: "#1004",
@@ -46,6 +47,7 @@ const orders = [
     items: "3 Items",
     fulfillment: "Fulfilled",
     destination: "Regional",
+    status: "Approved",
   },
   {
     id: "#1007",
@@ -57,6 +59,7 @@ const orders = [
     items: "1 Items",
     fulfillment: "Unfulfilled",
     destination: "International",
+    status: "Pending Approval",
   },
   {
     id: "#1009",
@@ -68,6 +71,7 @@ const orders = [
     items: "5 Items",
     fulfillment: "Fulfilled",
     destination: "Town",
+    status: "Approved",
   },
   {
     id: "#1011",
@@ -79,6 +83,7 @@ const orders = [
     items: "4 Items",
     fulfillment: "Unfulfilled",
     destination: "Regional",
+    status: "Pending Approval",
   },
   {
     id: "#1013",
@@ -90,6 +95,7 @@ const orders = [
     items: "3 Items",
     fulfillment: "Fulfilled",
     destination: "International",
+    status: "Approved",
   },
   {
     id: "#1015",
@@ -101,6 +107,7 @@ const orders = [
     items: "2 Items",
     fulfillment: "Unfulfilled",
     destination: "Town",
+    status: "Pending Approval",
   },
   {
     id: "#1018",
@@ -112,6 +119,7 @@ const orders = [
     items: "1 Items",
     fulfillment: "Fulfilled",
     destination: "Regional",
+    status: "Approved",
   },
   {
     id: "#1019",
@@ -123,6 +131,7 @@ const orders = [
     items: "2 Items",
     fulfillment: "Unfulfilled",
     destination: "International",
+    status: "Pending Approval",
   },
 ];
 
@@ -333,6 +342,9 @@ export default function Main() {
                   Fulfillment
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
+                  Status
+                </TableHead>
+                <TableHead className="text-gray-600 font-medium">
                   Action
                 </TableHead>
               </TableRow>
@@ -399,6 +411,18 @@ export default function Main() {
                       }
                     >
                       ● {order.fulfillment}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className={
+                        order.status === "Approved"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-orange-100 text-orange-700"
+                      }
+                    >
+                      {order.status}
                     </Badge>
                   </TableCell>
                   <TableCell>

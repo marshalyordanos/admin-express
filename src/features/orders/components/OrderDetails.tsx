@@ -74,18 +74,21 @@ const relatedOrders = [
     customer: "Jane Doe",
     address: "789 Pine St, Brooklyn, NY",
     distance: "0.5 mi",
+    status: "Pending Approval",
   },
   {
     id: "#1005",
     customer: "Bob Smith",
     address: "321 Elm St, Brooklyn, NY",
     distance: "0.8 mi",
+    status: "Approved",
   },
   {
     id: "#1008",
     customer: "Alice Johnson",
     address: "654 Maple Ave, Brooklyn, NY",
     distance: "1.2 mi",
+    status: "Pending Approval",
   },
 ];
 
@@ -533,6 +536,7 @@ export default function OrderDetails() {
                             <TableHead className="w-12">Select</TableHead>
                             <TableHead>Order</TableHead>
                             <TableHead>Distance</TableHead>
+                            <TableHead>Status</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -563,6 +567,18 @@ export default function OrderDetails() {
                                 <span className="text-sm text-gray-600">
                                   {order.distance}
                                 </span>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="secondary"
+                                  className={
+                                    order.status === "Approved"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-orange-100 text-orange-700"
+                                  }
+                                >
+                                  {order.status}
+                                </Badge>
                               </TableCell>
                             </TableRow>
                           ))}
