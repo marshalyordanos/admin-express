@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Formik, Form, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,16 +9,15 @@ import api from "../../../api/api";
 import { CreateBranchSchema } from "../schemas/CreateBranchSchema";
 import { IoArrowBack } from "react-icons/io5";
 import { BsBuildingFillAdd } from "react-icons/bs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const CreateBranch = () => {
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  const initialValues = {
+  const [loading, setLoading] = useState(false);
+  const [initialValues, setInitialValues] = useState({
     name: "",
     location: "",
     address: "",
@@ -27,7 +26,45 @@ const CreateBranch = () => {
     phone: "",
     email: "",
     description: "",
-  };
+  });
+
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
+
+  // Fetch branch data if in edit mode
+  useEffect(() => {
+    const fetchBranchData = async () => {
+      if (!isEditMode) return;
+
+      setLoading(true);
+      try {
+        const response = await api.get(`/branch/${id}`);
+        const { success, data } = response.data;
+
+        if (success && data) {
+          setInitialValues({
+            name: data.name || "",
+            location: data.location || "",
+            address: data.address || "",
+            latitude: data.latitude || 0,
+            longitude: data.longitude || 0,
+            phone: data.phone || "",
+            email: data.email || "",
+            description: data.description || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching branch data:", error);
+        setMessage("Failed to load branch data");
+        setStatus("error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBranchData();
+  }, [id, isEditMode]);
 
   const handleSubmit = async (
     values: typeof initialValues,
@@ -37,8 +74,11 @@ const CreateBranch = () => {
       setStatus("submitting");
       setMessage(null);
 
+      const endpoint = isEditMode ? `/branch/${id}` : "/branch";
+      const method = isEditMode ? "put" : "post";
+
       // Send only { name, location }
-      const response = await api.post("/branch", {
+      const response = await api[method](endpoint, {
         name: values.name,
         location: values.location,
       });
@@ -46,23 +86,49 @@ const CreateBranch = () => {
 
       if (success) {
         setStatus("success");
-        setMessage(responseMessage || "Branch created successfully!");
-        resetForm();
+        setMessage(
+          responseMessage ||
+            (isEditMode
+              ? "Branch updated successfully!"
+              : "Branch created successfully!")
+        );
+        if (!isEditMode) {
+          resetForm();
+        }
         setTimeout(() => {
           navigate("/branch");
         }, 2000);
       } else {
         setStatus("error");
-        setMessage(responseMessage || "Failed to create branch");
+        setMessage(
+          responseMessage ||
+            (isEditMode ? "Failed to update branch" : "Failed to create branch")
+        );
       }
     } catch (error) {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");
-      console.error("Add branch error:", error);
+      console.error(
+        isEditMode ? "Update branch error:" : "Add branch error:",
+        error
+      );
     } finally {
       setTimeout(() => setStatus("idle"), 2500);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl p-6 bg-white">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading branch data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl p-6 bg-white">
@@ -70,8 +136,9 @@ const CreateBranch = () => {
         initialValues={initialValues}
         validationSchema={CreateBranchSchema}
         onSubmit={handleSubmit}
+        enableReinitialize={true}
       >
-        {({ values, setFieldValue }) => (
+        {({ values, setFieldValue, errors, touched }) => (
           <Form>
             {/* Header */}
             <header className="relative">
@@ -88,7 +155,7 @@ const CreateBranch = () => {
                 <div className="flex gap-4 items-center">
                   <BsBuildingFillAdd className="text-3xl text-blue-500" />
                   <h1 className="text-3xl font-medium text-gray-700">
-                    Create New Branch
+                    {isEditMode ? "Edit Branch" : "Create New Branch"}
                   </h1>
                 </div>
               </div>
@@ -117,8 +184,13 @@ const CreateBranch = () => {
                     as={Input}
                     name="name"
                     placeholder="Enter branch name"
-                    className="py-7"
+                    className={`py-7 ${
+                      errors.name && touched.name ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.name && touched.name && (
+                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">City/Location *</Label>
@@ -126,8 +198,17 @@ const CreateBranch = () => {
                     as={Input}
                     name="location"
                     placeholder="e.g., Addis Ababa, Dire Dawa"
-                    className="py-7"
+                    className={`py-7 ${
+                      errors.location && touched.location
+                        ? "border-red-500"
+                        : ""
+                    }`}
                   />
+                  {errors.location && touched.location && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Phone Number</Label>
@@ -136,8 +217,13 @@ const CreateBranch = () => {
                     type="tel"
                     name="phone"
                     placeholder="+251 911 234 567"
-                    className="py-7"
+                    className={`py-7 ${
+                      errors.phone && touched.phone ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.phone && touched.phone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Email Address</Label>
@@ -146,8 +232,13 @@ const CreateBranch = () => {
                     type="email"
                     name="email"
                     placeholder="branch@company.com"
-                    className="py-7"
+                    className={`py-7 ${
+                      errors.email && touched.email ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.email && touched.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  )}
                 </div>
               </div>
 
@@ -188,7 +279,9 @@ const CreateBranch = () => {
             {/* Action buttons */}
             <div className="bg-gray-50 p-6 rounded-lg mt-6 space-y-4">
               <h2 className="text-lg font-medium mb-4">
-                Complete Branch Setup
+                {isEditMode
+                  ? "Update Branch Information"
+                  : "Complete Branch Setup"}
               </h2>
 
               <div className="flex gap-4">
@@ -211,8 +304,14 @@ const CreateBranch = () => {
                   {status === "submitting" ? (
                     <span className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Creating Branch...</span>
+                      <span>
+                        {isEditMode
+                          ? "Updating Branch..."
+                          : "Creating Branch..."}
+                      </span>
                     </span>
+                  ) : isEditMode ? (
+                    "Update Branch"
                   ) : (
                     "Create Branch"
                   )}

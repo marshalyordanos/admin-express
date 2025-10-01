@@ -423,7 +423,7 @@ export default function BranchMain() {
                         className="p-0 px-3 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/branch/update/${branch.id}`);
+                          navigate(`/branch/edit/${branch.id}`);
                         }}
                       >
                         Edit

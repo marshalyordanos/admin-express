@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Formik, Form, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import Button from "../../../components/common/Button";
 import api from "../../../api/api";
 import { CreateStaffSchema } from "../schemas/CreateStaffSchema";
 import { IoArrowBack, IoPersonAdd, IoEye, IoEyeOff } from "react-icons/io5";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const CreateStaff = () => {
   const [status, setStatus] = useState<
@@ -21,16 +21,51 @@ const CreateStaff = () => {
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const navigate = useNavigate();
-
-  const initialValues = {
+  const [loading, setLoading] = useState(false);
+  const [initialValues, setInitialValues] = useState({
     name: "",
     email: "",
     password: "",
     branchId: "",
     phone: "",
     role: "",
-  };
+  });
+
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
+
+  // Fetch staff data if in edit mode
+  useEffect(() => {
+    const fetchStaffData = async () => {
+      if (!isEditMode) return;
+
+      setLoading(true);
+      try {
+        const response = await api.get(`/staff/${id}`);
+        const { success, data } = response.data;
+
+        if (success && data) {
+          setInitialValues({
+            name: data.name || "",
+            email: data.email || "",
+            password: "", // Don't pre-fill password for security
+            branchId: data.branchId || "",
+            phone: data.phone || "",
+            role: data.role || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching staff data:", error);
+        setMessage("Failed to load staff data");
+        setStatus("error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStaffData();
+  }, [id, isEditMode]);
 
   const handleSubmit = async (
     values: typeof initialValues,
@@ -40,28 +75,63 @@ const CreateStaff = () => {
       setStatus("submitting");
       setMessage(null);
 
-      const response = await api.post("/staff", values);
+      const endpoint = isEditMode ? `/staff/${id}` : "/staff";
+      const method = isEditMode ? "put" : "post";
+
+      // In edit mode, only send password if it's not empty
+      const payload =
+        isEditMode && !values.password
+          ? { ...values, password: undefined }
+          : values;
+
+      const response = await api[method](endpoint, payload);
       const { success, message: responseMessage } = response.data;
 
       if (success) {
         setStatus("success");
-        setMessage(responseMessage || "Staff created successfully!");
-        resetForm();
+        setMessage(
+          responseMessage ||
+            (isEditMode
+              ? "Staff updated successfully!"
+              : "Staff created successfully!")
+        );
+        if (!isEditMode) {
+          resetForm();
+        }
         setTimeout(() => {
           navigate("/staff");
         }, 2000);
       } else {
         setStatus("error");
-        setMessage(responseMessage || "Failed to create staff");
+        setMessage(
+          responseMessage ||
+            (isEditMode ? "Failed to update staff" : "Failed to create staff")
+        );
       }
     } catch (error) {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");
-      console.error("Add staff error:", error);
+      console.error(
+        isEditMode ? "Update staff error:" : "Add staff error:",
+        error
+      );
     } finally {
       setTimeout(() => setStatus("idle"), 2500);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl p-6 bg-white">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading staff data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl p-6 bg-white">
@@ -69,8 +139,9 @@ const CreateStaff = () => {
         initialValues={initialValues}
         validationSchema={CreateStaffSchema}
         onSubmit={handleSubmit}
+        enableReinitialize={true}
       >
-        {({ values, setFieldValue }) => (
+        {({ values, setFieldValue, errors, touched }) => (
           <Form>
             {/* Header */}
             <header className="relative">
@@ -118,8 +189,13 @@ const CreateStaff = () => {
                     as={Input}
                     name="name"
                     placeholder="Enter staff full name"
-                    className="py-7"
+                    className={`py-7 ${
+                      errors.name && touched.name ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.name && touched.name && (
+                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Email Address *</Label>
@@ -128,8 +204,13 @@ const CreateStaff = () => {
                     type="email"
                     name="email"
                     placeholder="staff@company.com"
-                    className="py-7"
+                    className={`py-7 ${
+                      errors.email && touched.email ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.email && touched.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Phone Number *</Label>
@@ -138,8 +219,13 @@ const CreateStaff = () => {
                     type="tel"
                     name="phone"
                     placeholder="+251 911 234 567"
-                    className="py-7"
+                    className={`py-7 ${
+                      errors.phone && touched.phone ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.phone && touched.phone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                  )}
                 </div>
                 <div className="relative">
                   <Label className="mb-1">Password *</Label>
@@ -148,7 +234,11 @@ const CreateStaff = () => {
                     type={showPassword ? "text" : "password"}
                     name="password"
                     placeholder="Enter password"
-                    className="py-7 pr-10"
+                    className={`py-7 pr-10 ${
+                      errors.password && touched.password
+                        ? "border-red-500"
+                        : ""
+                    }`}
                   />
                   <button
                     type="button"
@@ -161,6 +251,11 @@ const CreateStaff = () => {
                       <IoEyeOff className="h-5 w-5" />
                     )}
                   </button>
+                  {errors.password && touched.password && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.password}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -173,7 +268,11 @@ const CreateStaff = () => {
                     value={values.role}
                     onValueChange={(val) => setFieldValue("role", val)}
                   >
-                    <SelectTrigger className="py-7 !w-full">
+                    <SelectTrigger
+                      className={`py-7 !w-full ${
+                        errors.role && touched.role ? "border-red-500" : ""
+                      }`}
+                    >
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -186,6 +285,9 @@ const CreateStaff = () => {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.role && touched.role && (
+                    <p className="text-red-500 text-sm mt-1">{errors.role}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Branch ID *</Label>
@@ -193,8 +295,17 @@ const CreateStaff = () => {
                     as={Input}
                     name="branchId"
                     placeholder="Enter branch ID (e.g., B001)"
-                    className="py-7"
+                    className={`py-7 ${
+                      errors.branchId && touched.branchId
+                        ? "border-red-500"
+                        : ""
+                    }`}
                   />
+                  {errors.branchId && touched.branchId && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.branchId}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

@@ -18,7 +18,29 @@ import { IoArrowBack, IoLogoDropbox } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import * as Yup from "yup";
 // import { useOrders } from "@/hooks/useOrders"; // custom hook
+
+const OrderValidationSchema = Yup.object().shape({
+  name: Yup.string().required("Sender name is required"),
+  email: Yup.string()
+    .email("Invalid email")
+    .required("Sender email is required"),
+  phone: Yup.string().required("Sender phone is required"),
+  receiverName: Yup.string().required("Receiver name is required"),
+  receiverEmail: Yup.string()
+    .email("Invalid email")
+    .required("Receiver email is required"),
+  receiverPhone: Yup.string().required("Receiver phone is required"),
+  receiverAddress: Yup.string().required("Delivery address is required"),
+  pickupAddress: Yup.string().required("Pickup address is required"),
+  serviceType: Yup.string().required("Service type is required"),
+  fulfillmentType: Yup.string().required("Fulfillment type is required"),
+  weight: Yup.number()
+    .min(0.1, "Weight must be greater than 0")
+    .required("Weight is required"),
+  destination: Yup.string().required("Destination is required"),
+});
 
 export default function OrderForm() {
   //   const { createOrder, isCreatingOrder } = useOrders();
@@ -104,8 +126,12 @@ export default function OrderForm() {
 
   return (
     <div className="max-w-4xl p-6 bg-white">
-      <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-        {({ values, setFieldValue }) => (
+      <Formik
+        initialValues={initialValues}
+        validationSchema={OrderValidationSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ values, setFieldValue, errors, touched }) => (
           <Form>
             {/* Header */}
             <header className="relative">
@@ -138,8 +164,13 @@ export default function OrderForm() {
                     as={Input}
                     name="name"
                     placeholder="Customer name"
-                    className={`py-7`}
+                    className={`py-7 ${
+                      errors.name && touched.name ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.name && touched.name && (
+                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Email</Label>
@@ -148,8 +179,13 @@ export default function OrderForm() {
                     type="email"
                     name="email"
                     placeholder="Email"
-                    className={`py-7`}
+                    className={`py-7 ${
+                      errors.email && touched.email ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.email && touched.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Phone</Label>
@@ -158,8 +194,13 @@ export default function OrderForm() {
                     type="tel"
                     name="phone"
                     placeholder="Phone"
-                    className={`py-7`}
+                    className={`py-7 ${
+                      errors.phone && touched.phone ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.phone && touched.phone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Pickup Address</Label>
@@ -174,6 +215,11 @@ export default function OrderForm() {
                     initialLng={values.pickupLongitude}
                     height="300px"
                   />
+                  {errors.pickupAddress && touched.pickupAddress && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.pickupAddress}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -186,8 +232,17 @@ export default function OrderForm() {
                     as={Input}
                     name="receiverName"
                     placeholder="Receiver name"
-                    className={`py-7`}
+                    className={`py-7 ${
+                      errors.receiverName && touched.receiverName
+                        ? "border-red-500"
+                        : ""
+                    }`}
                   />
+                  {errors.receiverName && touched.receiverName && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.receiverName}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Email</Label>
@@ -196,8 +251,17 @@ export default function OrderForm() {
                     type="email"
                     name="receiverEmail"
                     placeholder="Receiver email"
-                    className={`py-7`}
+                    className={`py-7 ${
+                      errors.receiverEmail && touched.receiverEmail
+                        ? "border-red-500"
+                        : ""
+                    }`}
                   />
+                  {errors.receiverEmail && touched.receiverEmail && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.receiverEmail}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Phone</Label>
@@ -206,8 +270,17 @@ export default function OrderForm() {
                     type="tel"
                     name="receiverPhone"
                     placeholder="Receiver phone"
-                    className={`py-7`}
+                    className={`py-7 ${
+                      errors.receiverPhone && touched.receiverPhone
+                        ? "border-red-500"
+                        : ""
+                    }`}
                   />
+                  {errors.receiverPhone && touched.receiverPhone && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.receiverPhone}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="mb-1">Delivery Address</Label>
@@ -222,6 +295,11 @@ export default function OrderForm() {
                     initialLng={values.receiverLongitude}
                     height="300px"
                   />
+                  {errors.receiverAddress && touched.receiverAddress && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.receiverAddress}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -236,7 +314,13 @@ export default function OrderForm() {
                   value={values.serviceType}
                   onValueChange={(val) => setFieldValue("serviceType", val)}
                 >
-                  <SelectTrigger className="py-7 !w-full bg-none border">
+                  <SelectTrigger
+                    className={`py-7 !w-full bg-none border ${
+                      errors.serviceType && touched.serviceType
+                        ? "border-red-500"
+                        : ""
+                    }`}
+                  >
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
                   <SelectContent>
@@ -245,6 +329,11 @@ export default function OrderForm() {
                     <SelectItem value="overnight">Overnight</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.serviceType && touched.serviceType && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.serviceType}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -253,7 +342,13 @@ export default function OrderForm() {
                   value={values.fulfillmentType}
                   onValueChange={(val) => setFieldValue("fulfillmentType", val)}
                 >
-                  <SelectTrigger className="bg-none py-7 !w-full">
+                  <SelectTrigger
+                    className={`bg-none py-7 !w-full ${
+                      errors.fulfillmentType && touched.fulfillmentType
+                        ? "border-red-500"
+                        : ""
+                    }`}
+                  >
                     <SelectValue placeholder="Select fulfillment" />
                   </SelectTrigger>
                   <SelectContent>
@@ -261,6 +356,11 @@ export default function OrderForm() {
                     <SelectItem value="DROPOFF">DROPOFF</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.fulfillmentType && touched.fulfillmentType && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.fulfillmentType}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="mb-1">Sender Entity</Label>
@@ -318,8 +418,13 @@ export default function OrderForm() {
                     type="number"
                     step="0.1"
                     name="weight"
-                    className={`py-7`}
+                    className={`py-7 ${
+                      errors.weight && touched.weight ? "border-red-500" : ""
+                    }`}
                   />
+                  {errors.weight && touched.weight && (
+                    <p className="text-red-500 text-sm mt-1">{errors.weight}</p>
+                  )}
                 </div>
                 {values.shipmentType === "courier" ? (
                   <>
@@ -430,7 +535,13 @@ export default function OrderForm() {
                     value={String(values.destination)}
                     onValueChange={(val) => setFieldValue("destination", val)}
                   >
-                    <SelectTrigger className="!w-full py-7">
+                    <SelectTrigger
+                      className={`!w-full py-7 ${
+                        errors.destination && touched.destination
+                          ? "border-red-500"
+                          : ""
+                      }`}
+                    >
                       <SelectValue placeholder="Select destination" />
                     </SelectTrigger>
                     <SelectContent>
@@ -441,6 +552,11 @@ export default function OrderForm() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.destination && touched.destination && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.destination}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
-import BranchMain from "../../features/branch/components/BranchMain";
+import Main from "../../features/branch/components/Main";
 
 const BranchPage = () => {
-  return <BranchMain />;
+  return <Main />;
 };
 
 export default BranchPage;

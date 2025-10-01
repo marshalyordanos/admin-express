@@ -1,7 +1,7 @@
-import StaffMain from "../../features/staff/components/StaffMain";
+import Main from "../../features/staff/components/Main";
 
 const StaffPage = () => {
-  return <StaffMain />;
+  return <Main />;
 };
 
 export default StaffPage;
