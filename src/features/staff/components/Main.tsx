@@ -311,9 +311,6 @@ export default function StaffMain() {
                   Completed
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
-                  Rating
-                </TableHead>
-                <TableHead className="text-gray-600 font-medium">
                   Status
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
@@ -382,14 +379,6 @@ export default function StaffMain() {
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
                     {member.completedOrders}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-500">★</span>
-                      <span className="font-medium text-gray-900">
-                        {member.rating}
-                      </span>
-                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge
