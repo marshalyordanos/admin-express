@@ -1,7 +1,5 @@
-import CreateStaff from "../../features/staff/components/CreateStaff";
+import CreateStaff from "@/features/staff/components/CreateStaff";
 
-const EditStaffPage = () => {
+export default function EditStaffPage() {
   return <CreateStaff />;
-};
-
-export default EditStaffPage;
+}

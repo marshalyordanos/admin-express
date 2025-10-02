@@ -158,7 +158,7 @@ const CreateStaff = () => {
                 <div className="flex gap-4 items-center">
                   <IoPersonAdd className="text-2xl text-blue-500" />
                   <h1 className="text-3xl font-medium text-gray-700">
-                    Add New Staff Member
+                    {isEditMode ? "Edit Staff Member" : "Add New Staff Member"}
                   </h1>
                 </div>
               </div>
@@ -313,7 +313,9 @@ const CreateStaff = () => {
             {/* Action buttons */}
             <div className="bg-gray-50 p-6 rounded-lg mt-6 space-y-4">
               <h2 className="text-lg font-medium mb-4">
-                Complete Staff Registration
+                {isEditMode
+                  ? "Update Staff Information"
+                  : "Complete Staff Registration"}
               </h2>
 
               <div className="flex gap-4">
@@ -336,8 +338,12 @@ const CreateStaff = () => {
                   {status === "submitting" ? (
                     <span className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Creating Staff...</span>
+                      <span>
+                        {isEditMode ? "Updating Staff..." : "Creating Staff..."}
+                      </span>
                     </span>
+                  ) : isEditMode ? (
+                    "Update Staff"
                   ) : (
                     "Create Staff"
                   )}

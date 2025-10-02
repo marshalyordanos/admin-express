@@ -1,7 +1,5 @@
-import CreateBranch from "../../features/branch/components/CreateBranch";
+import CreateBranch from "@/features/branch/components/CreateBranch";
 
-const EditBranchPage = () => {
+export default function EditBranchPage() {
   return <CreateBranch />;
-};
-
-export default EditBranchPage;
+}

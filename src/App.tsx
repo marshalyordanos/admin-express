@@ -19,6 +19,16 @@ import EditVehiclePage from "./pages/Fleet/EditVehiclePage";
 import MaintenanceLogPage from "./pages/Fleet/MaintenanceLogPage";
 import EditStaffPage from "./pages/Staff/EditStaffPage";
 import EditBranchPage from "./pages/Branch/EditBranchPage";
+import CreateMaintenanceLogPage from "./pages/Fleet/CreateMaintenanceLogPage";
+import EditMaintenanceLogPage from "./pages/Fleet/EditMaintenanceLogPage";
+import CustomerPage from "./pages/Customer/CustomerPage";
+import CreateCustomerPage from "./pages/Customer/CreateCustomerPage";
+import EditCustomerPage from "./pages/Customer/EditCustomerPage";
+import CorporateClientsPage from "./pages/Customer/CorporateClientsPage";
+import LoyaltyProgramPage from "./pages/Customer/LoyaltyProgramPage";
+import ComplaintsPage from "./pages/Customer/ComplaintsPage";
+import AddPointsPage from "./pages/Customer/AddPointsPage";
+import ManageRewardsPage from "./pages/Customer/ManageRewardsPage";
 
 const App = () => {
   return (
@@ -45,6 +55,31 @@ const App = () => {
             <Route path="/fleet/create" element={<CreateVehiclePage />} />
             <Route path="/fleet/edit/:id" element={<EditVehiclePage />} />
             <Route path="/fleet/maintenance" element={<MaintenanceLogPage />} />
+            <Route
+              path="/fleet/maintenance/create"
+              element={<CreateMaintenanceLogPage />}
+            />
+            <Route
+              path="/fleet/maintenance/edit/:id"
+              element={<EditMaintenanceLogPage />}
+            />
+            <Route path="/customer" element={<CustomerPage />} />
+            <Route path="/customer/create" element={<CreateCustomerPage />} />
+            <Route path="/customer/edit/:id" element={<EditCustomerPage />} />
+            <Route
+              path="/customer/corporate"
+              element={<CorporateClientsPage />}
+            />
+            <Route path="/customer/loyalty" element={<LoyaltyProgramPage />} />
+            <Route
+              path="/customer/loyalty/create"
+              element={<AddPointsPage />}
+            />
+            <Route
+              path="/customer/loyalty/rewards"
+              element={<ManageRewardsPage />}
+            />
+            <Route path="/customer/complaints" element={<ComplaintsPage />} />
           </Route>
         </Route>
       </Routes>

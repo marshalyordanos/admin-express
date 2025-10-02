@@ -13,6 +13,7 @@ interface SubSubItem {
 interface SubItem {
   name: string;
   path: string;
+  icon?: React.ReactNode;
   subsubItems?: SubSubItem[];
 }
 
@@ -37,6 +38,46 @@ export default function Sidebar() {
     }
   }, [isCollapsed]);
 
+  // Auto-expand parent menus when on sub-routes
+  useEffect(() => {
+    if (isCollapsed) return;
+
+    menuItems.forEach((item: MenuItem) => {
+      if (item.subItems) {
+        const hasActiveSubItem = item.subItems.some(
+          (sub: SubItem) =>
+            location.pathname === sub.path ||
+            location.pathname.startsWith(sub.path + "/") ||
+            (sub.subsubItems &&
+              sub.subsubItems.some(
+                (ss: SubSubItem) =>
+                  location.pathname === ss.path ||
+                  location.pathname.startsWith(ss.path + "/")
+              ))
+        );
+
+        if (hasActiveSubItem) {
+          setExpandedParent(item.name);
+
+          // Also expand sub-items if they have active sub-sub-items
+          item.subItems.forEach((sub: SubItem) => {
+            if (sub.subsubItems) {
+              const hasActiveSubSubItem = sub.subsubItems.some(
+                (ss: SubSubItem) =>
+                  location.pathname === ss.path ||
+                  location.pathname.startsWith(ss.path + "/")
+              );
+
+              if (hasActiveSubSubItem) {
+                setExpandedSub(`${item.name}-${sub.name}`);
+              }
+            }
+          });
+        }
+      }
+    });
+  }, [location.pathname, isCollapsed]);
+
   const toggleParent = (name: string) => {
     setExpandedParent((prev) => (prev === name ? null : name));
     setExpandedSub(null);
@@ -48,11 +89,22 @@ export default function Sidebar() {
   };
 
   const isMenuItemActive = (itemPath: string, subItems?: SubItem[]) => {
+    // Check exact match first
     if (location.pathname === itemPath) return true;
+
+    // Check if current path starts with the item path (for management modules)
+    if (location.pathname.startsWith(itemPath + "/")) return true;
+
+    // Check sub-items
     return subItems?.some(
       (s) =>
         location.pathname === s.path ||
-        s.subsubItems?.some((ss) => location.pathname === ss.path)
+        location.pathname.startsWith(s.path + "/") ||
+        s.subsubItems?.some(
+          (ss) =>
+            location.pathname === ss.path ||
+            location.pathname.startsWith(ss.path + "/")
+        )
     );
   };
 
@@ -145,8 +197,11 @@ export default function Sidebar() {
                       const isSubExpanded = expandedSub === subKey;
                       const isSubActive =
                         location.pathname === sub.path ||
+                        location.pathname.startsWith(sub.path + "/") ||
                         sub.subsubItems?.some(
-                          (ss) => location.pathname === ss.path
+                          (ss) =>
+                            location.pathname === ss.path ||
+                            location.pathname.startsWith(ss.path + "/")
                         );
 
                       return (
@@ -197,7 +252,8 @@ export default function Sidebar() {
                               <div className="ml-4 mt-2 flex flex-col gap-1 groupp">
                                 {sub.subsubItems!.map((ss) => {
                                   const isSSActive =
-                                    location.pathname === ss.path;
+                                    location.pathname === ss.path ||
+                                    location.pathname.startsWith(ss.path + "/");
                                   return (
                                     <NavLink
                                       key={ss.name}
