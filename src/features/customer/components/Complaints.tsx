@@ -3,20 +3,14 @@
 import { useState } from "react";
 import {
   Search,
-  Download,
-  ArrowUpDown,
   AlertTriangle,
   Clock,
   CheckCircle,
   XCircle,
-  User,
-  FileText,
-  TrendingUp,
-  TrendingDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -27,6 +21,13 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import TablePagination from "@/components/common/TablePagination";
 import {
@@ -296,28 +297,36 @@ export default function Complaints() {
                   className="pl-10 pr-3 w-full py-6"
                 />
               </div>
-              <select
+              <Select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-6 border border-gray-300 rounded-md"
+                onValueChange={(value) => setFilterStatus(value)}
               >
-                <option value="all">All Status</option>
-                <option value="Open">Open</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Closed">Closed</option>
-              </select>
-              <select
+                <SelectTrigger className="w-[180px] py-6">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Resolved">Resolved</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
                 value={filterPriority}
-                onChange={(e) => setFilterPriority(e.target.value)}
-                className="px-4 py-6 border border-gray-300 rounded-md"
+                onValueChange={(value) => setFilterPriority(value)}
               >
-                <option value="all">All Priority</option>
-                <option value="Critical">Critical</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
+                <SelectTrigger className="w-[180px] py-6">
+                  <SelectValue placeholder="All Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="Critical">Critical</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Table */}

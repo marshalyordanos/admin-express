@@ -15,9 +15,16 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import TablePagination from "@/components/common/TablePagination";
-import { IoAdd, IoStar, IoArrowBack, IoGift } from "react-icons/io5";
+import { IoAdd, IoStar, IoArrowBack} from "react-icons/io5";
 import { FaCrown } from "react-icons/fa";
 
 const loyaltyMembers = [
@@ -254,13 +261,13 @@ export default function LoyaltyProgram() {
                   <IoAdd className="mr-2 h-4 w-4" />
                   Add Points
                 </Button>
-                <Button
+                {/* <Button
                   onClick={() => navigate("/customer/loyalty/rewards")}
                   className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white"
                 >
                   <IoGift className="mr-2 h-4 w-4" />
                   Manage Rewards
-                </Button>
+                </Button> */}
               </div>
             </div>
 
@@ -331,17 +338,21 @@ export default function LoyaltyProgram() {
                   className="pl-10 pr-3 w-full py-6"
                 />
               </div>
-              <select
+              <Select
                 value={filterTier}
-                onChange={(e) => setFilterTier(e.target.value)}
-                className="px-4 py-6 border border-gray-300 rounded-md"
+                onValueChange={(value) => setFilterTier(value)}
               >
-                <option value="all">All Tiers</option>
-                <option value="bronze">Bronze</option>
-                <option value="silver">Silver</option>
-                <option value="gold">Gold</option>
-                <option value="platinum">Platinum</option>
-              </select>
+                <SelectTrigger className="w-[180px] py-6">
+                  <SelectValue placeholder="All Tiers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tiers</SelectItem>
+                  <SelectItem value="bronze">Bronze</SelectItem>
+                  <SelectItem value="silver">Silver</SelectItem>
+                  <SelectItem value="gold">Gold</SelectItem>
+                  <SelectItem value="platinum">Platinum</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Table */}

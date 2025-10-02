@@ -265,17 +265,6 @@ const AddPoints = () => {
                     className="py-4 min-h-[100px]"
                   />
                 </div>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-blue-900 mb-2">
-                    Points Guidelines
-                  </h3>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    <li>• Purchase rewards: 1 point per 10 ETB spent</li>
-                    <li>• Referral bonus: 100-500 points</li>
-                    <li>• Promotional points: As per campaign</li>
-                    <li>• Maximum single addition: 10,000 points</li>
-                  </ul>
-                </div>
               </div>
             </div>
 

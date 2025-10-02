@@ -9,10 +9,8 @@ import {
   TrendingDown,
   Users,
   UserCheck,
-  UserX,
   Building2,
   Star,
-  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

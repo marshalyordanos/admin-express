@@ -28,7 +28,7 @@ import CorporateClientsPage from "./pages/Customer/CorporateClientsPage";
 import LoyaltyProgramPage from "./pages/Customer/LoyaltyProgramPage";
 import ComplaintsPage from "./pages/Customer/ComplaintsPage";
 import AddPointsPage from "./pages/Customer/AddPointsPage";
-import ManageRewardsPage from "./pages/Customer/ManageRewardsPage";
+import CreateComplaintPage from "./pages/Customer/CreateComplaintPage";
 
 const App = () => {
   return (
@@ -75,11 +75,11 @@ const App = () => {
               path="/customer/loyalty/create"
               element={<AddPointsPage />}
             />
-            <Route
-              path="/customer/loyalty/rewards"
-              element={<ManageRewardsPage />}
-            />
             <Route path="/customer/complaints" element={<ComplaintsPage />} />
+            <Route
+              path="/customer/complaints/create"
+              element={<CreateComplaintPage />}
+            />
           </Route>
         </Route>
       </Routes>
