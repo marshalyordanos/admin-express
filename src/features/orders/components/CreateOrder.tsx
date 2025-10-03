@@ -566,30 +566,46 @@ export default function OrderForm() {
               <h2 className="text-lg font-medium mb-4">Complete order</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button
-                  type="button"
-                  className="mb-1 !w-[180px] cursor-pointer hover:bg-blue-700"
-                  onClick={onEstimate}
-                >
-                  Generate Estimate price
-                </Button>
-
-                <Input
-                  className="py-7 font-bold !text-2xl border-gray-300"
-                  disabled={true}
-                  value={estimatePrice}
-                />
                 <div className="flex items-center gap-2">
-                  <Label className="mb-1">Requirement Checklist</Label>
-                  <Checkbox className="accent-blue-500" />
+                  <Label
+                    className="mb-1 text-lg font-medium"
+                    htmlFor="requirement"
+                  >
+                    Requirement Checklist
+                  </Label>
+                  <Checkbox className="border-gray-300 ml-2" />
+                </div>
+                <div className="col-span-2 grid grid-cols-2 gap-4">
+                  <Button
+                    type="button"
+                    className="mb-1  cursor-pointer hover:bg-blue-700"
+                    onClick={onEstimate}
+                  >
+                    Generate Estimate price
+                  </Button>
+
+                  <Input
+                    className="py-7 font-bold !text-2xl border-gray-300"
+                    disabled={true}
+                    value={estimatePrice}
+                  />
                 </div>
 
-                <Button
-                  type="submit"
-                  className="mb-1 !w-[180px] col-span-2 cursor-pointer hover:bg-blue-700"
-                >
-                  Submit order
-                </Button>
+                <div className="col-span-2 grid grid-cols-2 gap-4 ">
+                  <Button
+                    type="submit"
+                    className="mb-1 cursor-pointer hover:bg-blue-700"
+                  >
+                    Submit order
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 cursor-pointer !text-black border border-gray-300 !w-full"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </div>
           </Form>

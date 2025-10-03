@@ -10,7 +10,7 @@ import StaffPage from "./pages/Staff/StaffPage";
 import AllStaffPage from "./pages/Staff/AllStaffPage";
 import CreateStaffPage from "./pages/Staff/CreateStaffPage";
 import OrdersPage from "./pages/orders/OrdersPage";
-import OrderForm from "./features/orders/components/OrdersForm";
+import CreateOrder from "./features/orders/components/CreateOrder";
 import OrderDetails from "./features/orders/components/OrderDetails";
 import DispatchPage from "./pages/DispatchPage";
 import FleetPage from "./pages/Fleet/FleetPage";
@@ -48,7 +48,7 @@ const App = () => {
             <Route path="/staff/create" element={<CreateStaffPage />} />
             <Route path="/staff/edit/:id" element={<EditStaffPage />} />
             <Route path="/order" element={<OrdersPage />} />
-            <Route path="/order/new" element={<OrderForm />} />
+            <Route path="/order/new" element={<CreateOrder />} />
             <Route path="/order/details/:id" element={<OrderDetails />} />
             <Route path="/dispatch" element={<DispatchPage />} />
             <Route path="/fleet" element={<FleetPage />} />
