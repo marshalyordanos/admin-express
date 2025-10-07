@@ -300,7 +300,7 @@ export default function MaintenanceLog() {
                     <IoArrowBack className="h-5 w-5" />
                   </Button>
                   <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <IoConstruct className="text-orange-500" />
+                    <IoConstruct className="text-blue-500" />
                     Maintenance Logs
                   </h1>
                 </div>
@@ -311,7 +311,7 @@ export default function MaintenanceLog() {
               <div className="flex gap-3 mt-4 md:mt-0">
                 <Button
                   onClick={() => navigate("/fleet/maintenance/create")}
-                  className="bg-orange-500 hover:bg-orange-600 cursor-pointer text-white"
+                  className="bg-blue-500 hover:bg-blue-600 cursor-pointer text-white"
                 >
                   <IoAdd className="mr-2 h-4 w-4" />
                   Add Maintenance Record

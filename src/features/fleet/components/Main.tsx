@@ -391,7 +391,7 @@ export default function FleetMain() {
                 </Button>
                 <Button
                   onClick={() => navigate("/fleet/maintenance")}
-                  className="bg-orange-500 hover:bg-orange-600 cursor-pointer text-white"
+                  className="bg-blue-500 hover:bg-blue-600 cursor-pointer text-white"
                 >
                   <IoConstruct className="mr-2 h-4 w-4" />
                   Maintenance Logs
