@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Formik, Form, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,19 +10,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Button from "../../../components/common/Button";
-import api from "../../../api/api";
+// import api from "../../../lib/api/api";
 import { CreateStaffSchema } from "../schemas/CreateStaffSchema";
 import { IoArrowBack, IoPersonAdd, IoEye, IoEyeOff } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
 
 const CreateStaff = () => {
-  const [status, setStatus] = useState<
+  const [status] = useState<
     "idle" | "submitting" | "success" | "error"
   >("idle");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [loading, setLoading] = useState(false);
-  const [initialValues, setInitialValues] = useState({
+  const [loading] = useState(false);
+  const [initialValues] = useState({
     name: "",
     email: "",
     password: "",
@@ -36,88 +36,81 @@ const CreateStaff = () => {
   const isEditMode = !!id;
 
   // Fetch staff data if in edit mode
-  useEffect(() => {
-    const fetchStaffData = async () => {
-      if (!isEditMode) return;
+  // useEffect(() => {
+  //   const fetchStaffData = async () => {
+  //     if (!isEditMode) return;
 
-      setLoading(true);
-      try {
-        const response = await api.get(`/staff/${id}`);
-        const { success, data } = response.data;
+  //     setLoading(true);
+  //     try {
+  //       const response = await api.get(`/staff/${id}`);
+  //       const { success, data } = response.data;
 
-        if (success && data) {
-          setInitialValues({
-            name: data.name || "",
-            email: data.email || "",
-            password: "", // Don't pre-fill password for security
-            branchId: data.branchId || "",
-            phone: data.phone || "",
-            role: data.role || "",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching staff data:", error);
-        setMessage("Failed to load staff data");
-        setStatus("error");
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       if (success && data) {
+  //         setInitialValues({
+  //           name: data.name || "",
+  //           email: data.email || "",
+  //           password: "", // Don't pre-fill password for security
+  //           branchId: data.branchId || "",
+  //           phone: data.phone || "",
+  //           role: data.role || "",
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching staff data:", error);
+  //       setMessage("Failed to load staff data");
+  //       setStatus("error");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchStaffData();
-  }, [id, isEditMode]);
+  //   fetchStaffData();
+  // }, [id, isEditMode]);
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
-    try {
-      setStatus("submitting");
-      setMessage(null);
-
-      const endpoint = isEditMode ? `/staff/${id}` : "/staff";
-      const method = isEditMode ? "put" : "post";
-
-      // In edit mode, only send password if it's not empty
-      const payload =
-        isEditMode && !values.password
-          ? { ...values, password: undefined }
-          : values;
-
-      const response = await api[method](endpoint, payload);
-      const { success, message: responseMessage } = response.data;
-
-      if (success) {
-        setStatus("success");
-        setMessage(
-          responseMessage ||
-            (isEditMode
-              ? "Staff updated successfully!"
-              : "Staff created successfully!")
-        );
-        if (!isEditMode) {
-          resetForm();
-        }
-        setTimeout(() => {
-          navigate("/staff");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setMessage(
-          responseMessage ||
-            (isEditMode ? "Failed to update staff" : "Failed to create staff")
-        );
-      }
-    } catch (error) {
-      setStatus("error");
-      setMessage("Something went wrong. Please try again.");
-      console.error(
-        isEditMode ? "Update staff error:" : "Add staff error:",
-        error
-      );
-    } finally {
-      setTimeout(() => setStatus("idle"), 2500);
-    }
+  const handleSubmit = async () => {
+    // try {
+    //   setStatus("submitting");
+    //   setMessage(null);
+    //   const endpoint = isEditMode ? `/staff/${id}` : "/staff";
+    //   const method = isEditMode ? "put" : "post";
+    //   // In edit mode, only send password if it's not empty
+    //   const payload =
+    //     isEditMode && !values.password
+    //       ? { ...values, password: undefined }
+    //       : values;
+    //   // const response = await api[method](endpoint, payload);
+    //   // const { success, message: responseMessage } = response.data;
+    //   if (success) {
+    //     setStatus("success");
+    //     setMessage(
+    //       responseMessage ||
+    //         (isEditMode
+    //           ? "Staff updated successfully!"
+    //           : "Staff created successfully!")
+    //     );
+    //     if (!isEditMode) {
+    //       resetForm();
+    //     }
+    //     setTimeout(() => {
+    //       navigate("/staff");
+    //     }, 2000);
+    //   } else {
+    //     setStatus("error");
+    //     setMessage(
+    //       responseMessage ||
+    //         (isEditMode ? "Failed to update staff" : "Failed to create staff")
+    //     );
+    //   }
+    // } catch (error) {
+    //   setStatus("error");
+    //   setMessage("Something went wrong. Please try again.");
+    //   console.error(
+    //     isEditMode ? "Update staff error:" : "Add staff error:",
+    //     error
+    //   );
+    // } finally {
+    //   setTimeout(() => setStatus("idle"), 2500);
+    // }
   };
 
   if (loading) {

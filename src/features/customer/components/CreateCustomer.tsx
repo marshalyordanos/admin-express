@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Button from "../../../components/common/Button";
-import api from "../../../api/api";
+// import api from "../../../lib/api/api";
 import { CustomerSchema } from "../schemas/CustomerSchema";
 import { IoArrowBack, IoPersonAdd, IoBusiness } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,7 +23,7 @@ const CreateCustomer = () => {
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initialValues, setInitialValues] = useState({
+  const [initialValues] = useState({
     name: "",
     email: "",
     phone: "",
@@ -51,108 +51,108 @@ const CreateCustomer = () => {
       if (!isEditMode) return;
 
       setLoading(true);
-      try {
-        const response = await api.get(`/customer/${id}`);
-        const { success, data } = response.data;
+      // try {
+      //   // const response = await api.get(`/customer/${id}`);
+      //   // const { success, data } = response.data;
 
-        if (success && data) {
-          setInitialValues({
-            name: data.name || "",
-            email: data.email || "",
-            phone: data.phone || "",
-            type: data.type || "",
-            address: data.address || "",
-            city: data.city || "",
-            notes: data.notes || "",
-            companyName: data.companyName || "",
-            contactPerson: data.contactPerson || "",
-            contractNumber: data.contractNumber || "",
-            creditLimit: data.creditLimit?.toString() || "",
-            paymentTerms: data.paymentTerms || "",
-            preferredLanguage: data.preferredLanguage || "",
-            communicationPreference: data.communicationPreference || "",
-            marketingOptIn: data.marketingOptIn || false,
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching customer data:", error);
-        setMessage("Failed to load customer data");
-        setStatus("error");
-      } finally {
-        setLoading(false);
-      }
+      //   if (success && data) {
+      //     setInitialValues({
+      //       name: data.name || "",
+      //       email: data.email || "",
+      //       phone: data.phone || "",
+      //       type: data.type || "",
+      //       address: data.address || "",
+      //       city: data.city || "",
+      //       notes: data.notes || "",
+      //       companyName: data.companyName || "",
+      //       contactPerson: data.contactPerson || "",
+      //       contractNumber: data.contractNumber || "",
+      //       creditLimit: data.creditLimit?.toString() || "",
+      //       paymentTerms: data.paymentTerms || "",
+      //       preferredLanguage: data.preferredLanguage || "",
+      //       communicationPreference: data.communicationPreference || "",
+      //       marketingOptIn: data.marketingOptIn || false,
+      //     });
+      //   }
+      // } catch (error) {
+      //   console.error("Error fetching customer data:", error);
+      //   setMessage("Failed to load customer data");
+      //   setStatus("error");
+      // } finally {
+      //   setLoading(false);
+      // }
     };
 
     fetchCustomerData();
   }, [id, isEditMode]);
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
-    try {
-      setStatus("submitting");
-      setMessage(null);
+  const handleSubmit = async () =>
+    // values: typeof initialValues,
+    // { resetForm }: { resetForm: () => void }
+    {
+      try {
+        setStatus("submitting");
+        setMessage(null);
 
-      const endpoint = isEditMode ? `/customer/${id}` : "/customer";
-      const method = isEditMode ? "put" : "post";
+        // const endpoint = isEditMode ? `/customer/${id}` : "/customer";
+        // const method = isEditMode ? "put" : "post";
 
-      const payload = {
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        type: values.type,
-        address: values.address,
-        city: values.city,
-        notes: values.notes || null,
-        companyName: values.type === "Corporate" ? values.companyName : null,
-        contactPerson:
-          values.type === "Corporate" ? values.contactPerson : null,
-        contractNumber: values.contractNumber || null,
-        creditLimit: values.creditLimit ? parseFloat(values.creditLimit) : null,
-        paymentTerms: values.paymentTerms || null,
-        preferredLanguage: values.preferredLanguage,
-        communicationPreference: values.communicationPreference,
-        marketingOptIn: values.marketingOptIn,
-      };
+        // const payload = {
+        //   name: values.name,
+        //   email: values.email,
+        //   phone: values.phone,
+        //   type: values.type,
+        //   address: values.address,
+        //   city: values.city,
+        //   notes: values.notes || null,
+        //   companyName: values.type === "Corporate" ? values.companyName : null,
+        //   contactPerson:
+        //     values.type === "Corporate" ? values.contactPerson : null,
+        //   contractNumber: values.contractNumber || null,
+        //   creditLimit: values.creditLimit ? parseFloat(values.creditLimit) : null,
+        //   paymentTerms: values.paymentTerms || null,
+        //   preferredLanguage: values.preferredLanguage,
+        //   communicationPreference: values.communicationPreference,
+        //   marketingOptIn: values.marketingOptIn,
+        // };
 
-      const response = await api[method](endpoint, payload);
-      const { success, message: responseMessage } = response.data;
+        // const response = await api[method](endpoint, payload);
+        // const { success, message: responseMessage } = response.data;
 
-      if (success) {
-        setStatus("success");
-        setMessage(
-          responseMessage ||
-            (isEditMode
-              ? "Customer updated successfully!"
-              : "Customer created successfully!")
-        );
-        if (!isEditMode) {
-          resetForm();
-        }
-        setTimeout(() => {
-          navigate("/customer");
-        }, 2000);
-      } else {
+        // if (success) {
+        //   setStatus("success");
+        //   setMessage(
+        //     responseMessage ||
+        //       (isEditMode
+        //         ? "Customer updated successfully!"
+        //         : "Customer created successfully!")
+        //   );
+        //   if (!isEditMode) {
+        //     resetForm();
+        //   }
+        //   setTimeout(() => {
+        //     navigate("/customer");
+        //   }, 2000);
+        // } else {
+        //   setStatus("error");
+        //   setMessage(
+        //     responseMessage ||
+        //       (isEditMode
+        //         ? "Failed to update customer"
+        //         : "Failed to create customer")
+        //   );
+        // }
+      } catch (error) {
         setStatus("error");
-        setMessage(
-          responseMessage ||
-            (isEditMode
-              ? "Failed to update customer"
-              : "Failed to create customer")
+        setMessage("Something went wrong. Please try again.");
+        console.error(
+          isEditMode ? "Update customer error:" : "Add customer error:",
+          error
         );
+      } finally {
+        setTimeout(() => setStatus("idle"), 2500);
       }
-    } catch (error) {
-      setStatus("error");
-      setMessage("Something went wrong. Please try again.");
-      console.error(
-        isEditMode ? "Update customer error:" : "Add customer error:",
-        error
-      );
-    } finally {
-      setTimeout(() => setStatus("idle"), 2500);
-    }
-  };
+    };
 
   if (loading) {
     return (

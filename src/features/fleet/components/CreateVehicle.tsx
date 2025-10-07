@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Button from "@/components/common/Button";
-import api from "@/api/api";
+// import api from "@/lib/api/api";
 import * as Yup from "yup";
 import { IoArrowBack, IoCarSport } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
@@ -37,7 +37,7 @@ const CreateVehicle = () => {
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initialValues, setInitialValues] = useState({
+  const [initialValues] = useState({
     plateNumber: "",
     type: "",
     brand: "",
@@ -68,82 +68,79 @@ const CreateVehicle = () => {
       if (!isEditMode) return;
 
       setLoading(true);
-      try {
-        const response = await api.get(`/fleet/vehicle/${id}`);
-        const { success, data } = response.data;
+      // try {
+      //   const response = await api.get(`/fleet/vehicle/${id}`);
+      //   const { success, data } = response.data;
 
-        if (success && data) {
-          // Pre-fill form with existing data
-          setInitialValues({
-            plateNumber: data.plateNumber || "",
-            type: data.type || "",
-            brand: data.brand || "",
-            model: data.model || "",
-            year: data.year || new Date().getFullYear(),
-            ownership: data.ownership || "",
-            driverId: data.driverId || "",
-            fuelType: data.fuelType || "",
-            capacity: data.capacity || "",
-            currentMileage: data.currentMileage || 0,
-            insuranceNumber: data.insuranceNumber || "",
-            insuranceProvider: data.insuranceProvider || "",
-            insuranceExpiry: data.insuranceExpiry || "",
-            registrationDate: data.registrationDate || "",
-            chassisNumber: data.chassisNumber || "",
-            engineNumber: data.engineNumber || "",
-            color: data.color || "",
-            notes: data.notes || "",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching vehicle data:", error);
-        setMessage("Failed to load vehicle data");
-        setStatus("error");
-      } finally {
-        setLoading(false);
-      }
+      //   if (success && data) {
+      //     // Pre-fill form with existing data
+      //     setInitialValues({
+      //       plateNumber: data.plateNumber || "",
+      //       type: data.type || "",
+      //       brand: data.brand || "",
+      //       model: data.model || "",
+      //       year: data.year || new Date().getFullYear(),
+      //       ownership: data.ownership || "",
+      //       driverId: data.driverId || "",
+      //       fuelType: data.fuelType || "",
+      //       capacity: data.capacity || "",
+      //       currentMileage: data.currentMileage || 0,
+      //       insuranceNumber: data.insuranceNumber || "",
+      //       insuranceProvider: data.insuranceProvider || "",
+      //       insuranceExpiry: data.insuranceExpiry || "",
+      //       registrationDate: data.registrationDate || "",
+      //       chassisNumber: data.chassisNumber || "",
+      //       engineNumber: data.engineNumber || "",
+      //       color: data.color || "",
+      //       notes: data.notes || "",
+      //     });
+      //   }
+      // } catch (error) {
+      //   console.error("Error fetching vehicle data:", error);
+      //   setMessage("Failed to load vehicle data");
+      //   setStatus("error");
+      // } finally {
+      //   setLoading(false);
+      // }
     };
 
     fetchVehicleData();
   }, [id, isEditMode]);
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
+  const handleSubmit = async () => {
     try {
       setStatus("submitting");
       setMessage(null);
 
-      const endpoint = isEditMode ? `/fleet/vehicle/${id}` : "/fleet/vehicle";
-      const method = isEditMode ? "put" : "post";
+      // const endpoint = isEditMode ? `/fleet/vehicle/${id}` : "/fleet/vehicle";
+      // const method = isEditMode ? "put" : "post";
 
-      const response = await api[method](endpoint, values);
-      const { success, message: responseMessage } = response.data;
+      // const response = await api[method](endpoint, values);
+      // const { success, message: responseMessage } = response.data;
 
-      if (success) {
-        setStatus("success");
-        setMessage(
-          responseMessage ||
-            (isEditMode
-              ? "Vehicle updated successfully!"
-              : "Vehicle registered successfully!")
-        );
-        if (!isEditMode) {
-          resetForm();
-        }
-        setTimeout(() => {
-          navigate("/fleet");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setMessage(
-          responseMessage ||
-            (isEditMode
-              ? "Failed to update vehicle"
-              : "Failed to register vehicle")
-        );
-      }
+      // if (success) {
+      //   setStatus("success");
+      //   setMessage(
+      //     responseMessage ||
+      //       (isEditMode
+      //         ? "Vehicle updated successfully!"
+      //         : "Vehicle registered successfully!")
+      //   );
+      //   if (!isEditMode) {
+      //     resetForm();
+      //   }
+      //   setTimeout(() => {
+      //     navigate("/fleet");
+      //   }, 2000);
+      // } else {
+      //   setStatus("error");
+      //   setMessage(
+      //     responseMessage ||
+      //       (isEditMode
+      //         ? "Failed to update vehicle"
+      //         : "Failed to register vehicle")
+      //   );
+      // }
     } catch (error) {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");

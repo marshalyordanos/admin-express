@@ -3,7 +3,7 @@ import { Formik, Form } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Button from "../../../components/common/Button";
-import api from "../../../api/api";
+// import api from "../../../lib/api/api";
 import { AssignManagerSchema } from "../schemas/AssignManagerSchema";
 import { IoArrowBack, IoPersonAdd } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
@@ -26,10 +26,10 @@ const demoBranches = [
 ];
 
 const AssignManager = () => {
-  const [status, setStatus] = useState<
+  const [status] = useState<
     "idle" | "submitting" | "success" | "error"
   >("idle");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Dropdown states
@@ -63,43 +63,43 @@ const AssignManager = () => {
       branch.location.toLowerCase().includes(branchSearch.toLowerCase())
   );
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
-    try {
-      setStatus("submitting");
-      setMessage(null);
-
-      // Send only managerID and branchID
-      const payload = {
-        managerID: values.managerID,
-        branchID: values.branchID,
-      };
-
-      const response = await api.post("/branch/assign-manager", payload);
-      const { success, message: responseMessage } = response.data;
-
-      if (success) {
-        setStatus("success");
-        setMessage(responseMessage || "Manager assigned successfully!");
-        resetForm();
-        setManagerSearch("");
-        setBranchSearch("");
-        setTimeout(() => {
-          navigate("/branch");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setMessage(responseMessage || "Failed to assign manager");
-      }
-    } catch (error) {
-      setStatus("error");
-      setMessage("Something went wrong. Please try again.");
-      console.error("Assign manager error:", error);
-    } finally {
-      setTimeout(() => setStatus("idle"), 2500);
-    }
+  const handleSubmit = async () => {
+    // try {
+    //   const payload = {
+    //     managerID: values.managerID,
+    //     branchID: values.branchID,
+    //   };
+    //   setStatus("submitting");
+    //   setMessage(null);
+    // Send only managerID and branchID
+    // };
+    // const response = await api.post("/branch/assign-manager", payload);
+    // const { success, message: responseMessage } = response.data;
+    // const payload = {
+    //   managerID: values.managerID,
+    // branchID: values.branchID,
+    // };
+    // if (success) {
+    //   setStatus("success");
+    //   setMessage(responseMessage || "Manager assigned successfully!");
+    //   // };
+    //   resetForm();
+    //   setManagerSearch("");
+    //   setBranchSearch("");
+    //   setTimeout(() => {
+    //     navigate("/branch");
+    //   }, 2000);
+    //   //  } else {
+    //     setStatus("error");
+    //     setMessage(responseMessage || "Failed to assign manager");
+    //   }
+    // } catch (error) {
+    //   setStatus("error");
+    //   setMessage("Something went wrong. Please try again.");
+    //   console.error("Assign manager error:", error);
+    // } finally {
+    //   setTimeout(() => setStatus("idle"), 2500);
+    // }
   };
 
   // Select manager handler

@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import SidebarLayout from "./Layout/SidebarLayout";
+import SidebarLayout from "./Layout/Layout";
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import BranchPage from "./pages/Branch/BranchPage";
@@ -7,7 +7,6 @@ import CreateBranch from "./pages/Branch/CreateBranchPage";
 import AssignBranch from "./pages/Branch/AssignManagerPage";
 import RevokeManager from "./pages/Branch/RevokeManagerPage";
 import StaffPage from "./pages/Staff/StaffPage";
-import AllStaffPage from "./pages/Staff/AllStaffPage";
 import CreateStaffPage from "./pages/Staff/CreateStaffPage";
 import OrdersPage from "./pages/orders/OrdersPage";
 import CreateOrder from "./features/orders/components/CreateOrder";
@@ -29,60 +28,76 @@ import LoyaltyProgramPage from "./pages/Customer/LoyaltyProgramPage";
 import ComplaintsPage from "./pages/Customer/ComplaintsPage";
 import AddPointsPage from "./pages/Customer/AddPointsPage";
 import CreateComplaintPage from "./pages/Customer/CreateComplaintPage";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "react-hot-toast";
+import ProtectedRoutes from "./components/ProtectedRoutes";
+
+const queryClient = new QueryClient();
 
 const App = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/">
-          <Route index element={<LoginPage />} />
-          <Route element={<SidebarLayout />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="/branch" element={<BranchPage />} />
-            <Route path="/branch/create" element={<CreateBranch />} />
-            <Route path="/branch/edit/:id" element={<EditBranchPage />} />
-            <Route path="/branch/assign-manager" element={<AssignBranch />} />
-            <Route path="/branch/revoke-manager" element={<RevokeManager />} />
-            <Route path="/staff" element={<StaffPage />} />
-            <Route path="/staff/all" element={<AllStaffPage />} />
-            <Route path="/staff/create" element={<CreateStaffPage />} />
-            <Route path="/staff/edit/:id" element={<EditStaffPage />} />
-            <Route path="/order" element={<OrdersPage />} />
-            <Route path="/order/new" element={<CreateOrder />} />
-            <Route path="/order/details/:id" element={<OrderDetails />} />
-            <Route path="/dispatch" element={<DispatchPage />} />
-            <Route path="/fleet" element={<FleetPage />} />
-            <Route path="/fleet/create" element={<CreateVehiclePage />} />
-            <Route path="/fleet/edit/:id" element={<EditVehiclePage />} />
-            <Route path="/fleet/maintenance" element={<MaintenanceLogPage />} />
-            <Route
-              path="/fleet/maintenance/create"
-              element={<CreateMaintenanceLogPage />}
-            />
-            <Route
-              path="/fleet/maintenance/edit/:id"
-              element={<EditMaintenanceLogPage />}
-            />
-            <Route path="/customer" element={<CustomerPage />} />
-            <Route path="/customer/create" element={<CreateCustomerPage />} />
-            <Route path="/customer/edit/:id" element={<EditCustomerPage />} />
-            <Route
-              path="/customer/corporate"
-              element={<CorporateClientsPage />}
-            />
-            <Route path="/customer/loyalty" element={<LoyaltyProgramPage />} />
-            <Route
-              path="/customer/loyalty/create"
-              element={<AddPointsPage />}
-            />
-            <Route path="/customer/complaints" element={<ComplaintsPage />} />
-            <Route
-              path="/customer/complaints/create"
-              element={<CreateComplaintPage />}
-            />
+      <QueryClientProvider client={queryClient}>
+        <Routes>
+          <Route path="/" element={<ProtectedRoutes />}>
+            <Route index element={<LoginPage />} />
+            <Route element={<SidebarLayout />}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="/branch" element={<BranchPage />} />
+              <Route path="/branch/create" element={<CreateBranch />} />
+              <Route path="/branch/edit/:id" element={<EditBranchPage />} />
+              <Route path="/branch/assign-manager" element={<AssignBranch />} />
+              <Route
+                path="/branch/revoke-manager"
+                element={<RevokeManager />}
+              />
+              <Route path="/staff" element={<StaffPage />} />
+              <Route path="/staff/create" element={<CreateStaffPage />} />
+              <Route path="/staff/edit/:id" element={<EditStaffPage />} />
+              <Route path="/order" element={<OrdersPage />} />
+              <Route path="/order/new" element={<CreateOrder />} />
+              <Route path="/order/details/:id" element={<OrderDetails />} />
+              <Route path="/dispatch" element={<DispatchPage />} />
+              <Route path="/fleet" element={<FleetPage />} />
+              <Route path="/fleet/create" element={<CreateVehiclePage />} />
+              <Route path="/fleet/edit/:id" element={<EditVehiclePage />} />
+              <Route
+                path="/fleet/maintenance"
+                element={<MaintenanceLogPage />}
+              />
+              <Route
+                path="/fleet/maintenance/create"
+                element={<CreateMaintenanceLogPage />}
+              />
+              <Route
+                path="/fleet/maintenance/edit/:id"
+                element={<EditMaintenanceLogPage />}
+              />
+              <Route path="/customer" element={<CustomerPage />} />
+              <Route path="/customer/create" element={<CreateCustomerPage />} />
+              <Route path="/customer/edit/:id" element={<EditCustomerPage />} />
+              <Route
+                path="/customer/corporate"
+                element={<CorporateClientsPage />}
+              />
+              <Route
+                path="/customer/loyalty"
+                element={<LoyaltyProgramPage />}
+              />
+              <Route
+                path="/customer/loyalty/create"
+                element={<AddPointsPage />}
+              />
+              <Route path="/customer/complaints" element={<ComplaintsPage />} />
+              <Route
+                path="/customer/complaints/create"
+                element={<CreateComplaintPage />}
+              />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
+        </Routes>
+        <Toaster position="top-center" reverseOrder={false} />
+      </QueryClientProvider>
     </BrowserRouter>
   );
 };

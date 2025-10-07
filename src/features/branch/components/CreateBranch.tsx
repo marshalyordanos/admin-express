@@ -1,23 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Formik, Form, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Button from "../../../components/common/Button";
 import MapAddressSelector from "@/components/common/MapAddressSelector";
-import api from "../../../api/api";
+// import api from "../../../lib/api/api";
 import { CreateBranchSchema } from "../schemas/CreateBranchSchema";
 import { IoArrowBack } from "react-icons/io5";
 import { BsBuildingFillAdd } from "react-icons/bs";
 import { useNavigate, useParams } from "react-router-dom";
 
 const CreateBranch = () => {
-  const [status, setStatus] = useState<
-    "idle" | "submitting" | "success" | "error"
-  >("idle");
-  const [message, setMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [initialValues, setInitialValues] = useState({
+  const [status] = useState<"idle" | "submitting" | "success" | "error">(
+    "idle"
+  );
+  const [message] = useState<string | null>(null);
+  const [loading] = useState(false);
+  const [initialValues] = useState({
     name: "",
     location: "",
     address: "",
@@ -33,89 +33,89 @@ const CreateBranch = () => {
   const isEditMode = !!id;
 
   // Fetch branch data if in edit mode
-  useEffect(() => {
-    const fetchBranchData = async () => {
-      if (!isEditMode) return;
+  // useEffect(() => {
+  //   const fetchBranchData = async () => {
+  //     if (!isEditMode) return;
 
-      setLoading(true);
-      try {
-        const response = await api.get(`/branch/${id}`);
-        const { success, data } = response.data;
+  //     setLoading(true);
+  //     try {
+  //       const response = await api.get(`/branch/${id}`);
+  //       const { success, data } = response.data;
 
-        if (success && data) {
-          setInitialValues({
-            name: data.name || "",
-            location: data.location || "",
-            address: data.address || "",
-            latitude: data.latitude || 0,
-            longitude: data.longitude || 0,
-            phone: data.phone || "",
-            email: data.email || "",
-            description: data.description || "",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching branch data:", error);
-        setMessage("Failed to load branch data");
-        setStatus("error");
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       if (success && data) {
+  //         setInitialValues({
+  //           name: data.name || "",
+  //           location: data.location || "",
+  //           address: data.address || "",
+  //           latitude: data.latitude || 0,
+  //           longitude: data.longitude || 0,
+  //           phone: data.phone || "",
+  //           email: data.email || "",
+  //           description: data.description || "",
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching branch data:", error);
+  //       setMessage("Failed to load branch data");
+  //       setStatus("error");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchBranchData();
-  }, [id, isEditMode]);
+  //   fetchBranchData();
+  // }, [id, isEditMode]);
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
-    try {
-      setStatus("submitting");
-      setMessage(null);
+  // const handleSubmit = async (
+  //   values: typeof initialValues,
+  //   { resetForm }: { resetForm: () => void }
+  // ) => {
+  //   try {
+  //     setStatus("submitting");
+  //     setMessage(null);
 
-      const endpoint = isEditMode ? `/branch/${id}` : "/branch";
-      const method = isEditMode ? "put" : "post";
+  //     const endpoint = isEditMode ? `/branch/${id}` : "/branch";
+  //     const method = isEditMode ? "put" : "post";
 
-      // Send only { name, location }
-      const response = await api[method](endpoint, {
-        name: values.name,
-        location: values.location,
-      });
-      const { success, message: responseMessage } = response.data;
+  //     // Send only { name, location }
+  //     const response = await api[method](endpoint, {
+  //       name: values.name,
+  //       location: values.location,
+  //     });
+  //     const { success, message: responseMessage } = response.data;
 
-      if (success) {
-        setStatus("success");
-        setMessage(
-          responseMessage ||
-            (isEditMode
-              ? "Branch updated successfully!"
-              : "Branch created successfully!")
-        );
-        if (!isEditMode) {
-          resetForm();
-        }
-        setTimeout(() => {
-          navigate("/branch");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setMessage(
-          responseMessage ||
-            (isEditMode ? "Failed to update branch" : "Failed to create branch")
-        );
-      }
-    } catch (error) {
-      setStatus("error");
-      setMessage("Something went wrong. Please try again.");
-      console.error(
-        isEditMode ? "Update branch error:" : "Add branch error:",
-        error
-      );
-    } finally {
-      setTimeout(() => setStatus("idle"), 2500);
-    }
-  };
+  //     if (success) {
+  //       setStatus("success");
+  //       setMessage(
+  //         responseMessage ||
+  //           (isEditMode
+  //             ? "Branch updated successfully!"
+  //             : "Branch created successfully!")
+  //       );
+  //       if (!isEditMode) {
+  //         resetForm();
+  //       }
+  //       setTimeout(() => {
+  //         navigate("/branch");
+  //       }, 2000);
+  //     } else {
+  //       setStatus("error");
+  //       setMessage(
+  //         responseMessage ||
+  //           (isEditMode ? "Failed to update branch" : "Failed to create branch")
+  //       );
+  //     }
+  //   } catch (error) {
+  //     setStatus("error");
+  //     setMessage("Something went wrong. Please try again.");
+  //     console.error(
+  //       isEditMode ? "Update branch error:" : "Add branch error:",
+  //       error
+  //     );
+  //   } finally {
+  //     setTimeout(() => setStatus("idle"), 2500);
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -135,7 +135,7 @@ const CreateBranch = () => {
       <Formik
         initialValues={initialValues}
         validationSchema={CreateBranchSchema}
-        onSubmit={handleSubmit}
+        onSubmit={() => {}}
         enableReinitialize={true}
       >
         {({ values, setFieldValue, errors, touched }) => (

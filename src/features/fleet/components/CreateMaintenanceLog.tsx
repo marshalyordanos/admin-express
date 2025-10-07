@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Button from "../../../components/common/Button";
-import api from "../../../api/api";
 import { MaintenanceLogSchema } from "../schemas/MaintenanceLogSchema";
 import { IoArrowBack, IoConstruct } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
@@ -25,7 +24,7 @@ const CreateMaintenanceLog = () => {
   const [vehicles, setVehicles] = useState<
     Array<{ id: string; plateNumber: string }>
   >([]);
-  const [initialValues, setInitialValues] = useState({
+  const [initialValues] = useState({
     vehicleId: "",
     type: "",
     service: "",
@@ -70,88 +69,85 @@ const CreateMaintenanceLog = () => {
       if (!isEditMode) return;
 
       setLoading(true);
-      try {
-        const response = await api.get(`/maintenance/${id}`);
-        const { success, data } = response.data;
+      // try {
+      //   // const response = await api.get(`/maintenance/${id}`);
+      //   // const { success, data } = response.data;
 
-        if (success && data) {
-          setInitialValues({
-            vehicleId: data.vehicleId || "",
-            type: data.type || "",
-            service: data.service || "",
-            date: data.date || "",
-            cost: data.cost?.toString() || "",
-            mileage: data.mileage?.toString() || "",
-            provider: data.provider || "",
-            status: data.status || "",
-            technician: data.technician || "",
-            nextService: data.nextService || "",
-            notes: data.notes || "",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching maintenance data:", error);
-        setMessage("Failed to load maintenance data");
-        setStatus("error");
-      } finally {
-        setLoading(false);
-      }
+      //   if (success && data) {
+      //     setInitialValues({
+      //       vehicleId: data.vehicleId || "",
+      //       type: data.type || "",
+      //       service: data.service || "",
+      //       date: data.date || "",
+      //       cost: data.cost?.toString() || "",
+      //       mileage: data.mileage?.toString() || "",
+      //       provider: data.provider || "",
+      //       status: data.status || "",
+      //       technician: data.technician || "",
+      //       nextService: data.nextService || "",
+      //       notes: data.notes || "",
+      //     });
+      //   }
+      // } catch (error) {
+      //   console.error("Error fetching maintenance data:", error);
+      //   setMessage("Failed to load maintenance data");
+      //   setStatus("error");
+      // } finally {
+      //   setLoading(false);
+      // }
     };
 
     fetchMaintenanceData();
   }, [id, isEditMode]);
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
+  const handleSubmit = async () => {
     try {
       setStatus("submitting");
       setMessage(null);
 
-      const endpoint = isEditMode ? `/maintenance/${id}` : "/maintenance";
-      const method = isEditMode ? "put" : "post";
+      // const endpoint = isEditMode ? `/maintenance/${id}` : "/maintenance";
+      // const method = isEditMode ? "put" : "post";
 
-      const payload = {
-        vehicleId: values.vehicleId,
-        type: values.type,
-        service: values.service,
-        date: values.date,
-        cost: parseFloat(values.cost),
-        mileage: parseInt(values.mileage),
-        provider: values.provider,
-        status: values.status,
-        technician: values.technician,
-        nextService: values.nextService || null,
-        notes: values.notes || null,
-      };
+      // const payload = {
+      //   vehicleId: values.vehicleId,
+      //   type: values.type,
+      //   service: values.service,
+      //   date: values.date,
+      //   cost: parseFloat(values.cost),
+      //   mileage: parseInt(values.mileage),
+      //   provider: values.provider,
+      //   status: values.status,
+      //   technician: values.technician,
+      //   nextService: values.nextService || null,
+      //   notes: values.notes || null,
+      // };
 
-      const response = await api[method](endpoint, payload);
-      const { success, message: responseMessage } = response.data;
+      // const response = await api[method](endpoint, payload);
+      // const { success, message: responseMessage } = response.data;
 
-      if (success) {
-        setStatus("success");
-        setMessage(
-          responseMessage ||
-            (isEditMode
-              ? "Maintenance record updated successfully!"
-              : "Maintenance record created successfully!")
-        );
-        if (!isEditMode) {
-          resetForm();
-        }
-        setTimeout(() => {
-          navigate("/fleet/maintenance");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setMessage(
-          responseMessage ||
-            (isEditMode
-              ? "Failed to update maintenance record"
-              : "Failed to create maintenance record")
-        );
-      }
+      // if (success) {
+      //   setStatus("success");
+      //   setMessage(
+      //     responseMessage ||
+      //       (isEditMode
+      //         ? "Maintenance record updated successfully!"
+      //         : "Maintenance record created successfully!")
+      //   );
+      //   if (!isEditMode) {
+      //     resetForm();
+      //   }
+      //   setTimeout(() => {
+      //     navigate("/fleet/maintenance");
+      //   }, 2000);
+      // } else {
+      //   setStatus("error");
+      //   setMessage(
+      //     responseMessage ||
+      //       (isEditMode
+      //         ? "Failed to update maintenance record"
+      //         : "Failed to create maintenance record")
+      //   );
+      // }
     } catch (error) {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");

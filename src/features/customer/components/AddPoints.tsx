@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Button from "../../../components/common/Button";
-import api from "../../../api/api";
+// import api from "../../../lib/api/api";
 import { IoArrowBack, IoStar, IoAdd } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
@@ -30,10 +30,10 @@ const AddPointsSchema = Yup.object().shape({
 });
 
 const AddPoints = () => {
-  const [status, setStatus] = useState<
-    "idle" | "submitting" | "success" | "error"
-  >("idle");
-  const [message, setMessage] = useState<string | null>(null);
+  const [status] = useState<"idle" | "submitting" | "success" | "error">(
+    "idle"
+  );
+  const [message] = useState<string | null>(null);
   const [customers, setCustomers] = useState<
     Array<{ id: string; name: string; email: string }>
   >([]);
@@ -73,44 +73,41 @@ const AddPoints = () => {
     fetchCustomers();
   }, []);
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
-    try {
-      setStatus("submitting");
-      setMessage(null);
-
-      const payload = {
-        customerId: values.customerId,
-        points: parseInt(values.points),
-        reason: values.reason,
-        type: values.type,
-        notes: values.notes || null,
-      };
-
-      const response = await api.post("/loyalty/points", payload);
-      const { success, message: responseMessage } = response.data;
-
-      if (success) {
-        setStatus("success");
-        setMessage(responseMessage || "Points added successfully!");
-        resetForm();
-        setTimeout(() => {
-          navigate("/customer/loyalty");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setMessage(responseMessage || "Failed to add points");
-      }
-    } catch (error) {
-      setStatus("error");
-      setMessage("Something went wrong. Please try again.");
-      console.error("Add points error:", error);
-    } finally {
-      setTimeout(() => setStatus("idle"), 2500);
-    }
-  };
+  const handleSubmit = async () =>
+    // values: typeof initialValues,
+    // { resetForm }: { resetForm: () => void }
+    {
+      // try {
+      //   setStatus("submitting");
+      //   setMessage(null);
+      //   const payload = {
+      //     customerId: values.customerId,
+      //     points: parseInt(values.points),
+      //     reason: values.reason,
+      //     type: values.type,
+      //     notes: values.notes || null,
+      //   };
+      //   const response = await api.post("/loyalty/points", payload);
+      //   const { success, message: responseMessage } = response.data;
+      //   if (success) {
+      //     setStatus("success");
+      //     setMessage(responseMessage || "Points added successfully!");
+      //     resetForm();
+      //     setTimeout(() => {
+      //       navigate("/customer/loyalty");
+      //     }, 2000);
+      //   } else {
+      //     setStatus("error");
+      //     setMessage(responseMessage || "Failed to add points");
+      //   }
+      // } catch (error) {
+      //   setStatus("error");
+      //   setMessage("Something went wrong. Please try again.");
+      //   console.error("Add points error:", error);
+      // } finally {
+      //   setTimeout(() => setStatus("idle"), 2500);
+      // }
+    };
 
   return (
     <div className="max-w-4xl p-6 bg-white">

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useFormik } from "formik";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { LoginSchema } from "../schemas/LoginSchema";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
@@ -10,15 +11,16 @@ import {
 } from "react-icons/io5";
 import { motion } from "framer-motion";
 import Loading from "../../../components/common/Loading";
-import api from "../../../api/api";
 import { useNavigate } from "react-router-dom";
+import { useLogin } from "@/hooks/useAuth";
+import type { LoginResponse } from "@/types/auth";
+import { toast } from "react-hot-toast";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
   >("idle");
-  const [popup, setPopup] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
 
   const navigate = useNavigate();
@@ -55,54 +57,46 @@ const Login = () => {
     visible: { opacity: 1, x: 0 },
   };
 
-  const formik = useFormik({
-    initialValues: {
+  const onSuccess = (data: LoginResponse) => {
+    setStatus("success");
+    setMessage(data.message);
+    localStorage.setItem("accessToken", data.data.tokens.accessToken);
+    localStorage.setItem("refreshToken", data.data.tokens.refreshToken);
+    localStorage.setItem("user", JSON.stringify(data.data.user));
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 1500);
+    toast.success(data.message);
+  };
+  const onError = (error: Error) => {
+    setStatus("error");
+    setMessage(error.message);
+    toast.error(error.message);
+  };
+
+    const { mutate: login, isPending } = useLogin(onSuccess, onError);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, touchedFields },
+  } = useForm({
+    resolver: yupResolver(LoginSchema),
+    defaultValues: {
       email: "",
       password: "",
     },
-    validationSchema: LoginSchema,
-    onSubmit: async (values) => {
-      try {
-        setStatus("submitting");
-        setMessage(null);
-
-        const response = await api.post("/auth/login", values);
-        const { success, message, data } = response.data;
-
-        if (success) {
-          setStatus("success");
-          setPopup("success");
-          setMessage(message);
-
-          // Save tokens
-          localStorage.setItem("accessToken", data.tokens.accessToken);
-          localStorage.setItem("refreshToken", data.tokens.refreshToken);
-
-          // Save user info
-          localStorage.setItem("user", JSON.stringify(data.user));
-
-          // Redirect to dashboard
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 1500);
-        } else {
-          setStatus("error");
-          setPopup("error");
-          setMessage(message || "Invalid email or password");
-        }
-      } catch (error) {
-        setStatus("error");
-        setPopup("error");
-        setMessage("Something went wrong. Please try again.");
-        console.error("Login error:", error);
-      } finally {
-        setTimeout(() => setStatus("idle"), 2500);
-      }
-    },
   });
 
-  const { values, handleChange, handleBlur, handleSubmit, errors, touched } =
-    formik;
+  const onSubmit = async (values: { email: string; password: string }) => {
+    setStatus("submitting");
+    setMessage(null);
+
+    login({
+      email: values.email,
+      password: values.password,
+    }); 
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -245,7 +239,7 @@ const Login = () => {
           {message && (
             <motion.div
               className={`mb-6 px-4 py-3 rounded-lg text-sm font-medium ${
-                popup === "success"
+                status === "success"
                   ? "bg-green-50 text-green-700 border border-green-200"
                   : "bg-red-50 text-red-700 border border-red-200"
               }`}
@@ -260,7 +254,7 @@ const Login = () => {
 
           {/* Login Form */}
           <motion.form
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmit(onSubmit)}
             className="space-y-6"
             autoComplete="off"
             variants={formVariants}
@@ -285,14 +279,11 @@ const Login = () => {
                 </div>
                 <motion.input
                   id="email"
-                  name="email"
                   type="email"
                   placeholder="Enter your email"
-                  value={values.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
+                  {...register("email")}
                   className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent ${
-                    errors.email && touched.email
+                    errors.email && touchedFields.email
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300"
                   }`}
@@ -300,14 +291,14 @@ const Login = () => {
                   transition={{ duration: 0.2 }}
                 />
               </div>
-              {errors.email && touched.email && (
+              {errors.email && touchedFields.email && (
                 <motion.p
                   className="mt-1 text-sm text-red-600"
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {errors.email}
+                  {errors.email.message}
                 </motion.p>
               )}
             </motion.div>
@@ -329,14 +320,11 @@ const Login = () => {
                 </div>
                 <motion.input
                   id="password"
-                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  value={values.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
+                  {...register("password")}
                   className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent ${
-                    errors.password && touched.password
+                    errors.password && touchedFields.password
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300"
                   }`}
@@ -358,14 +346,14 @@ const Login = () => {
                   )}
                 </motion.button>
               </div>
-              {errors.password && touched.password && (
+              {errors.password && touchedFields.password && (
                 <motion.p
                   className="mt-1 text-sm text-red-600"
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {errors.password}
+                  {errors.password.message}
                 </motion.p>
               )}
             </motion.div>
@@ -409,18 +397,22 @@ const Login = () => {
             {/* Submit Button */}
             <motion.button
               type="submit"
-              disabled={status === "submitting"}
+              disabled={status === "submitting" || isPending}
               className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white ${
-                status === "submitting"
+                status === "submitting" || isPending
                   ? "bg-blue-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               }`}
               variants={inputVariants}
               transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
-              whileHover={status !== "submitting" ? { scale: 1.02 } : {}}
-              whileTap={status !== "submitting" ? { scale: 0.98 } : {}}
+              whileHover={
+                status !== "submitting" && !isPending ? { scale: 1.02 } : {}
+              }
+              whileTap={
+                status !== "submitting" && !isPending ? { scale: 0.98 } : {}
+              }
             >
-              {status === "submitting" ? (
+              {status === "submitting" || isPending ? (
                 <span className="flex items-center gap-2">
                   <Loading />
                   <span>Signing in...</span>

@@ -1,10 +1,12 @@
 import { FaBell, FaBars } from "react-icons/fa";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { toggleSidebar } from "../features/sidebar/sidebarSlice";
+import { useNavigate } from "react-router-dom";
 
 export default function Header() {
   const isCollapsed = useAppSelector((state) => state.sidebar.isCollapsed);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   return (
     <header
@@ -60,7 +62,15 @@ export default function Header() {
                   Account Settings
                 </button>
                 <div className="border-t border-gray-200 my-1"></div>
-                <button className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-gray-100 rounded-md cursor-pointer">
+                <button
+                  className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-gray-100 rounded-md cursor-pointer"
+                  onClick={() => {
+                    localStorage.removeItem("accessToken");
+                    localStorage.removeItem("refreshToken");
+                    localStorage.removeItem("user");
+                    navigate("/");
+                  }}
+                >
                   Sign Out
                 </button>
               </div>

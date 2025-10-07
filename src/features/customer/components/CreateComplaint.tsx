@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Button from "../../../components/common/Button";
-import api from "../../../api/api";
+// import api from "../../../lib/api/api";
 import { IoArrowBack, IoWarning, IoAdd } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
 import * as Yup from "yup";
@@ -124,50 +124,47 @@ const CreateComplaint = () => {
     }
   }, [isEditMode, id]);
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
+  const handleSubmit = async () => {
     try {
       setStatus("submitting");
       setMessage(null);
 
-      const payload = {
-        customerId: values.customerId,
-        orderId: values.orderId,
-        type: values.type,
-        priority: values.priority,
-        subject: values.subject,
-        description: values.description,
-        assignedTo: values.assignedTo,
-      };
+      // const payload = {
+      //   customerId: values.customerId,
+      //   orderId: values.orderId,
+      //   type: values.type,
+      //   priority: values.priority,
+      //   subject: values.subject,
+      //   description: values.description,
+      //   assignedTo: values.assignedTo,
+      // };
 
-      const endpoint = isEditMode ? `/complaints/${id}` : "/complaints";
-      let response;
+      // const endpoint = isEditMode ? `/complaints/${id}` : "/complaints";
+      // let response;
       if (isEditMode) {
-        response = await api.put(endpoint, payload);
+        // response = await api.put(endpoint, payload);
       } else {
-        response = await api.post(endpoint, payload);
+        // response = await api.post(endpoint, payload);
       }
-      const { success, message: responseMessage } = response.data;
+      // const { success, message: responseMessage } = response.data;
 
-      if (success) {
-        setStatus("success");
-        setMessage(
-          responseMessage ||
-            `Complaint ${isEditMode ? "updated" : "created"} successfully!`
-        );
-        resetForm();
-        setTimeout(() => {
-          navigate("/customer/complaints");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setMessage(
-          responseMessage ||
-            `Failed to ${isEditMode ? "update" : "create"} complaint`
-        );
-      }
+      // if (success) {
+      //   setStatus("success");
+      //   setMessage(
+      //     responseMessage ||
+      //       `Complaint ${isEditMode ? "updated" : "created"} successfully!`
+      //   );
+      //   resetForm();
+      //   setTimeout(() => {
+      //     navigate("/customer/complaints");
+      //   }, 2000);
+      // } else {
+      //   setStatus("error");
+      //   setMessage(
+      //     responseMessage ||
+      //       `Failed to ${isEditMode ? "update" : "create"} complaint`
+      //   );
+      // }
     } catch (error) {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");

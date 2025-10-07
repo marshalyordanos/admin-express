@@ -3,15 +3,15 @@ import { useFormik } from "formik";
 import Input from "../../../components/common/Input";
 import Button from "../../../components/common/Button";
 import Loading from "../../../components/common/Loading";
-import api from "../../../api/api";
+// import api from "../../../lib/api/api";
 import { UpdateBranchSchema } from "../schemas/UpdateBranchSchema";
 
 const UpdateBranch = () => {
-  const [status, setStatus] = useState<
+  const [status] = useState<
     "idle" | "submitting" | "success" | "error"
   >("idle");
-  const [popup, setPopup] = useState<"idle" | "success" | "error">("idle");
-  const [message, setMessage] = useState<string | null>(null);
+  const [popup] = useState<"idle" | "success" | "error">("idle");
+  const [message] = useState<string | null>(null);
 
   const formik = useFormik({
     initialValues: {
@@ -19,33 +19,31 @@ const UpdateBranch = () => {
       location: "",
     },
     validationSchema: UpdateBranchSchema,
-    onSubmit: async (values) => {
-      try {
-        setStatus("submitting");
-        setMessage(null);
-
-        // PATCH request with branchId
-        // const response = await api.patch(`/branch/${branchId}`, values);
-        const response = await api.patch(`/branch`, values);
-        const { success, message } = response.data;
-
-        if (success) {
-          setStatus("success");
-          setPopup("success");
-          setMessage(message || "Branch updated successfully!");
-        } else {
-          setStatus("error");
-          setPopup("error");
-          setMessage(message || "Failed to update branch");
-        }
-      } catch (error) {
-        setStatus("error");
-        setPopup("error");
-        setMessage("Something went wrong. Please try again.");
-        console.error("Update branch error:", error);
-      } finally {
-        setTimeout(() => setStatus("idle"), 2500);
-      }
+    onSubmit: async () => {
+      // try {
+      //   setStatus("submitting");
+      //   setMessage(null);
+      //   // PATCH request with branchId
+      //   // const response = await api.patch(`/branch/${branchId}`, values);
+      //   const response = await api.patch(`/branch`, values);
+      //   const { success, message } = response.data;
+      //   if (success) {
+      //     setStatus("success");
+      //     setPopup("success");
+      //     setMessage(message || "Branch updated successfully!");
+      //   } else {
+      //     setStatus("error");
+      //     setPopup("error");
+      //     setMessage(message || "Failed to update branch");
+      //   }
+      // } catch (error) {
+      //   setStatus("error");
+      //   setPopup("error");
+      //   setMessage("Something went wrong. Please try again.");
+      //   console.error("Update branch error:", error);
+      // } finally {
+      //   setTimeout(() => setStatus("idle"), 2500);
+      // }
     },
   });
 

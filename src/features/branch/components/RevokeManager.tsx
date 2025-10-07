@@ -3,7 +3,7 @@ import { Formik, Form } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Button from "../../../components/common/Button";
-import api from "../../../api/api";
+// import api from "../../../lib/api/api";
 import { RevokeManagerSchema } from "../schemas/RevokeManagerSchema";
 import { IoArrowBack, IoPersonRemove } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
@@ -26,10 +26,10 @@ const demoBranches = [
 ];
 
 const RevokeManager = () => {
-  const [status, setStatus] = useState<
+  const [status] = useState<
     "idle" | "submitting" | "success" | "error"
   >("idle");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Dropdown states
@@ -63,44 +63,44 @@ const RevokeManager = () => {
       branch.location.toLowerCase().includes(branchSearch.toLowerCase())
   );
 
-  const handleSubmit = async (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
-    try {
-      setStatus("submitting");
-      setMessage(null);
+  // const handleSubmit = async (
+  //   values: typeof initialValues,
+  //   { resetForm }: { resetForm: () => void }
+  // ) => {
+  //   try {
+  //     setStatus("submitting");
+  //     setMessage(null);
 
-      // Send only managerID and branchID
-      const payload = {
-        managerID: values.managerID,
-        branchID: values.branchID,
-      };
+  //     // Send only managerID and branchID
+  //     const payload = {
+  //       managerID: values.managerID,
+  //       branchID: values.branchID,
+  //     };
 
-      const response = await api.post("/branch/revoke-manager", payload);
-      const { success, message: responseMessage } = response.data;
+  //     const response = await api.post("/branch/revoke-manager", payload);
+  //     const { success, message: responseMessage } = response.data;
 
-      if (success) {
-        setStatus("success");
-        setMessage(responseMessage || "Manager revoked successfully!");
-        resetForm();
-        setManagerSearch("");
-        setBranchSearch("");
-        setTimeout(() => {
-          navigate("/branch");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setMessage(responseMessage || "Failed to revoke manager");
-      }
-    } catch (error) {
-      setStatus("error");
-      setMessage("Something went wrong. Please try again.");
-      console.error("Revoke manager error:", error);
-    } finally {
-      setTimeout(() => setStatus("idle"), 2500);
-    }
-  };
+  //     if (success) {
+  //       setStatus("success");
+  //       setMessage(responseMessage || "Manager revoked successfully!");
+  //       resetForm();
+  //       setManagerSearch("");
+  //       setBranchSearch("");
+  //       setTimeout(() => {
+  //         navigate("/branch");
+  //       }, 2000);
+  //     } else {
+  //       setStatus("error");
+  //       setMessage(responseMessage || "Failed to revoke manager");
+  //     }
+  //   } catch (error) {
+  //     setStatus("error");
+  //     setMessage("Something went wrong. Please try again.");
+  //     console.error("Revoke manager error:", error);
+  //   } finally {
+  //     setTimeout(() => setStatus("idle"), 2500);
+  //   }
+  // };
 
   // Select manager handler
   const selectManager = (
@@ -147,7 +147,7 @@ const RevokeManager = () => {
       <Formik
         initialValues={initialValues}
         validationSchema={RevokeManagerSchema}
-        onSubmit={handleSubmit}
+        onSubmit={() => {}}
       >
         {({ values, setFieldValue, errors, touched }) => (
           <Form>
