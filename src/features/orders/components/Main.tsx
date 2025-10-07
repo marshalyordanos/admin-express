@@ -247,13 +247,6 @@ export default function Main() {
           </div>
         </div>
 
-        {/* Date Range */}
-        <div className="mb-6">
-          <Button variant="outline" className="text-gray-600 bg-transparent">
-            <Calendar /> Jan 1 - Jan 30, 2024
-          </Button>
-        </div>
-
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {metrics.map((metric, index) => (

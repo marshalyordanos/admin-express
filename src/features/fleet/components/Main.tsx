@@ -366,8 +366,8 @@ export default function FleetMain() {
     <div className="min-h-screen">
       {/* Main Content */}
       <main>
-        <Card className="shadow-none border-none">
-          <CardContent className="p-6">
+        <Card className="shadow-none border-none p-0">
+          <CardContent className="px-0">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
               <div>

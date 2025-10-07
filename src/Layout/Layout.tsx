@@ -15,7 +15,7 @@ const SidebarLayout = () => {
         }`}
       >
         <Header />
-        <div className="p-8">
+        <div className="px-8 py-4">
           <Outlet />
         </div>
       </div>

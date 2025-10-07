@@ -488,11 +488,11 @@ export default function Dispatch() {
 
   return (
     <div className="min-h-screen">
-      <div className="p-6">
+      <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl font-semibold text-gray-900">
               Dispatch Center
             </h1>
             <p className="text-gray-600 mt-2">
