@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import TablePagination from "@/components/common/TablePagination";
-import { IoAdd, IoStar, IoArrowBack} from "react-icons/io5";
+import { IoAdd, IoStar, IoArrowBack } from "react-icons/io5";
 import { FaCrown } from "react-icons/fa";
 
 const loyaltyMembers = [
@@ -245,7 +245,7 @@ export default function LoyaltyProgram() {
                     <IoArrowBack className="h-5 w-5" />
                   </Button>
                   <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <IoStar className="text-yellow-500" />
+                    <IoStar className="text-blue-500" />
                     Loyalty Program
                   </h1>
                 </div>
@@ -256,7 +256,7 @@ export default function LoyaltyProgram() {
               <div className="flex gap-3 mt-4 md:mt-0">
                 <Button
                   onClick={() => navigate("/customer/loyalty/create")}
-                  className="bg-yellow-500 hover:bg-yellow-600 cursor-pointer text-white"
+                  className="bg-blue-500 hover:bg-blue-600 cursor-pointer text-white"
                 >
                   <IoAdd className="mr-2 h-4 w-4" />
                   Add Points
