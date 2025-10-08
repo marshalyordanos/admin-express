@@ -28,6 +28,7 @@ import LoyaltyProgramPage from "./pages/Customer/LoyaltyProgramPage";
 import ComplaintsPage from "./pages/Customer/ComplaintsPage";
 import AddPointsPage from "./pages/Customer/AddPointsPage";
 import CreateComplaintPage from "./pages/Customer/CreateComplaintPage";
+import PricingPage from "./pages/PricingPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoutes from "./components/ProtectedRoutes";
@@ -93,6 +94,7 @@ const App = () => {
                 path="/customer/complaints/create"
                 element={<CreateComplaintPage />}
               />
+              <Route path="/pricing" element={<PricingPage />} />
             </Route>
           </Route>
         </Routes>

@@ -14,7 +14,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import TablePagination from "@/components/common/TablePagination";
-import ConfirmationModal from "@/components/common/ConfirmationModal";
 import {
   IoAdd,
   IoCarSport,
@@ -27,6 +26,7 @@ import {
   IoFilter,
   IoDownload,
 } from "react-icons/io5";
+import { MdBlock } from "react-icons/md";
 import {
   Select,
   SelectContent,
@@ -240,12 +240,6 @@ const metrics = [
 export default function FleetMain() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [vehicleToDelete, setVehicleToDelete] = useState<{
-    id: string;
-    plateNumber: string;
-  } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterOwnership, setFilterOwnership] = useState("all");
@@ -306,34 +300,6 @@ export default function FleetMain() {
       setSortColumn(column);
       setSortDirection("asc");
     }
-  };
-
-  const handleDeleteClick = (vehicle: { id: string; plateNumber: string }) => {
-    setVehicleToDelete(vehicle);
-    setDeleteModalOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!vehicleToDelete) return;
-
-    setIsDeleting(true);
-    try {
-      // Simulate API call - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Deleting vehicle:", vehicleToDelete);
-      // Handle successful deletion
-      setDeleteModalOpen(false);
-      setVehicleToDelete(null);
-    } catch (error) {
-      console.error("Error deleting vehicle:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteModalOpen(false);
-    setVehicleToDelete(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -522,7 +488,7 @@ export default function FleetMain() {
                     >
                       Status
                     </TableHead>
-                    <TableHead className="text-gray-600 font-medium text-right">
+                    <TableHead className="text-gray-600 font-medium">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -637,7 +603,7 @@ export default function FleetMain() {
                         </Badge>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end space-x-2">
+                        <div className="flex items-center space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -652,15 +618,10 @@ export default function FleetMain() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="p-0 px-3 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick({
-                                id: vehicle.id,
-                                plateNumber: vehicle.plateNumber,
-                              });
-                            }}
+                            disabled
+                            className="p-0 px-3 text-red-400 bg-red-50 cursor-not-allowed opacity-60 flex items-center gap-1"
                           >
+                            <MdBlock className="h-4 w-4" />
                             Delete
                           </Button>
                         </div>
@@ -682,21 +643,6 @@ export default function FleetMain() {
             />
           </CardContent>
         </Card>
-
-        {/* Confirmation Modal */}
-        <ConfirmationModal
-          isOpen={deleteModalOpen}
-          onClose={handleDeleteCancel}
-          onConfirm={handleDeleteConfirm}
-          title="Confirm Deletion"
-          description={`Are you sure you want to delete vehicle ${
-            vehicleToDelete?.plateNumber || ""
-          }? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          variant="danger"
-          isLoading={isDeleting}
-        />
       </main>
     </div>
   );

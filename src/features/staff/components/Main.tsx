@@ -27,8 +27,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import TablePagination from "@/components/common/TablePagination";
-import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { IoAdd, IoPerson } from "react-icons/io5";
+import { MdBlock } from "react-icons/md";
 
 const staff = [
   {
@@ -136,12 +136,6 @@ const metrics = [
 export default function StaffMain() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [staffToDelete, setStaffToDelete] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -159,34 +153,6 @@ export default function StaffMain() {
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
-  };
-
-  const handleDeleteClick = (staff: { id: string; name: string }) => {
-    setStaffToDelete(staff);
-    setDeleteModalOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!staffToDelete) return;
-
-    setIsDeleting(true);
-    try {
-      // Simulate API call - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Deleting staff:", staffToDelete);
-      // Handle successful deletion
-      setDeleteModalOpen(false);
-      setStaffToDelete(null);
-    } catch (error) {
-      console.error("Error deleting staff:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteModalOpen(false);
-    setStaffToDelete(null);
   };
 
   return (
@@ -408,15 +374,10 @@ export default function StaffMain() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="p-0 px-3 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick({
-                            id: member.id,
-                            name: member.name,
-                          });
-                        }}
+                        disabled
+                        className="p-0 px-3 text-red-400 bg-red-50 cursor-not-allowed opacity-60 flex items-center gap-1"
                       >
+                        <MdBlock className="h-4 w-4" />
                         Delete
                       </Button>
                     </div>
@@ -434,21 +395,6 @@ export default function StaffMain() {
             onPageSizeChange={handlePageSizeChange}
           />
         </Card>
-
-        {/* Confirmation Modal */}
-        <ConfirmationModal
-          isOpen={deleteModalOpen}
-          onClose={handleDeleteCancel}
-          onConfirm={handleDeleteConfirm}
-          title="Confirm Deletion"
-          description={`Are you sure you want to delete ${
-            staffToDelete?.name || "this staff member"
-          }? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          variant="danger"
-          isLoading={isDeleting}
-        />
       </main>
     </div>
   );

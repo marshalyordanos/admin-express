@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
-  TableBody,  
+  TableBody,
   TableCell,
   TableHead,
   TableHeader,
@@ -290,7 +290,7 @@ export default function Main() {
 
         {/* Filters */}
         <div className="flex items-center gap-10 mb-6">
-          <div className="flex items-center space-x-1 bg-[#9d979724] rounded-md p-2">
+          <div className="flex items-center space-x-1 bg-[#edeaea24] rounded-md p-2">
             {tabs.map((tab) => (
               <Button
                 key={tab}
@@ -443,7 +443,7 @@ export default function Main() {
                         size="sm"
                         className="p-0 px-3 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
                       >
-                        Request Approval
+                        Approve
                       </Button>
                     </div>
                   </TableCell>

@@ -27,7 +27,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import TablePagination from "@/components/common/TablePagination";
-import ConfirmationModal from "@/components/common/ConfirmationModal";
 import {
   IoAdd,
   IoPerson,
@@ -35,6 +34,7 @@ import {
   IoStar,
   IoWarning,
 } from "react-icons/io5";
+import { MdBlock } from "react-icons/md";
 
 const customers = [
   {
@@ -177,12 +177,6 @@ const metrics = [
 export default function CustomerMain() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -200,34 +194,6 @@ export default function CustomerMain() {
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
-  };
-
-  const handleDeleteClick = (customer: { id: string; name: string }) => {
-    setCustomerToDelete(customer);
-    setDeleteModalOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!customerToDelete) return;
-
-    setIsDeleting(true);
-    try {
-      // Simulate API call - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Deleting customer:", customerToDelete);
-      // Handle successful deletion
-      setDeleteModalOpen(false);
-      setCustomerToDelete(null);
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteModalOpen(false);
-    setCustomerToDelete(null);
   };
 
   return (
@@ -497,15 +463,10 @@ export default function CustomerMain() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="p-0 px-3 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick({
-                            id: customer.id,
-                            name: customer.name,
-                          });
-                        }}
+                        disabled
+                        className="p-0 px-3 text-red-400 bg-red-50 cursor-not-allowed opacity-60 flex items-center gap-1"
                       >
+                        <MdBlock className="h-4 w-4" />
                         Delete
                       </Button>
                     </div>
@@ -523,21 +484,6 @@ export default function CustomerMain() {
             onPageSizeChange={handlePageSizeChange}
           />
         </Card>
-
-        {/* Confirmation Modal */}
-        <ConfirmationModal
-          isOpen={deleteModalOpen}
-          onClose={handleDeleteCancel}
-          onConfirm={handleDeleteConfirm}
-          title="Confirm Deletion"
-          description={`Are you sure you want to delete ${
-            customerToDelete?.name || "this customer"
-          }? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          variant="danger"
-          isLoading={isDeleting}
-        />
       </main>
     </div>
   );
