@@ -20,6 +20,10 @@ import EditStaffPage from "./pages/Staff/EditStaffPage";
 import EditBranchPage from "./pages/Branch/EditBranchPage";
 import CreateMaintenanceLogPage from "./pages/Fleet/CreateMaintenanceLogPage";
 import EditMaintenanceLogPage from "./pages/Fleet/EditMaintenanceLogPage";
+import VehicleDetailsPage from "./pages/Fleet/VehicleDetailsPage";
+import StaffDetailsPage from "./pages/Staff/StaffDetailsPage";
+import BranchDetailsPage from "./pages/Branch/BranchDetailsPage";
+import CustomerDetailsPage from "./pages/Customer/CustomerDetailsPage";
 import CustomerPage from "./pages/Customer/CustomerPage";
 import CreateCustomerPage from "./pages/Customer/CreateCustomerPage";
 import EditCustomerPage from "./pages/Customer/EditCustomerPage";
@@ -45,6 +49,10 @@ const App = () => {
             <Route element={<SidebarLayout />}>
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="/branch" element={<BranchPage />} />
+              <Route
+                path="/branch/details/:id"
+                element={<BranchDetailsPage />}
+              />
               <Route path="/branch/create" element={<CreateBranch />} />
               <Route path="/branch/edit/:id" element={<EditBranchPage />} />
               <Route path="/branch/assign-manager" element={<AssignBranch />} />
@@ -53,6 +61,7 @@ const App = () => {
                 element={<RevokeManager />}
               />
               <Route path="/staff" element={<StaffPage />} />
+              <Route path="/staff/details/:id" element={<StaffDetailsPage />} />
               <Route path="/staff/create" element={<CreateStaffPage />} />
               <Route path="/staff/edit/:id" element={<EditStaffPage />} />
               <Route path="/order" element={<OrdersPage />} />
@@ -60,6 +69,10 @@ const App = () => {
               <Route path="/order/details/:id" element={<OrderDetails />} />
               <Route path="/dispatch" element={<DispatchPage />} />
               <Route path="/fleet" element={<FleetPage />} />
+              <Route
+                path="/fleet/details/:id"
+                element={<VehicleDetailsPage />}
+              />
               <Route path="/fleet/create" element={<CreateVehiclePage />} />
               <Route path="/fleet/edit/:id" element={<EditVehiclePage />} />
               <Route
@@ -75,6 +88,10 @@ const App = () => {
                 element={<EditMaintenanceLogPage />}
               />
               <Route path="/customer" element={<CustomerPage />} />
+              <Route
+                path="/customer/details/:id"
+                element={<CustomerDetailsPage />}
+              />
               <Route path="/customer/create" element={<CreateCustomerPage />} />
               <Route path="/customer/edit/:id" element={<EditCustomerPage />} />
               <Route
