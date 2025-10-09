@@ -421,7 +421,7 @@ export default function BranchMain() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 opacity-60"
+                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700"
                       >
                         <IoLockOpen className="h-6 w-6 font-bold" />
                       </Button>
