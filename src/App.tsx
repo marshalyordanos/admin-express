@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SidebarLayout from "./Layout/Layout";
 import LoginPage from "./pages/LoginPage";
@@ -36,10 +37,57 @@ import PricingPage from "./pages/PricingPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoutes from "./components/ProtectedRoutes";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { useAppDispatch } from "./store/hooks";
+import { hydrateAuth } from "./features/auth/authSlice";
+import { Permission } from "./config/rolePermissions";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const dispatch = useAppDispatch();
+
+  // Hydrate auth state from localStorage on app load
+  useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+    const userStr = localStorage.getItem("user");
+    const roleStr = localStorage.getItem("role");
+
+    if (accessToken && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        let role = user.role || null;
+
+        // If role is stored separately, parse it
+        if (roleStr) {
+          try {
+            role = JSON.parse(roleStr);
+          } catch {
+            // If parsing fails, use role from user object
+            role = user.role || null;
+          }
+        }
+
+        dispatch(
+          hydrateAuth({
+            user,
+            role,
+            accessToken,
+            refreshToken,
+          })
+        );
+      } catch (error) {
+        console.error("Failed to parse user from localStorage:", error);
+        // Clear invalid data
+        localStorage.removeItem("user");
+        localStorage.removeItem("role");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+      }
+    }
+  }, [dispatch]);
+
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
@@ -47,71 +95,262 @@ const App = () => {
           <Route path="/" element={<ProtectedRoutes />}>
             <Route index element={<LoginPage />} />
             <Route element={<SidebarLayout />}>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="/branch" element={<BranchPage />} />
+              <Route
+                path="dashboard"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.DASHBOARD}>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/branch"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.BRANCH}>
+                    <BranchPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/branch/details/:id"
-                element={<BranchDetailsPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.BRANCH}>
+                    <BranchDetailsPage />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/branch/create" element={<CreateBranch />} />
-              <Route path="/branch/edit/:id" element={<EditBranchPage />} />
-              <Route path="/branch/assign-manager" element={<AssignBranch />} />
+              <Route
+                path="/branch/create"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.BRANCH}>
+                    <CreateBranch />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/branch/edit/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.BRANCH}>
+                    <EditBranchPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/branch/assign-manager"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.BRANCH}>
+                    <AssignBranch />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/branch/revoke-manager"
-                element={<RevokeManager />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.BRANCH}>
+                    <RevokeManager />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/staff" element={<StaffPage />} />
-              <Route path="/staff/details/:id" element={<StaffDetailsPage />} />
-              <Route path="/staff/create" element={<CreateStaffPage />} />
-              <Route path="/staff/edit/:id" element={<EditStaffPage />} />
-              <Route path="/order" element={<OrdersPage />} />
-              <Route path="/order/new" element={<CreateOrder />} />
-              <Route path="/order/details/:id" element={<OrderDetails />} />
-              <Route path="/dispatch" element={<DispatchPage />} />
-              <Route path="/fleet" element={<FleetPage />} />
+              <Route
+                path="/staff"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.STAFF}>
+                    <StaffPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/staff/details/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.STAFF}>
+                    <StaffDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/staff/create"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.STAFF}>
+                    <CreateStaffPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/staff/edit/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.STAFF}>
+                    <EditStaffPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/order"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ORDERS}>
+                    <OrdersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/order/new"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ORDERS}>
+                    <CreateOrder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/order/details/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ORDERS}>
+                    <OrderDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dispatch"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.DISPATCH}>
+                    <DispatchPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/fleet"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.FLEET}>
+                    <FleetPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/fleet/details/:id"
-                element={<VehicleDetailsPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.FLEET}>
+                    <VehicleDetailsPage />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/fleet/create" element={<CreateVehiclePage />} />
-              <Route path="/fleet/edit/:id" element={<EditVehiclePage />} />
+              <Route
+                path="/fleet/create"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.FLEET}>
+                    <CreateVehiclePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/fleet/edit/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.FLEET}>
+                    <EditVehiclePage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/fleet/maintenance"
-                element={<MaintenanceLogPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.FLEET}>
+                    <MaintenanceLogPage />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/fleet/maintenance/create"
-                element={<CreateMaintenanceLogPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.FLEET}>
+                    <CreateMaintenanceLogPage />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/fleet/maintenance/edit/:id"
-                element={<EditMaintenanceLogPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.FLEET}>
+                    <EditMaintenanceLogPage />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/customer" element={<CustomerPage />} />
+              <Route
+                path="/customer"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <CustomerPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/customer/details/:id"
-                element={<CustomerDetailsPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <CustomerDetailsPage />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/customer/create" element={<CreateCustomerPage />} />
-              <Route path="/customer/edit/:id" element={<EditCustomerPage />} />
+              <Route
+                path="/customer/create"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <CreateCustomerPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer/edit/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <EditCustomerPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/customer/corporate"
-                element={<CorporateClientsPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <CorporateClientsPage />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/customer/loyalty"
-                element={<LoyaltyProgramPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <LoyaltyProgramPage />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/customer/loyalty/create"
-                element={<AddPointsPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <AddPointsPage />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/customer/complaints" element={<ComplaintsPage />} />
+              <Route
+                path="/customer/complaints"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <ComplaintsPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/customer/complaints/create"
-                element={<CreateComplaintPage />}
+                element={
+                  <ProtectedRoute requiredPermission={Permission.CUSTOMER}>
+                    <CreateComplaintPage />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/pricing" element={<PricingPage />} />
+              <Route
+                path="/pricing"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.PRICING}>
+                    <PricingPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
           </Route>
         </Routes>

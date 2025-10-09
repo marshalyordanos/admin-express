@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { LoginSchema } from "../../auth/schemas/LoginSchema";
+import { LoginSchema } from "../schemas/LoginSchema";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
   IoShieldCheckmark,

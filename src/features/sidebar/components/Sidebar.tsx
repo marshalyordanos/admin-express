@@ -1,9 +1,11 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FaChevronDown, FaCrown, FaTimes } from "react-icons/fa";
 import menuItems from "../../../constants/AdminSidebar";
 import { useAppSelector, useAppDispatch } from "../../../store/hooks";
 import { toggleSidebar } from "../sidebarSlice";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Permission } from "@/config/rolePermissions";
 
 // Types
 interface SubSubItem {
@@ -23,15 +25,27 @@ interface MenuItem {
   path: string;
   icon?: React.ReactNode;
   subItems?: SubItem[];
+  permission?: Permission;
 }
 
 export default function Sidebar() {
   const location = useLocation();
   const isCollapsed = useAppSelector((state) => state.sidebar.isCollapsed);
   const dispatch = useAppDispatch();
+  const { hasPermission } = usePermissions();
 
   const [expandedParent, setExpandedParent] = useState<string | null>(null);
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
+
+  // Filter menu items based on user permissions
+  const filteredMenuItems = useMemo(() => {
+    return menuItems.filter((item) => {
+      // If no permission is specified, show the item
+      if (!item.permission) return true;
+      // Check if user has permission
+      return hasPermission(item.permission);
+    });
+  }, [hasPermission]);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -44,7 +58,7 @@ export default function Sidebar() {
   useEffect(() => {
     if (isCollapsed) return;
 
-    menuItems.forEach((item: MenuItem) => {
+    filteredMenuItems.forEach((item: MenuItem) => {
       if (item.subItems) {
         const hasActiveSubItem = item.subItems.some(
           (sub: SubItem) =>
@@ -78,7 +92,7 @@ export default function Sidebar() {
         }
       }
     });
-  }, [location.pathname, isCollapsed]);
+  }, [location.pathname, isCollapsed, filteredMenuItems]);
 
   const toggleParent = (name: string) => {
     setExpandedParent((prev) => (prev === name ? null : name));
@@ -161,7 +175,7 @@ export default function Sidebar() {
             isCollapsed ? "p-1 sm:p-2" : "p-2 sm:p-4"
           }`}
         >
-          {menuItems.map((item: MenuItem) => {
+          {filteredMenuItems.map((item: MenuItem) => {
             const { name, path, icon, subItems } = item;
             const isActive = isMenuItemActive(path, subItems);
             const isExpanded = expandedParent === name;

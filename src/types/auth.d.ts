@@ -10,7 +10,16 @@ export interface User {
   roleId: string | null;
   isStaff: boolean;
   isSuperAdmin: boolean;
-  role: string | null;
+  role: Role | null;
+}
+
+
+export interface Role{
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Tokens {

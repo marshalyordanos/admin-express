@@ -1,7 +1,6 @@
 import {
   FaTachometerAlt,
   FaTruck,
-  FaCogs,
   FaExchangeAlt,
   FaCodeBranch,
   FaUsersCog,
@@ -9,63 +8,64 @@ import {
 } from "react-icons/fa";
 import { IoPricetags } from "react-icons/io5";
 import { IoDocumentText } from "react-icons/io5";
+import { Permission } from "@/config/rolePermissions";
 
 const menuItems = [
   {
     name: "Dashboard",
     path: "/dashboard",
     icon: <FaTachometerAlt />,
+    permission: Permission.DASHBOARD,
   },
   {
     name: "Branch Management",
     path: "/branch",
     icon: <FaCodeBranch />,
+    permission: Permission.BRANCH,
   },
   {
     name: "Staff Management",
     path: "/staff",
     icon: <FaUsersCog />,
+    permission: Permission.STAFF,
   },
   {
     name: "Order Management",
     path: "/order",
     icon: <FaTruckLoading />,
+    permission: Permission.ORDERS,
   },
   {
     name: "Dispatch Management",
     path: "/dispatch",
     icon: <FaExchangeAlt />,
+    permission: Permission.DISPATCH,
   },
   {
     name: "Fleet Management",
     path: "/fleet",
     icon: <FaTruck />,
+    permission: Permission.FLEET,
   },
   {
     name: "Customer Management",
     path: "/customer",
     icon: <FaUsersCog />,
+    permission: Permission.CUSTOMER,
   },
   {
     name: "Pricing Management",
     path: "/pricing",
     icon: <IoPricetags />,
+    permission: Permission.PRICING,
   },
   {
     name: "Report Generation",
     path: "/report",
     icon: <IoDocumentText />,
+    permission: Permission.REPORT, // Can be seen by all
   },
-  {
-    name: "System Configuration",
-    path: "/system",
-    icon: <FaCogs />,
-    subItems: [
-      { name: "Fuel Alerts", path: "/alerts/fuel", icon: <FaCogs /> },
-      { name: "Maintenance", path: "/alerts/maintenance", icon: <FaCogs /> },
-      { name: "Delays", path: "/alerts/delays", icon: <FaCogs /> },
-    ],
-  },
+
   // {
   //   name: "Alerts",
   //   path: "/alerts",
