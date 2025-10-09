@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MdEdit, MdDelete, MdLock } from "react-icons/md";
 
 // Mock data
 const baseRates = [
@@ -269,6 +270,9 @@ export default function PricingMain() {
               <TableHead className="text-gray-600 font-medium">
                 Status
               </TableHead>
+              <TableHead className="text-gray-600 font-medium">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -308,6 +312,33 @@ export default function PricingMain() {
                   >
                     {rate.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                    >
+                      <MdEdit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="p-2 text-gray-400 bg-gray-50 cursor-not-allowed opacity-60"
+                    >
+                      <MdLock className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="p-2 text-red-400 bg-red-50 cursor-not-allowed opacity-60"
+                    >
+                      <MdDelete className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -351,6 +382,9 @@ export default function PricingMain() {
               <TableHead className="text-gray-600 font-medium">
                 Status
               </TableHead>
+              <TableHead className="text-gray-600 font-medium">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -380,6 +414,33 @@ export default function PricingMain() {
                   >
                     {surcharge.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                    >
+                      <MdEdit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="p-2 text-gray-400 bg-gray-50 cursor-not-allowed opacity-60"
+                    >
+                      <MdLock className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="p-2 text-red-400 bg-red-50 cursor-not-allowed opacity-60"
+                    >
+                      <MdDelete className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -426,6 +487,9 @@ export default function PricingMain() {
               <TableHead className="text-gray-600 font-medium">
                 Status
               </TableHead>
+              <TableHead className="text-gray-600 font-medium">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -452,6 +516,33 @@ export default function PricingMain() {
                   >
                     {plan.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                    >
+                      <MdEdit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="p-2 text-gray-400 bg-gray-50 cursor-not-allowed opacity-60"
+                    >
+                      <MdLock className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="p-2 text-red-400 bg-red-50 cursor-not-allowed opacity-60"
+                    >
+                      <MdDelete className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -492,6 +583,9 @@ export default function PricingMain() {
               <TableHead className="text-gray-600 font-medium">
                 Status
               </TableHead>
+              <TableHead className="text-gray-600 font-medium">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -524,6 +618,33 @@ export default function PricingMain() {
                   >
                     {code.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                    >
+                      <MdEdit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="p-2 text-gray-400 bg-gray-50 cursor-not-allowed opacity-60"
+                    >
+                      <MdLock className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="p-2 text-red-400 bg-red-50 cursor-not-allowed opacity-60"
+                    >
+                      <MdDelete className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -437,15 +437,13 @@ export default function Main() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center space-x-6">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-0 px-3 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                      >
-                        Approve
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                    >
+                      Approve
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
