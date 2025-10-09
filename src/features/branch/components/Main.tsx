@@ -162,67 +162,73 @@ export default function BranchMain() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20 md:pb-6">
       {/* Main Content */}
-      <main>
+      <main className="px-4 md:px-6 lg:px-8">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
               Branch Management
             </h1>
           </div>
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" className="text-gray-600 bg-transparent">
-              <Download className="h-4 w-4 mr-2" />
-              Export
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <Button
+              variant="outline"
+              className="text-gray-600 bg-transparent text-xs sm:text-sm px-2 sm:px-4"
+            >
+              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Export</span>
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+              className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer text-xs sm:text-sm px-2 sm:px-4"
               onClick={() => navigate("/branch/create")}
             >
-              <IoAdd className="h-4 w-4 mr-2" />
-              Create Branch
+              <IoAdd className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Create Branch</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="flex items-center space-x-3 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-6">
           <Button
             variant="outline"
-            className="text-gray-600 bg-white cursor-pointer"
+            className="text-gray-600 bg-white cursor-pointer text-xs sm:text-sm px-3 sm:px-4 w-full sm:w-auto"
             onClick={() => navigate("/branch/assign-manager")}
           >
-            <IoPersonAdd className="h-4 w-4 mr-2" />
-            Assign Manager
+            <IoPersonAdd className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Assign Manager</span>
+            <span className="sm:hidden">Assign</span>
           </Button>
           <Button
             variant="outline"
-            className="text-gray-600 bg-white cursor-pointer"
+            className="text-gray-600 bg-white cursor-pointer text-xs sm:text-sm px-3 sm:px-4 w-full sm:w-auto"
             onClick={() => navigate("/branch/revoke-manager")}
           >
-            <IoPersonRemove className="h-4 w-4 mr-2" />
-            Revoke Manager
+            <IoPersonRemove className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Revoke Manager</span>
+            <span className="sm:hidden">Revoke</span>
           </Button>
         </div>
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           {metrics.map((metric, index) => (
             <Card key={index} className="bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+              <CardHeader className="pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">
                   {metric.title}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6 pt-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                    <div className="text-lg sm:text-2xl font-bold text-gray-900 mb-1">
                       {metric.value}
                     </div>
-                    <div className="flex items-center text-sm">
+                    <div className="flex items-center text-xs sm:text-sm">
                       {metric.trend === "up" ? (
                         <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
                       ) : (
@@ -240,7 +246,7 @@ export default function BranchMain() {
                     </div>
                   </div>
                   <div
-                    className={`p-3 rounded-full ${
+                    className={`p-2 sm:p-3 rounded-full ${
                       metric.color === "blue"
                         ? "bg-blue-100 text-blue-600"
                         : metric.color === "green"
@@ -250,7 +256,7 @@ export default function BranchMain() {
                         : "bg-orange-100 text-orange-600"
                     }`}
                   >
-                    {metric.icon}
+                    <div className="h-4 w-4 sm:h-5 sm:w-5">{metric.icon}</div>
                   </div>
                 </div>
               </CardContent>

@@ -148,6 +148,9 @@ html::-webkit-scrollbar-thumb:hover {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+.scroll-bar-hide {
+  scrollbar-width: none;
+}
 
 @layer base {
   * {

@@ -1,8 +1,9 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { FaChevronDown, FaCrown } from "react-icons/fa";
+import { FaChevronDown, FaCrown, FaTimes } from "react-icons/fa";
 import menuItems from "../../../constants/AdminSidebar";
-import { useAppSelector } from "../../../store/hooks";
+import { useAppSelector, useAppDispatch } from "../../../store/hooks";
+import { toggleSidebar } from "../sidebarSlice";
 
 // Types
 interface SubSubItem {
@@ -27,6 +28,7 @@ interface MenuItem {
 export default function Sidebar() {
   const location = useLocation();
   const isCollapsed = useAppSelector((state) => state.sidebar.isCollapsed);
+  const dispatch = useAppDispatch();
 
   const [expandedParent, setExpandedParent] = useState<string | null>(null);
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
@@ -109,178 +111,210 @@ export default function Sidebar() {
   };
 
   return (
-    <aside
-      className={`bg-white text-black h-screen fixed left-0 top-0 z-50 font-text overflow-y-auto border-r border-gray transition-all duration-300 ${
-        isCollapsed ? "w-22" : "w-80"
-      }`}
-    >
-      {/* Header */}
-      <div className="sticky top-0 z-15 pt-6 py-5 bg-white">
+    <>
+      {/* Mobile Overlay - Only visible on mobile when sidebar is open */}
+      {!isCollapsed && (
         <div
-          className={`flex items-center ${
-            isCollapsed ? "justify-center" : "gap-3 px-6"
+          className="fixed inset-0 bg-black/10 z-40 lg:hidden"
+          onClick={() => dispatch(toggleSidebar())}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`bg-white text-black h-screen fixed left-0 top-0 z-50 font-text overflow-y-auto border-r border-gray transition-all duration-300 ${
+          isCollapsed
+            ? "-translate-x-full lg:translate-x-0 lg:w-20"
+            : "translate-x-0 w-72 sm:w-80 lg:w-80"
+        }`}
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-15 pt-4 sm:pt-6 py-3 sm:py-5 bg-white border-b border-gray-100">
+          <div
+            className={`flex items-center ${
+              isCollapsed ? "justify-center" : "gap-2 sm:gap-3 px-3 sm:px-6"
+            }`}
+          >
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-darkblue rounded-lg flex items-center justify-center shadow-lg">
+              <FaCrown className="text-white text-sm sm:text-lg" />
+            </div>
+            {!isCollapsed && (
+              <>
+                <p className="font-medium text-sm sm:text-base flex-1">
+                  Express Service
+                </p>
+                {/* Mobile Close Button */}
+                <button
+                  onClick={() => dispatch(toggleSidebar())}
+                  className="lg:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                >
+                  <FaTimes className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav
+          className={`flex flex-col gap-1 sm:gap-2 ${
+            isCollapsed ? "p-1 sm:p-2" : "p-2 sm:p-4"
           }`}
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-darkblue rounded-lg flex items-center justify-center shadow-lg">
-            <FaCrown className="text-white text-lg" />
-          </div>
-          {!isCollapsed && <p className="font-medium">Express Service</p>}
-        </div>
-      </div>
+          {menuItems.map((item: MenuItem) => {
+            const { name, path, icon, subItems } = item;
+            const isActive = isMenuItemActive(path, subItems);
+            const isExpanded = expandedParent === name;
 
-      {/* Navigation */}
-      <nav className={`flex flex-col gap-2 ${isCollapsed ? "p-2" : "p-4"}`}>
-        {menuItems.map((item: MenuItem) => {
-          const { name, path, icon, subItems } = item;
-          const isActive = isMenuItemActive(path, subItems);
-          const isExpanded = expandedParent === name;
-
-          return (
-            <div key={name}>
-              {/* Parent */}
-              <div
-                className={`flex items-center justify-between cursor-pointer rounded-lg transition-all group ${
-                  isActive ? "bg-blue-500" : "hover:bg-blue-500"
-                } ${isCollapsed ? "justify-center py-4" : ""}`}
-                onClick={() => (subItems ? toggleParent(name) : null)}
-              >
-                <NavLink
-                  to={path}
-                  onClick={(e) => subItems && e.preventDefault()}
-                  className={`flex items-center gap-3 h-full w-full flex-1 p-3 ${
-                    isCollapsed ? "justify-center" : ""
-                  }`}
+            return (
+              <div key={name}>
+                {/* Parent */}
+                <div
+                  className={`flex items-center justify-between cursor-pointer rounded-lg transition-all group ${
+                    isActive ? "bg-blue-500" : "hover:bg-blue-500"
+                  } ${isCollapsed ? "justify-center py-2 sm:py-4" : ""}`}
+                  onClick={() => (subItems ? toggleParent(name) : null)}
                 >
-                  <span
-                    className={`text-2xl ${
-                      isActive
-                        ? "text-white"
-                        : "text-black group-hover:text-white"
+                  <NavLink
+                    to={path}
+                    onClick={(e) => subItems && e.preventDefault()}
+                    className={`flex items-center gap-2 sm:gap-3 h-full w-full flex-1 p-2 sm:p-3 ${
+                      isCollapsed ? "justify-center" : ""
                     }`}
                   >
-                    {icon}
-                  </span>
-                  {!isCollapsed && (
                     <span
-                      className={`${
+                      className={`text-lg sm:text-2xl ${
                         isActive
                           ? "text-white"
                           : "text-black group-hover:text-white"
-                      } text-sm`}
+                      }`}
                     >
-                      {name}
+                      {icon}
                     </span>
+                    {!isCollapsed && (
+                      <span
+                        className={`${
+                          isActive
+                            ? "text-white"
+                            : "text-black group-hover:text-white"
+                        } text-xs sm:text-sm`}
+                      >
+                        {name}
+                      </span>
+                    )}
+                  </NavLink>
+                  {!isCollapsed && subItems && (
+                    <FaChevronDown
+                      className={`text-xs transition-transform group-hover:text-white mr-1 sm:mr-2 ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                    />
                   )}
-                </NavLink>
-                {!isCollapsed && subItems && (
-                  <FaChevronDown
-                    className={`text-xs transition-transform group-hover:text-white r-2 ${
-                      isExpanded ? "rotate-180" : ""
+                </div>
+
+                {/* Sub Items */}
+                {subItems && !isCollapsed && (
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${
+                      isExpanded ? "max-h-105 opacity-100" : "max-h-0 opacity-0"
                     }`}
-                  />
-                )}
-              </div>
+                  >
+                    <div className="ml-4 sm:ml-6 mt-1 sm:mt-2 flex flex-col gap-1">
+                      {subItems.map((sub) => {
+                        const hasSubsub =
+                          Array.isArray(sub.subsubItems) &&
+                          sub.subsubItems.length > 0;
+                        const subKey = `${name}-${sub.name}`;
+                        const isSubExpanded = expandedSub === subKey;
+                        const isSubActive =
+                          location.pathname === sub.path ||
+                          location.pathname.startsWith(sub.path + "/") ||
+                          sub.subsubItems?.some(
+                            (ss) =>
+                              location.pathname === ss.path ||
+                              location.pathname.startsWith(ss.path + "/")
+                          );
 
-              {/* Sub Items */}
-              {subItems && !isCollapsed && (
-                <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    isExpanded ? "max-h-105 opacity-100" : "max-h-0 opacity-0"
-                  }`}
-                >
-                  <div className="ml-6 mt-2 flex flex-col gap-1">
-                    {subItems.map((sub) => {
-                      const hasSubsub =
-                        Array.isArray(sub.subsubItems) &&
-                        sub.subsubItems.length > 0;
-                      const subKey = `${name}-${sub.name}`;
-                      const isSubExpanded = expandedSub === subKey;
-                      const isSubActive =
-                        location.pathname === sub.path ||
-                        location.pathname.startsWith(sub.path + "/") ||
-                        sub.subsubItems?.some(
-                          (ss) =>
-                            location.pathname === ss.path ||
-                            location.pathname.startsWith(ss.path + "/")
-                        );
-
-                      return (
-                        <div key={sub.name}>
-                          <div
-                            className={`flex items-center justify-between rounded-lg cursor-pointer ${
-                              isSubActive
-                                ? "bg-blue-500"
-                                : "hover:bg-blue-500 hover:text-white group-hover:text-white"
-                            }`}
-                            onClick={() =>
-                              hasSubsub && toggleSub(name, sub.name)
-                            }
-                          >
-                            <NavLink
-                              to={sub.path}
-                              onClick={(e) => hasSubsub && e.preventDefault()}
-                              className="flex-1 text-sm h-full w-full p-2"
+                        return (
+                          <div key={sub.name}>
+                            <div
+                              className={`flex items-center justify-between rounded-lg cursor-pointer ${
+                                isSubActive
+                                  ? "bg-blue-500"
+                                  : "hover:bg-blue-500 hover:text-white group-hover:text-white"
+                              }`}
+                              onClick={() =>
+                                hasSubsub && toggleSub(name, sub.name)
+                              }
                             >
-                              <span
-                                className={
-                                  isSubActive
-                                    ? "text-white"
-                                    : "text-black group-hover:text-white"
-                                }
+                              <NavLink
+                                to={sub.path}
+                                onClick={(e) => hasSubsub && e.preventDefault()}
+                                className="flex-1 text-xs sm:text-sm h-full w-full p-1 sm:p-2"
                               >
-                                {sub.name}
-                              </span>
-                            </NavLink>
+                                <span
+                                  className={
+                                    isSubActive
+                                      ? "text-white"
+                                      : "text-black group-hover:text-white"
+                                  }
+                                >
+                                  {sub.name}
+                                </span>
+                              </NavLink>
+                              {hasSubsub && (
+                                <FaChevronDown
+                                  className={`text-xs transition-transform group-hover:text-white mr-1 sm:mr-2 ${
+                                    isSubExpanded ? "rotate-180" : ""
+                                  }`}
+                                />
+                              )}
+                            </div>
+
+                            {/* Subsub Items */}
                             {hasSubsub && (
-                              <FaChevronDown
-                                className={`text-xs transition-transform group-hover:text-white mr-2${
-                                  isSubExpanded ? "rotate-180" : ""
+                              <div
+                                className={`overflow-hidden transition-all duration-300 ${
+                                  isSubExpanded
+                                    ? "max-h-96 opacity-100"
+                                    : "max-h-0 opacity-0"
                                 }`}
-                              />
+                              >
+                                <div className="ml-3 sm:ml-4 mt-1 sm:mt-2 flex flex-col gap-1">
+                                  {sub.subsubItems!.map((ss) => {
+                                    const isSSActive =
+                                      location.pathname === ss.path ||
+                                      location.pathname.startsWith(
+                                        ss.path + "/"
+                                      );
+                                    return (
+                                      <NavLink
+                                        key={ss.name}
+                                        to={ss.path}
+                                        className={`text-xs sm:text-sm rounded-lg h-full w-full p-1 sm:p-2 ${
+                                          isSSActive
+                                            ? "bg-blue-500 text-white"
+                                            : "hover:bg-blue-500 hover:text-white"
+                                        }`}
+                                      >
+                                        {ss.name}
+                                      </NavLink>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             )}
                           </div>
-
-                          {/* Subsub Items */}
-                          {hasSubsub && (
-                            <div
-                              className={`overflow-hidden transition-all duration-300 ${
-                                isSubExpanded
-                                  ? "max-h-96 opacity-100"
-                                  : "max-h-0 opacity-0"
-                              }`}
-                            >
-                              <div className="ml-4 mt-2 flex flex-col gap-1 groupp">
-                                {sub.subsubItems!.map((ss) => {
-                                  const isSSActive =
-                                    location.pathname === ss.path ||
-                                    location.pathname.startsWith(ss.path + "/");
-                                  return (
-                                    <NavLink
-                                      key={ss.name}
-                                      to={ss.path}
-                                      className={`text-sm rounded-lg h-full w-full p-2 ${
-                                        isSSActive
-                                          ? "bg-blue-500 text-white"
-                                          : "hover:bg-blue-500 hover:text-white groupp-hover:text-white"
-                                      }`}
-                                    >
-                                      {ss.name}
-                                    </NavLink>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-    </aside>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
   );
 }
