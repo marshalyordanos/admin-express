@@ -2,6 +2,7 @@
 
 export const RoleName = {
   SUPER_ADMIN: "SuperAdmin",
+  // SuperAdmin: "SuperAdmin",
   OPERATIONAL_MANAGER: "OPERATIONAL_MANAGER",
   HR_MANAGER: "HR_MANAGER",
   CUSTOMER_MANAGER: "CUSTOMER_MANAGER",
@@ -41,11 +42,9 @@ export const rolePermissions: Record<string, Permission[]> = {
   [RoleName.HR_MANAGER]: [
     Permission.DASHBOARD,
     Permission.ORDERS,
-    Permission.FLEET,
     Permission.STAFF,
     Permission.BRANCH,
     Permission.CUSTOMER,
-    Permission.DISPATCH,
     Permission.PRICING,
     Permission.REPORT,
   ],
@@ -53,6 +52,7 @@ export const rolePermissions: Record<string, Permission[]> = {
     Permission.DASHBOARD,
     Permission.ORDERS,
     Permission.FLEET,
+    Permission.DISPATCH,
     Permission.REPORT,
   ],
   [RoleName.CUSTOMER_MANAGER]: [

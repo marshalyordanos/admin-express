@@ -34,6 +34,9 @@ import ComplaintsPage from "./pages/Customer/ComplaintsPage";
 import AddPointsPage from "./pages/Customer/AddPointsPage";
 import CreateComplaintPage from "./pages/Customer/CreateComplaintPage";
 import PricingPage from "./pages/PricingPage";
+import TownPricingPage from "./pages/Pricing/TownPricingPage";
+import RegionalPricingPage from "./pages/Pricing/RegionalPricingPage";
+import InternationalPricingPage from "./pages/Pricing/InternationalPricingPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoutes from "./components/ProtectedRoutes";
@@ -348,6 +351,30 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredPermission={Permission.PRICING}>
                     <PricingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pricing/town"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.PRICING}>
+                    <TownPricingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pricing/regional"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.PRICING}>
+                    <RegionalPricingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pricing/international"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.PRICING}>
+                    <InternationalPricingPage />
                   </ProtectedRoute>
                 }
               />

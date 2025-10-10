@@ -217,18 +217,21 @@ export default function BranchMain() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           {metrics.map((metric, index) => (
             <Card key={index} className="bg-white">
-              <CardHeader className="pb-2 p-3 sm:p-6">
-                <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-600">
                   {metric.title}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-lg sm:text-2xl font-bold text-gray-900 mb-1">
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
                       {metric.value}
+                      <span className="text-lg font-normal text-gray-400 ml-1">
+                        -
+                      </span>
                     </div>
-                    <div className="flex items-center text-xs sm:text-sm">
+                    <div className="flex items-center text-sm">
                       {metric.trend === "up" ? (
                         <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
                       ) : (
@@ -244,19 +247,6 @@ export default function BranchMain() {
                         {metric.change}
                       </span>
                     </div>
-                  </div>
-                  <div
-                    className={`p-2 sm:p-3 rounded-full ${
-                      metric.color === "blue"
-                        ? "bg-blue-100 text-blue-600"
-                        : metric.color === "green"
-                        ? "bg-green-100 text-green-600"
-                        : metric.color === "purple"
-                        ? "bg-purple-100 text-purple-600"
-                        : "bg-orange-100 text-orange-600"
-                    }`}
-                  >
-                    <div className="h-4 w-4 sm:h-5 sm:w-5">{metric.icon}</div>
                   </div>
                 </div>
               </CardContent>

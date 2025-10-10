@@ -9,6 +9,7 @@ import {
 export const usePermissions = () => {
   const { role } = useAuthState();
   const roleName = role?.name;
+  console.log(roleName);
 
   return {
     hasPermission: (permission: Permission) =>
