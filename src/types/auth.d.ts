@@ -13,8 +13,7 @@ export interface User {
   role: Role | null;
 }
 
-
-export interface Role{
+export interface Role {
   id: string;
   name: string;
   description: string;
@@ -41,4 +40,3 @@ export interface LoginResponse {
     tokens: Tokens;
   };
 }
-

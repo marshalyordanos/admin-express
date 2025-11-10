@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Formik, Form } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,9 @@ import Button from "../../../components/common/Button";
 import { RevokeManagerSchema } from "../schemas/RevokeManagerSchema";
 import { IoArrowBack, IoPersonRemove } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import api from "@/lib/api/api";
+import type { Branch, BranchListResponse, Pagination, Staff, StaffListResponse } from "@/types/types";
 
 // Demo data - replace with actual API calls
 const demoManagers = [
@@ -32,13 +35,21 @@ const RevokeManager = () => {
   const [message] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Dropdown states
-  const [managers] = useState(demoManagers);
-  const [branches] = useState(demoBranches);
+
   const [managerSearch, setManagerSearch] = useState("");
   const [branchSearch, setBranchSearch] = useState("");
   const [showManagerDropdown, setShowManagerDropdown] = useState(false);
   const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [staffs, setStaffs] = useState<Staff[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [searchText, setSearchText] = useState("");
+
+  const [loadingBrand, setLoadingBrand] = useState(false);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+
 
   const initialValues = {
     managerID: "",
@@ -47,21 +58,72 @@ const RevokeManager = () => {
     branchName: "",
   };
 
-  // Filter managers based on search
-  const filteredManagers = managers.filter(
-    (manager) =>
-      manager.name.toLowerCase().includes(managerSearch.toLowerCase()) ||
-      manager.id.toLowerCase().includes(managerSearch.toLowerCase()) ||
-      manager.email.toLowerCase().includes(managerSearch.toLowerCase())
-  );
 
-  // Filter branches based on search
-  const filteredBranches = branches.filter(
-    (branch) =>
-      branch.name.toLowerCase().includes(branchSearch.toLowerCase()) ||
-      branch.id.toLowerCase().includes(branchSearch.toLowerCase()) ||
-      branch.location.toLowerCase().includes(branchSearch.toLowerCase())
-  );
+
+  const featchStaffs = async (page = 1, limit = 10) => {
+    try {
+      setLoadingStaff(true);
+
+      const staffs = await api.get<StaffListResponse>(
+        `/staff?search=all:${searchText}&page=${1}&pageSize=${20}`
+      );
+      setStaffs(staffs.data.data);
+      setPagination(staffs.data.pagination);
+      toast.success(staffs.data.message);
+      setLoadingStaff(false);
+    } catch (error: any) {
+      setLoadingStaff(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchStaffs();
+  }, [searchText]);
+
+  const featchBranch = async () => {
+    try {
+      setLoadingBrand(true);
+
+      const branch = await api.get<BranchListResponse>("/branch");
+      setBranches(branch.data.data);
+      setLoadingBrand(false);
+    } catch (error: any) {
+      setLoadingBrand(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchBranch();
+  }, []);
+
+  const handleSubmit = async (value: any) => {
+    console.log(initialValues, value);
+    try {
+      setLoading(true);
+      const data = { managerId: value?.managerID, branchId: value?.branchID };
+
+      const res = await api.post("/branch/revoke-manager", data);
+      toast.success(res.data?.message);
+      navigate("/branch");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Somethign went wrong!");
+    } finally {
+      setLoading(false);
+    }
+  };
+ 
 
   // const handleSubmit = async (
   //   values: typeof initialValues,
@@ -147,7 +209,7 @@ const RevokeManager = () => {
       <Formik
         initialValues={initialValues}
         validationSchema={RevokeManagerSchema}
-        onSubmit={() => {}}
+        onSubmit={handleSubmit}
       >
         {({ values, setFieldValue, errors, touched }) => (
           <Form>
@@ -222,8 +284,8 @@ const RevokeManager = () => {
 
                   {showManagerDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredManagers.length > 0 ? (
-                        filteredManagers.map((manager) => (
+                      {staffs.length > 0 ? (
+                        staffs.map((manager) => (
                           <div
                             key={manager.id}
                             onClick={() =>
@@ -293,8 +355,8 @@ const RevokeManager = () => {
 
                   {showBranchDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredBranches.length > 0 ? (
-                        filteredBranches.map((branch) => (
+                      {branches.length > 0 ? (
+                        branches.map((branch) => (
                           <div
                             key={branch.id}
                             onClick={() => selectBranch(branch, setFieldValue)}

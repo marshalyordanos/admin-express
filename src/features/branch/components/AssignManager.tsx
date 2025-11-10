@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Formik, Form } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,15 @@ import Button from "../../../components/common/Button";
 import { AssignManagerSchema } from "../schemas/AssignManagerSchema";
 import { IoArrowBack, IoPersonAdd } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import api from "@/lib/api/api";
+import type {
+  BranchListResponse,
+  Branch,
+  Staff,
+  Pagination,
+  StaffListResponse,
+} from "@/types/types";
 
 // Demo data - replace with actual API calls
 const demoManagers = [
@@ -26,19 +35,27 @@ const demoBranches = [
 ];
 
 const AssignManager = () => {
-  const [status] = useState<
-    "idle" | "submitting" | "success" | "error"
-  >("idle");
+  const [status] = useState<"idle" | "submitting" | "success" | "error">(
+    "idle"
+  );
   const [message] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Dropdown states
   const [managers] = useState(demoManagers);
-  const [branches] = useState(demoBranches);
   const [managerSearch, setManagerSearch] = useState("");
   const [branchSearch, setBranchSearch] = useState("");
   const [showManagerDropdown, setShowManagerDropdown] = useState(false);
   const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [staffs, setStaffs] = useState<Staff[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [searchText, setSearchText] = useState("");
+
+  const [loadingBrand, setLoadingBrand] = useState(false);
+  const [loadingStaff, setLoadingStaff] = useState(false);
 
   const initialValues = {
     managerID: "",
@@ -48,58 +65,71 @@ const AssignManager = () => {
   };
 
   // Filter managers based on search
-  const filteredManagers = managers.filter(
-    (manager) =>
-      manager.name.toLowerCase().includes(managerSearch.toLowerCase()) ||
-      manager.id.toLowerCase().includes(managerSearch.toLowerCase()) ||
-      manager.email.toLowerCase().includes(managerSearch.toLowerCase())
-  );
 
   // Filter branches based on search
-  const filteredBranches = branches.filter(
-    (branch) =>
-      branch.name.toLowerCase().includes(branchSearch.toLowerCase()) ||
-      branch.id.toLowerCase().includes(branchSearch.toLowerCase()) ||
-      branch.location.toLowerCase().includes(branchSearch.toLowerCase())
-  );
 
-  const handleSubmit = async () => {
-    // try {
-    //   const payload = {
-    //     managerID: values.managerID,
-    //     branchID: values.branchID,
-    //   };
-    //   setStatus("submitting");
-    //   setMessage(null);
-    // Send only managerID and branchID
-    // };
-    // const response = await api.post("/branch/assign-manager", payload);
-    // const { success, message: responseMessage } = response.data;
-    // const payload = {
-    //   managerID: values.managerID,
-    // branchID: values.branchID,
-    // };
-    // if (success) {
-    //   setStatus("success");
-    //   setMessage(responseMessage || "Manager assigned successfully!");
-    //   // };
-    //   resetForm();
-    //   setManagerSearch("");
-    //   setBranchSearch("");
-    //   setTimeout(() => {
-    //     navigate("/branch");
-    //   }, 2000);
-    //   //  } else {
-    //     setStatus("error");
-    //     setMessage(responseMessage || "Failed to assign manager");
-    //   }
-    // } catch (error) {
-    //   setStatus("error");
-    //   setMessage("Something went wrong. Please try again.");
-    //   console.error("Assign manager error:", error);
-    // } finally {
-    //   setTimeout(() => setStatus("idle"), 2500);
-    // }
+  const featchStaffs = async (page = 1, limit = 10) => {
+    try {
+      setLoadingStaff(true);
+
+      const staffs = await api.get<StaffListResponse>(
+        `/staff?search=all:${searchText}&page=${1}&pageSize=${20}`
+      );
+      setStaffs(staffs.data.data);
+      setPagination(staffs.data.pagination);
+      toast.success(staffs.data.message);
+      setLoadingStaff(false);
+    } catch (error: any) {
+      setLoadingStaff(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchStaffs();
+  }, [searchText]);
+
+  const featchBranch = async () => {
+    try {
+      setLoadingBrand(true);
+
+      const branch = await api.get<BranchListResponse>("/branch");
+      setBranches(branch.data.data);
+      setLoadingBrand(false);
+    } catch (error: any) {
+      setLoadingBrand(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchBranch();
+  }, []);
+
+  const handleSubmit = async (value: any) => {
+    console.log(initialValues, value);
+    try {
+      setLoading(true);
+      const data = { managerId: value?.managerID, branchId: value?.branchID };
+
+      const res = await api.post("/branch/assign-manager", data);
+      toast.success(res.data?.message);
+      navigate("/branch");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Somethign went wrong!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Select manager handler
@@ -141,6 +171,19 @@ const AssignManager = () => {
     setFieldValue("branchName", "");
     setBranchSearch("");
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl p-6 bg-white">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading ...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl p-6 bg-white">
@@ -222,8 +265,8 @@ const AssignManager = () => {
 
                   {showManagerDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredManagers.length > 0 ? (
-                        filteredManagers.map((manager) => (
+                      {staffs.length > 0 ? (
+                        staffs.map((manager) => (
                           <div
                             key={manager.id}
                             onClick={() =>
@@ -293,8 +336,8 @@ const AssignManager = () => {
 
                   {showBranchDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredBranches.length > 0 ? (
-                        filteredBranches.map((branch) => (
+                      {branches.length > 0 ? (
+                        branches.map((branch) => (
                           <div
                             key={branch.id}
                             onClick={() => selectBranch(branch, setFieldValue)}
