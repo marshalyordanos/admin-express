@@ -50,7 +50,7 @@ const CreateCustomer = () => {
     const fetchCustomerData = async () => {
       if (!isEditMode) return;
 
-      setLoading(true);
+      // setLoading(true);
       // try {
       //   // const response = await api.get(`/customer/${id}`);
       //   // const { success, data } = response.data;
@@ -94,54 +94,7 @@ const CreateCustomer = () => {
         setStatus("submitting");
         setMessage(null);
 
-        // const endpoint = isEditMode ? `/customer/${id}` : "/customer";
-        // const method = isEditMode ? "put" : "post";
-
-        // const payload = {
-        //   name: values.name,
-        //   email: values.email,
-        //   phone: values.phone,
-        //   type: values.type,
-        //   address: values.address,
-        //   city: values.city,
-        //   notes: values.notes || null,
-        //   companyName: values.type === "Corporate" ? values.companyName : null,
-        //   contactPerson:
-        //     values.type === "Corporate" ? values.contactPerson : null,
-        //   contractNumber: values.contractNumber || null,
-        //   creditLimit: values.creditLimit ? parseFloat(values.creditLimit) : null,
-        //   paymentTerms: values.paymentTerms || null,
-        //   preferredLanguage: values.preferredLanguage,
-        //   communicationPreference: values.communicationPreference,
-        //   marketingOptIn: values.marketingOptIn,
-        // };
-
-        // const response = await api[method](endpoint, payload);
-        // const { success, message: responseMessage } = response.data;
-
-        // if (success) {
-        //   setStatus("success");
-        //   setMessage(
-        //     responseMessage ||
-        //       (isEditMode
-        //         ? "Customer updated successfully!"
-        //         : "Customer created successfully!")
-        //   );
-        //   if (!isEditMode) {
-        //     resetForm();
-        //   }
-        //   setTimeout(() => {
-        //     navigate("/customer");
-        //   }, 2000);
-        // } else {
-        //   setStatus("error");
-        //   setMessage(
-        //     responseMessage ||
-        //       (isEditMode
-        //         ? "Failed to update customer"
-        //         : "Failed to create customer")
-        //   );
-        // }
+        
       } catch (error) {
         setStatus("error");
         setMessage("Something went wrong. Please try again.");

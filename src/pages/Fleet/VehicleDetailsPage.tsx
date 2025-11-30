@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -131,6 +131,15 @@ export default function VehicleDetailsPage() {
   const navigate = useNavigate();
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
 
+
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+
+  const fleetDetail = query.get("fleet")
+    ? JSON.parse(query.get("fleet")!)
+    : null;
+console.log(fleetDetail,"fleetDetail")
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Active":
@@ -180,7 +189,7 @@ export default function VehicleDetailsPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Vehicle Details - #{vehicleData.id}
+              Vehicle Details - #{fleetDetail.plateNumber}
             </h1>
             <p className="text-gray-500 text-sm">
               Manage vehicle maintenance and fleet operations
@@ -219,12 +228,12 @@ export default function VehicleDetailsPage() {
                     Driver
                   </Label>
                   <p className="text-lg font-semibold text-gray-900">
-                    {vehicleData.driver}
+                    {fleetDetail.driver?.name??"Not assigned"}  
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {vehicleData.driverId}
-                  </p>
-                  <p className="text-sm text-gray-500">+251 91 234 5678</p>
+                  {/* <p className="text-sm text-gray-500">
+                    {fleetDetail.driverId}
+                  </p> */}
+                  <p className="text-sm text-gray-500">{fleetDetail?.driver?.phone}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">
@@ -241,36 +250,36 @@ export default function VehicleDetailsPage() {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                <div>
+                {/* <div>
                   <Label className="text-sm font-medium text-gray-600">
                     Total Trips
                   </Label>
                   <p className="text-lg font-semibold text-gray-900">
                     {vehicleData.totalTrips}
                   </p>
-                </div>
+                </div> */}
                 <div>
                   <Label className="text-sm font-medium text-gray-600">
                     Capacity
                   </Label>
                   <p className="text-lg font-semibold text-gray-900">
-                    {vehicleData.capacity}
+                    {fleetDetail.maxLoad} KG
                   </p>
                 </div>
-                <div>
+                {/* <div>
                   <Label className="text-sm font-medium text-gray-600">
                     Utilization
                   </Label>
                   <p className="text-lg font-semibold text-gray-900">
                     {vehicleData.utilizationRate}%
                   </p>
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>
 
           {/* Maintenance Configuration */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <Settings className="h-5 w-5 mr-2 text-blue-600" />
@@ -317,7 +326,7 @@ export default function VehicleDetailsPage() {
                 <Badge className="bg-gray-100 text-gray-700">STANDARD</Badge>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Driver Assignment */}
           <Card>
@@ -370,31 +379,33 @@ export default function VehicleDetailsPage() {
                   <Label className="text-sm font-medium text-gray-600">
                     Fleet Category
                   </Label>
-                  <Select defaultValue="primary">
+                  <Select defaultValue={fleetDetail.type}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="primary">Primary Fleet</SelectItem>
-                      <SelectItem value="backup">Backup Fleet</SelectItem>
-                      <SelectItem value="specialty">
-                        Specialty Vehicle
-                      </SelectItem>
+                    <SelectItem value="Motorcycle">Motorcycle</SelectItem>
+                      <SelectItem value="Pickup">Pickup Truck</SelectItem>
+                      <SelectItem value="Van">Van</SelectItem>
+                      <SelectItem value="Truck">Truck</SelectItem>
+                      <SelectItem value="Trailer">Trailer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">
-                    Priority Level
+                    Status
                   </Label>
-                  <Select defaultValue="high">
+                  <Select defaultValue={fleetDetail?.status}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="high">High Priority</SelectItem>
-                      <SelectItem value="medium">Medium Priority</SelectItem>
-                      <SelectItem value="low">Low Priority</SelectItem>
+                    
+  
+                        <SelectItem value="ACTIVE">ACTIVE </SelectItem>
+                      <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+                      <SelectItem value="MAINTENANCE">MAINTENANCE</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -406,7 +417,7 @@ export default function VehicleDetailsPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Vehicle Specifications */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <MapPin className="h-5 w-5 mr-2 text-blue-600" />
@@ -447,7 +458,7 @@ export default function VehicleDetailsPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Group Related Vehicles */}
           <Card>

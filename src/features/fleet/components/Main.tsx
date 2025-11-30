@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +35,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { FleetListResponse, FleetVehicle, Pagination } from "@/types/types";
+import api from "@/lib/api/api";
+import toast from "react-hot-toast";
+import ConfirmDialog from "@/components/common/DeleteModal";
 
 const vehicles = [
   {
@@ -207,7 +211,7 @@ const vehicles = [
   },
 ];
 
-const metrics = [
+const metrics2 = [
   {
     label: "Total Vehicles",
     value: "8",
@@ -237,7 +241,27 @@ const metrics = [
     color: "purple",
   },
 ];
+export interface FleetDashboardStats {
+  totalVehicles: number;
+  inHouse: number;
+  external: number;
 
+  activeVehicles: number;
+  activePercentage: number;
+
+  underMaintenance: number;
+  maintenanceVehicles: string[]; // array of vehicle identifiers (plate/model/etc.)
+
+  avgUtilization: number;
+  utilizationChange: number;
+}
+interface Metric {
+  label: string;
+  value: string | number;
+  sublabel: string;
+  icon: React.ReactNode;
+  color: string;
+}
 export default function FleetMain() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -246,9 +270,112 @@ export default function FleetMain() {
   const [filterOwnership, setFilterOwnership] = useState("all");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  // const [summary, setSummary] = useState<DashboardStats | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [fleets,setFleets] = useState<FleetVehicle[]>([])
+  const [searchText, setSearchText] = useState("");
+
+  const [summary, setSummary] = useState<FleetDashboardStats | null>(null);
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  
+
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [selectedFleet, setSelectedFeet] = useState<FleetVehicle | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteLaoding, setDeleteLoading] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
+  const featchFleet = async (page=1,limit=10) => {
+    try {
+      setLoading(true);
+
+      const staffs = await api.get<FleetListResponse>(`/fleet`);
+      // const staffs = await api.get<FleetListResponse>(`/fleet?search=all:${searchText}&page=${page}&pageSize=${limit}`);
+
+      setFleets(staffs.data.data);
+      setPagination(staffs.data.pagination);
+      toast.success(staffs.data.message)
+      setLoading(false);
+    } catch (error: any) {
+      setLoading(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchFleet(currentPage,pageSize);
+  }, [searchText,currentPage,pageSize]);
+
+  const featchSummary = async () => {
+    try {
+      setLoadingSummary(true);
+
+      const staffs = await api.get<FleetDashboardStats>(
+        "/report/dashboard/fleet-summary"
+      );
+      setSummary(staffs.data);
+      // toast.success(staffs.data.message);
+      setLoadingSummary(false);
+    } catch (error: any) {
+      setLoadingSummary(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+  useEffect(() => {
+    featchSummary();
+  }, []);
+  useEffect(() => {
+    if (summary) {
+      setMetrics([
+        {
+          label: "Total Vehicles",
+          value: `${summary.totalVehicles}`,
+          sublabel: `${summary.inHouse} In-house, ${summary.external} External`,
+          icon: <IoCarSport className="h-5 w-5" />,
+          color: "blue",
+        },
+        {
+          label: "Active Vehicles",
+          value: `${summary.activeVehicles}`,
+          sublabel: `${summary.activePercentage}% of fleet`,
+          icon: <IoCheckmarkCircle className="h-5 w-5" />,
+          color: "green",
+        },
+        {
+          label: "Under Maintenance",
+          value: `${summary.underMaintenance}`,
+          sublabel:
+            summary.maintenanceVehicles.length > 0
+              ? summary.maintenanceVehicles.join(", ")
+              : "No vehicles",
+          icon: <IoConstruct className="h-5 w-5" />,
+          color: "orange",
+        },
+        {
+          label: "Avg Utilization",
+          value: `${summary.avgUtilization}%`,
+          sublabel: `${summary.utilizationChange > 0 ? "+" : ""}${
+            summary.utilizationChange
+          }% from last month`,
+          icon: <IoSpeedometer className="h-5 w-5" />,
+          color: "purple",
+        },
+      ]);
+    }
+  }, [summary]);
+  
   // Filter vehicles
   const filteredVehicles = vehicles.filter((vehicle) => {
     const matchesSearch =
@@ -329,6 +456,22 @@ export default function FleetMain() {
     }
   };
 
+  const handleDelete = async()=>{
+    try {
+      setDeleteLoading(true)
+      const res = await api.delete('fleet/'+selectedFleet?.id)
+      toast.success(res.data.message)
+      featchFleet(currentPage,pageSize)
+      setIsDialogOpen(false)
+      setDeleteLoading(false)
+  
+    } catch (error:any) {
+      toast.error(error?.response.data.message||"Something went wrong!")
+      setDeleteLoading(false)
+      
+    }
+  
+    }
   return (
     <div className="min-h-screen">
       {/* Main Content */}
@@ -462,12 +605,7 @@ export default function FleetMain() {
                     <TableHead className="text-gray-600 font-medium">
                       Vehicle
                     </TableHead>
-                    <TableHead
-                      className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("ownership")}
-                    >
-                      Ownership
-                    </TableHead>
+                   
                     <TableHead className="text-gray-600 font-medium">
                       Driver
                     </TableHead>
@@ -475,14 +613,14 @@ export default function FleetMain() {
                       className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort("utilizationRate")}
                     >
-                      Utilization
+                      Max Load
                     </TableHead>
-                    <TableHead className="text-gray-600 font-medium">
+                    {/* <TableHead className="text-gray-600 font-medium">
                       Mileage
                     </TableHead>
                     <TableHead className="text-gray-600 font-medium">
                       Insurance
-                    </TableHead>
+                    </TableHead> */}
                     <TableHead
                       className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort("status")}
@@ -495,11 +633,18 @@ export default function FleetMain() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedVehicles.map((vehicle) => (
+                  {fleets.map((vehicle) => (
                     <TableRow
                       key={vehicle.id}
                       className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => navigate(`/fleet/details/${vehicle.id}`)}
+                      onClick={(e) => {
+                        
+                          e.stopPropagation();
+                          navigate(`/fleet/details/${vehicle.id}?fleet=${encodeURIComponent(
+                      JSON.stringify(vehicle)
+                    )}`)
+                        // navigate(`/fleet/details/${vehicle.id}`)
+                      }}
                     >
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Checkbox />
@@ -514,36 +659,27 @@ export default function FleetMain() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{vehicle.brand}</span>
-                          <span className="text-sm text-gray-500">
-                            {vehicle.model} ({vehicle.year})
-                          </span>
+                          <span className="font-medium">{vehicle.model}</span>
+                         
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="secondary"
-                          className={
-                            vehicle.ownership === "In-house"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-purple-100 text-purple-700"
-                          }
-                        >
-                          {vehicle.ownership}
-                        </Badge>
-                      </TableCell>
+                     
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{vehicle.driver}</span>
-                          {vehicle.driverId && (
+                          {vehicle.driverId ?(
                             <span className="text-sm text-gray-500">
-                              {vehicle.driverId}
+                              {vehicle?.driver?.user?.name}
                             </span>
-                          )}
+                          ):
+                          <span className="font-medium">-</span>
+                          }
+
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                      <span className="font-medium">{vehicle.maxLoad}</span>
+
+                        {/* <div className="flex items-center gap-2">
                           <div className="w-full bg-gray-200 rounded-full h-2 max-w-[60px]">
                             <div
                               className={`h-2 rounded-full ${
@@ -561,9 +697,9 @@ export default function FleetMain() {
                           <span className="text-sm font-medium">
                             {vehicle.utilizationRate}%
                           </span>
-                        </div>
+                        </div> */}
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">
                             {vehicle.currentMileage.toLocaleString()} km
@@ -585,7 +721,7 @@ export default function FleetMain() {
                             {vehicle.insuranceExpiry}
                           </span>
                         </div>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         <Badge
                           variant="secondary"
@@ -611,7 +747,10 @@ export default function FleetMain() {
                             className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/fleet/edit/${vehicle.id}`);
+                              navigate(`/fleet/edit/${vehicle.id}?fleet=${encodeURIComponent(
+                          JSON.stringify(vehicle)
+                        )}`
+                      )
                             }}
                           >
                             <MdEdit className="h-4 w-4" />
@@ -626,6 +765,13 @@ export default function FleetMain() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // navigate(`/staff/edit/${member.id}`);
+                              setIsDialogOpen(true); //
+                         
+                              setSelectedFeet(vehicle)
+                            }}
                             className="p-2 text-red-400 bg-red-50 cursor-not-allowed opacity-60 hover:bg-red-100 hover:text-red-700"
                           >
                             <MdDelete className="h-4 w-4" />
@@ -650,6 +796,14 @@ export default function FleetMain() {
           </CardContent>
         </Card>
       </main>
+      <ConfirmDialog
+  isOpen={isDialogOpen}
+  setIsOpen={setIsDialogOpen}
+  title="Delete Staff Member"
+  description="Are you sure you want to delete this fllet? This action cannot be undone."
+  onConfirm={handleDelete}
+  loading={deleteLaoding}
+/>
     </div>
   );
 }

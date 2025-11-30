@@ -14,6 +14,9 @@ import Button from "../../../components/common/Button";
 import { MaintenanceLogSchema } from "../schemas/MaintenanceLogSchema";
 import { IoArrowBack, IoConstruct } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
+import type { FleetListResponse, FleetVehicle, Pagination, StaffListResponse } from "@/types/types";
+import api from "@/lib/api/api";
+import toast from "react-hot-toast";
 
 const CreateMaintenanceLog = () => {
   const [status, setStatus] = useState<
@@ -26,21 +29,54 @@ const CreateMaintenanceLog = () => {
   >([]);
   const [initialValues] = useState({
     vehicleId: "",
-    type: "",
-    service: "",
-    date: "",
+    // type: "",
+    // date: "",
     cost: "",
-    mileage: "",
-    provider: "",
-    status: "",
-    technician: "",
-    nextService: "",
+    // mileage: "",
+    // provider: "",
+    // status: "",
+    // technician: "",
+    // nextService: "",
     notes: "",
   });
 
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
+  const [fleets, setSetFleet] = useState<FleetVehicle[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [searchText, setSearchText] = useState("");
+
+  const [loadingBrand, setLoadingBrand] = useState(false);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [showFleetDropdown, setShowFleetDropdown] = useState(false);
+  const [fleetSearch, setfleetSearch] = useState("");
+
+  const featchFleets = async (page = 1, limit = 10) => {
+    try {
+      setLoadingStaff(true);
+
+      const staffs = await api.get<FleetListResponse>(
+        `/fleet`
+      );
+      setSetFleet(staffs.data.data);
+      setPagination(staffs.data.pagination);
+      toast.success(staffs.data.message);
+      setLoadingStaff(false);
+    } catch (error: any) {
+      setLoadingStaff(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchFleets();
+  }, [searchText]);
 
   // Fetch vehicles for dropdown
   useEffect(() => {
@@ -100,54 +136,29 @@ const CreateMaintenanceLog = () => {
     fetchMaintenanceData();
   }, [id, isEditMode]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (value:any) => {
     try {
       setStatus("submitting");
-      setMessage(null);
+      console.log(value,"values")
+      try {
+        setLoading(true);
 
-      // const endpoint = isEditMode ? `/maintenance/${id}` : "/maintenance";
-      // const method = isEditMode ? "put" : "post";
-
-      // const payload = {
-      //   vehicleId: values.vehicleId,
-      //   type: values.type,
-      //   service: values.service,
-      //   date: values.date,
-      //   cost: parseFloat(values.cost),
-      //   mileage: parseInt(values.mileage),
-      //   provider: values.provider,
-      //   status: values.status,
-      //   technician: values.technician,
-      //   nextService: values.nextService || null,
-      //   notes: values.notes || null,
-      // };
-
-      // const response = await api[method](endpoint, payload);
-      // const { success, message: responseMessage } = response.data;
-
-      // if (success) {
-      //   setStatus("success");
-      //   setMessage(
-      //     responseMessage ||
-      //       (isEditMode
-      //         ? "Maintenance record updated successfully!"
-      //         : "Maintenance record created successfully!")
-      //   );
-      //   if (!isEditMode) {
-      //     resetForm();
-      //   }
-      //   setTimeout(() => {
-      //     navigate("/fleet/maintenance");
-      //   }, 2000);
-      // } else {
-      //   setStatus("error");
-      //   setMessage(
-      //     responseMessage ||
-      //       (isEditMode
-      //         ? "Failed to update maintenance record"
-      //         : "Failed to create maintenance record")
-      //   );
-      // }
+  const data = 
+  {
+        
+        
+"vehicleId":value.vehicleId,
+    "cost":value.cost,
+    "maintenance":value.notes
+  }
+        const res = await api.post("/fleet/maintenance", data);
+        toast.success(res.data?.message);
+        navigate("/fleet/maintenance");
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || "Somethign went wrong!");
+      } finally {
+        setLoading(false);
+      }
     } catch (error) {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");
@@ -173,6 +184,25 @@ const CreateMaintenanceLog = () => {
     );
   }
 
+  const selectfleet = (
+    fleet: { id: string; model: string; plateNumber: string },
+    setFieldValue: (field: string, value: string) => void
+  ) => {
+    setFieldValue("vehicleId", fleet.id);
+    setFieldValue("fleetName", fleet.model);
+    setfleetSearch(`${fleet.model} (${fleet.id})`);
+    setShowFleetDropdown(false);
+  };
+
+  
+
+  const clearFleet = (
+    setFieldValue: (field: string, value: string) => void
+  ) => {
+    setFieldValue("vehicleId", "");
+    setFieldValue("fleetName", "");
+    setfleetSearch("");
+  };
   return (
     <div className="max-w-4xl p-6 bg-white">
       <Formik
@@ -227,34 +257,71 @@ const CreateMaintenanceLog = () => {
                 </h2>
                 <div>
                   <Label className="mb-1">Vehicle *</Label>
-                  <Select
-                    value={values.vehicleId}
-                    onValueChange={(val) => setFieldValue("vehicleId", val)}
-                  >
-                    <SelectTrigger
-                      className={`py-7 !w-full ${
-                        errors.vehicleId && touched.vehicleId
-                          ? "border-red-500"
-                          : ""
-                      }`}
-                    >
-                      <SelectValue placeholder="Select vehicle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vehicles.map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.id}>
-                          {vehicle.plateNumber}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Search managers by name, ID, or email..."
+                      value={fleetSearch}
+                      onChange={(e) => {
+                        setfleetSearch(e.target.value);
+                        setShowFleetDropdown(true);
+                        if (!e.target.value) {
+                          clearFleet(setFieldValue);
+                        }
+                      }}
+                      onFocus={() => setShowFleetDropdown(true)}
+                      onBlur={() =>
+                        setTimeout(() => setShowFleetDropdown(false), 200)
+                      }
+                      className="py-7"
+                    />
+                    {values.vehicleId && (
+                      <button
+                        type="button"
+                        onClick={() => clearFleet(setFieldValue)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {showFleetDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {fleets.length > 0 ? (
+                        fleets.map((fleet) => (
+                          <div
+                            key={fleet.id}
+                            onClick={() =>
+                              selectfleet(fleet, setFieldValue)
+                            }
+                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-gray-900">
+                              {fleet.model}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              ID: {fleet.id}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {fleet.plateNumber}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-gray-500 text-center">
+                          No managers found
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {errors.vehicleId && touched.vehicleId && (
                     <p className="text-red-500 text-sm mt-1">
                       {errors.vehicleId}
                     </p>
                   )}
                 </div>
-                <div>
+                {/* <div>
                   <Label className="mb-1">Maintenance Type *</Label>
                   <Select
                     value={values.type}
@@ -276,8 +343,32 @@ const CreateMaintenanceLog = () => {
                   {errors.type && touched.type && (
                     <p className="text-red-500 text-sm mt-1">{errors.type}</p>
                   )}
+                </div> */}
+                <div>
+                  <Label className="mb-1">Cost (ETB) *</Label>
+                  <Field
+                    as={Input}
+                    type="number"
+                    name="cost"
+                    placeholder="0"
+                    className={`py-7 ${
+                      errors.cost && touched.cost ? "border-red-500" : ""
+                    }`}
+                  />
+                  {errors.cost && touched.cost && (
+                    <p className="text-red-500 text-sm mt-1">{errors.cost}</p>
+                  )}
                 </div>
                 <div>
+                <Label className="mb-1">Notes</Label>
+                <Field
+                  as={Textarea}
+                  name="notes"
+                  placeholder="Additional notes about the maintenance..."
+                  className="py-4 min-h-[100px]"
+                />
+              </div>
+                {/* <div>
                   <Label className="mb-1">Service Description *</Label>
                   <Field
                     as={Input}
@@ -306,27 +397,13 @@ const CreateMaintenanceLog = () => {
                   {errors.date && touched.date && (
                     <p className="text-red-500 text-sm mt-1">{errors.date}</p>
                   )}
-                </div>
+                </div> */}
               </div>
 
               {/* Cost & Details */}
-              <div className="bg-gray-50 p-6 rounded-lg space-y-4">
+              {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4">
                 <h2 className="text-lg font-medium mb-4">Cost & Details</h2>
-                <div>
-                  <Label className="mb-1">Cost (ETB) *</Label>
-                  <Field
-                    as={Input}
-                    type="number"
-                    name="cost"
-                    placeholder="0"
-                    className={`py-7 ${
-                      errors.cost && touched.cost ? "border-red-500" : ""
-                    }`}
-                  />
-                  {errors.cost && touched.cost && (
-                    <p className="text-red-500 text-sm mt-1">{errors.cost}</p>
-                  )}
-                </div>
+              
                 <div>
                   <Label className="mb-1">Mileage (km) *</Label>
                   <Field
@@ -385,11 +462,11 @@ const CreateMaintenanceLog = () => {
                     <p className="text-red-500 text-sm mt-1">{errors.status}</p>
                   )}
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Additional Information */}
-            <div className="bg-gray-50 p-6 rounded-lg space-y-4">
+            {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4">
               <h2 className="text-lg font-medium mb-4">
                 Additional Information
               </h2>
@@ -422,16 +499,8 @@ const CreateMaintenanceLog = () => {
                   />
                 </div>
               </div>
-              <div>
-                <Label className="mb-1">Notes</Label>
-                <Field
-                  as={Textarea}
-                  name="notes"
-                  placeholder="Additional notes about the maintenance..."
-                  className="py-4 min-h-[100px]"
-                />
-              </div>
-            </div>
+             
+            </div> */}
 
             {/* Action buttons */}
             <div className="bg-gray-50 p-6 rounded-lg mt-6 space-y-4">

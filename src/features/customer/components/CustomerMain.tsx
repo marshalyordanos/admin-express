@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   Download,
@@ -36,8 +36,12 @@ import {
   IoLockOpen,
 } from "react-icons/io5";
 import { MdEdit, MdDelete } from "react-icons/md";
+import api from "@/lib/api/api";
+import toast from "react-hot-toast";
+import type { Customer, CustomerListResponse, Pagination } from "@/types/types";
+import ConfirmDialog from "@/components/common/DeleteModal";
 
-const customers = [
+const customers2 = [
   {
     id: "CUST-001",
     customerId: "C001",
@@ -140,53 +144,80 @@ const customers = [
   },
 ];
 
-const metrics = [
-  {
-    title: "Total Customers",
-    value: "1,247",
-    change: "23 new this month",
-    trend: "up",
-    icon: <Users className="h-5 w-5" />,
-    color: "blue",
-  },
-  {
-    title: "Active Customers",
-    value: "1,189",
-    change: "95% active rate",
-    trend: "up",
-    icon: <UserCheck className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    title: "Corporate Clients",
-    value: "58",
-    change: "12 new contracts",
-    trend: "up",
-    icon: <Building2 className="h-5 w-5" />,
-    color: "purple",
-  },
-  {
-    title: "Loyalty Members",
-    value: "892",
-    change: "High engagement",
-    trend: "up",
-    icon: <Star className="h-5 w-5" />,
-    color: "orange",
-  },
-];
 
+interface DashboardStats {
+  totalCustomers: {
+    value: number;
+    newThisMonth: number;
+    change: number;
+  };
+  activeCustomers: {
+    value: number;
+    rate: number;
+  };
+  corporateClients: {
+    value: number;
+    newThisMonth: number;
+  };
+  loyaltyMembers: {
+    value: number;
+    note: string;
+  };
+}
+
+interface Metric {
+  title: string;
+  value: string | number;
+  change: string;
+  trend: "up" | "down";
+  icon: React.ReactNode;
+  color: string;
+}
 export default function CustomerMain() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
   const navigate = useNavigate();
+  const [metrics, setMetrics] = useState<Metric[]>([]);
 
   // Calculate pagination
-  const totalItems = customers.length;
+  const totalItems = customers2.length;
   const totalPages = Math.ceil(totalItems / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const paginatedCustomers = customers.slice(startIndex, endIndex);
+  const paginatedCustomers = customers2.slice(startIndex, endIndex);
+  const [summary, setSummary] = useState<DashboardStats | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [customers,setCustomers] = useState<Customer[]>([])
+  const [searchText, setSearchText] = useState("");
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteLaoding, setDeleteLoading] = useState<boolean>(false);
+  const featchCustomers = async (page=1,limit=10) => {
+    try {
+      setLoading(true);
+
+      const staffs = await api.get<CustomerListResponse>(`/users/customers?search=all:${searchText}&page=${page}&pageSize=${limit}`);
+      setCustomers(staffs.data.data);
+      setPagination(staffs.data.pagination);
+      toast.success(staffs.data.message)
+      setLoading(false);
+    } catch (error: any) {
+      setLoading(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchCustomers(currentPage,pageSize);
+  }, [searchText,currentPage,pageSize]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -197,6 +228,85 @@ export default function CustomerMain() {
     setCurrentPage(1);
   };
 
+  const featchSummary = async () => {
+    try {
+      setLoadingSummary(true);
+
+      const staffs = await api.get<DashboardStats>(
+        "/report/dashboard/customer-summary"
+      );
+      setSummary(staffs.data);
+      // toast.success(staffs.data.message);
+      setLoadingSummary(false);
+    } catch (error: any) {
+      setLoadingSummary(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+  useEffect(() => {
+    featchSummary();
+  }, []);
+  useEffect(() => {
+    if (summary) {
+      setMetrics([
+        {
+          title: "Total Customers",
+          value: summary.totalCustomers.value,
+          change: `${summary.totalCustomers.newThisMonth} new this month`,
+          trend: summary.totalCustomers.change >= 0 ? "up" : "down",
+          color: "blue",
+          icon: <Users className="h-5 w-5" />,
+        },
+        {
+          title: "Active Customers",
+          value: summary.activeCustomers.value,
+          change: `${summary.activeCustomers.rate}% active rate`,
+          trend: summary.activeCustomers.rate >= 0 ? "up" : "down",
+          color: "green",
+          icon: <UserCheck className="h-5 w-5" />,
+        },
+        {
+          title: "Corporate Clients",
+          value: summary.corporateClients.value,
+          change: `${summary.corporateClients.newThisMonth} new contracts`,
+          trend: summary.corporateClients.newThisMonth >= 0 ? "up" : "down",
+          color: "purple",
+          icon: <Building2 className="h-5 w-5" />,
+        },
+        {
+          title: "Loyalty Members",
+          value: summary.loyaltyMembers.value,
+          change: summary.loyaltyMembers.note || "",
+          trend: "up", // always "up" for note
+          color: "orange",
+          icon: <Star className="h-5 w-5" />,
+        },
+      ]);
+    }
+  }, [summary]);
+
+  const handleDelete = async()=>{
+    try {
+      setDeleteLoading(true)
+      const res = await api.delete('users/'+selectedCustomer?.id)
+      toast.success(res.data.message)
+      featchCustomers(currentPage,pageSize)
+      setIsDialogOpen(false)
+      setDeleteLoading(false)
+  
+    } catch (error:any) {
+      toast.error(error?.response.data.message||"Something went wrong!")
+      setDeleteLoading(false)
+    }finally{
+      setDeleteLoading(false)
+    }
+  
+    }
   return (
     <div className="min-h-screen">
       {/* Main Content */}
@@ -213,27 +323,27 @@ export default function CustomerMain() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button
+            {/* <Button
               className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
               onClick={() => navigate("/customer/create")}
             >
               <IoAdd className="h-4 w-4 mr-2" />
               Add New Customer
-            </Button>
+            </Button> */}
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="flex items-center space-x-3 mb-6">
-          <Button
+          {/* <Button
             variant="outline"
             className="text-gray-600 bg-white cursor-pointer"
             onClick={() => navigate("/customer/corporate")}
           >
             <IoBusiness className="h-4 w-4 mr-2" />
             Corporate Clients
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             variant="outline"
             className="text-gray-600 bg-white cursor-pointer"
             onClick={() => navigate("/customer/loyalty")}
@@ -248,7 +358,7 @@ export default function CustomerMain() {
           >
             <IoWarning className="h-4 w-4 mr-2" />
             Complaints
-          </Button>
+          </Button> */}
         </div>
 
         {/* Metrics Cards */}
@@ -355,7 +465,7 @@ export default function CustomerMain() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedCustomers.map((customer, index) => (
+              {customers.map((customer, index) => (
                 <TableRow
                   key={index}
                   className="border-gray-100 hover:bg-gray-50 cursor-pointer"
@@ -369,7 +479,7 @@ export default function CustomerMain() {
                       variant="ghost"
                       className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
                     >
-                      {customer.customerId}
+                      {customer.id}
                     </Button>
                   </TableCell>
                   <TableCell>
@@ -385,9 +495,9 @@ export default function CustomerMain() {
                         <span className="font-medium text-gray-900">
                           {customer.name}
                         </span>
-                        {customer.companyName && (
+                        {customer?.companyName && (
                           <div className="text-sm text-gray-500">
-                            {customer.companyName}
+                            {customer?.companyName}
                           </div>
                         )}
                       </div>
@@ -412,27 +522,27 @@ export default function CustomerMain() {
                           : "bg-blue-100 text-blue-700"
                       }
                     >
-                      {customer.type}
+                      {customer.customerType}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
-                    {customer.totalOrders}
+                    {customer?.totalOrders}
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
-                    {customer.totalSpent.toLocaleString()} ETB
+                    {/* {customer?.totalSpent.toLocaleString()} ETB */}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <IoStar className="h-4 w-4 text-yellow-500" />
                       <span className="font-medium text-gray-900">
-                        {customer.loyaltyPoints}
+                        {customer?.loyaltyPoints}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {new Date(customer.lastOrderDate).toLocaleDateString(
+                    {/* {new Date(customer?.lastOrderDate).toLocaleDateString(
                       "en-GB"
-                    )}
+                    )} */}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -450,7 +560,7 @@ export default function CustomerMain() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Button
+                      {/* <Button
                         variant="ghost"
                         size="sm"
                         className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
@@ -460,7 +570,7 @@ export default function CustomerMain() {
                         }}
                       >
                         <MdEdit className="h-4 w-4" />
-                      </Button>
+                      </Button> */}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -471,6 +581,13 @@ export default function CustomerMain() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // navigate(`/staff/edit/${member.id}`);
+                          setIsDialogOpen(true); //
+                     
+                          setSelectedCustomer(customer)
+                        }}
                         className="p-2 text-red-400 bg-red-50 cursor-not-allowed opacity-60 hover:bg-red-100 hover:text-red-700"
                       >
                         <MdDelete className="h-4 w-4" />
@@ -491,6 +608,14 @@ export default function CustomerMain() {
           />
         </Card>
       </main>
+      <ConfirmDialog
+  isOpen={isDialogOpen}
+  setIsOpen={setIsDialogOpen}
+  title="Delete Staff Member"
+  description="Are you sure you want to delete this customer? This action cannot be undone."
+  onConfirm={handleDelete}
+  loading={deleteLaoding}
+/>
     </div>
   );
 }

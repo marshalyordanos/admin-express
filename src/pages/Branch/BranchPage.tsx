@@ -41,108 +41,7 @@ import type { Branch, BranchListResponse, Pagination } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 import ConfirmDialog from "@/components/common/DeleteModal";
 
-const branches = [
-  {
-    id: "B0001",
-    name: "Addis Ababa Central",
-    location: "Bole, Addis Ababa",
-    manager: "John Doe",
-    managerStatus: "Assigned",
-    totalOrders: 1200,
-    activeOrders: 85,
-    staff: 25,
-    revenue: "$85,000",
-    efficiency: 96,
-    status: "Active",
-  },
-  {
-    id: "B0002",
-    name: "Dire Dawa Branch",
-    location: "City Center, Dire Dawa",
-    manager: "Not Assigned",
-    managerStatus: "Vacant",
-    totalOrders: 950,
-    activeOrders: 62,
-    staff: 18,
-    revenue: "$60,000",
-    efficiency: 97,
-    status: "Active",
-  },
-  {
-    id: "B0003",
-    name: "Mekelle Branch",
-    location: "Downtown, Mekelle",
-    manager: "Jane Smith",
-    managerStatus: "Assigned",
-    totalOrders: 780,
-    activeOrders: 45,
-    staff: 15,
-    revenue: "$40,000",
-    efficiency: 94,
-    status: "Active",
-  },
-  {
-    id: "B0004",
-    name: "Bahir Dar Branch",
-    location: "Lake Side, Bahir Dar",
-    manager: "Not Assigned",
-    managerStatus: "Vacant",
-    totalOrders: 670,
-    activeOrders: 38,
-    staff: 12,
-    revenue: "$38,000",
-    efficiency: 96,
-    status: "Active",
-  },
-  {
-    id: "B0005",
-    name: "Hawassa Branch",
-    location: "Main Street, Hawassa",
-    manager: "Mike Johnson",
-    managerStatus: "Assigned",
-    totalOrders: 800,
-    activeOrders: 55,
-    staff: 16,
-    revenue: "$42,000",
-    efficiency: 95,
-    status: "Active",
-  },
-];
 
-const metrics = [
-  {
-    title: "Total Branches",
-    value: "5",
-    change: "2 new this month",
-    trend: "up",
-    icon: <MapPin className="h-5 w-5" />,
-    color: "blue",
-  },
-  {
-    title: "Active Orders",
-    value: "285",
-    change: "15% increase",
-    trend: "up",
-    icon: <Package className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    title: "Total Staff",
-    value: "86",
-    change: "8 new hires",
-    trend: "up",
-    icon: <Users className="h-5 w-5" />,
-    color: "purple",
-  },
-  {
-    title: "Manager Vacancies",
-    value: "2",
-    change: "Need assignment",
-    trend: "down",
-    icon: <IoPerson className="h-5 w-5" />,
-    color: "orange",
-  },
-];
 interface Metric {
   title: string;
   value: number | string;
@@ -458,7 +357,17 @@ interface BranchDashboardStats {
                 <TableRow
                   key={index}
                   className="border-gray-100 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/branch/details/${branch.id}`)}
+                  onClick={() =>{
+                    
+                    
+                      navigate(
+                        `/branch/details/${branch.id}?branch=${encodeURIComponent(
+                          JSON.stringify(branch)
+                        )}`
+                      )
+                    
+                    // navigate(`/branch/details/${branch.id}`)
+                  }}
                 >
                   <TableCell>
                     <Checkbox />
@@ -504,7 +413,7 @@ interface BranchDashboardStats {
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
                     {/* {branch.totalOrders.toLocaleString()} */}
-                   {branch?.analytics?.totalOrders}
+                   {Number(branch?.totalOrders).toFixed()}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -512,17 +421,17 @@ interface BranchDashboardStats {
                       className="bg-blue-100 text-blue-700"
                     >
                       {/* {branch.activeOrders} */}
-                   {branch?.analytics?.activeOrders}
+                   {Number(branch?.activeOrders).toFixed()}
                       
                     </Badge>
                   </TableCell>
                   <TableCell className="text-gray-600">
                     {/* {branch.staff} */}
-                    {branch?.analytics?.staffCount}
+                    {Number(branch?.staffCount).toFixed()}
                     </TableCell>
                   <TableCell className="font-medium text-gray-900">
                     {/* {branch.revenue} */}
-                    {branch?.analytics?.revenue}
+                    {Number(branch?.revenue).toFixed(2)}
 
                     
                   </TableCell>
@@ -532,7 +441,7 @@ interface BranchDashboardStats {
                         <div
                           className="bg-blue-600 h-2 rounded-full"
                           // style={{ width: `${branch.efficiency}%` }}  Will Change
-                             style={{width:"80%"}} 
+                             style={{width:`${branch?.efficiency}%`}} 
                         ></div>
                       </div>
                       <span className="text-sm font-medium">

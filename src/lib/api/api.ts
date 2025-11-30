@@ -23,7 +23,9 @@ interface RefreshResponse {
 }
 
 const api: AxiosInstance = axios.create({
-  baseURL: "https://express-service-app-zejj.onrender.com",
+  // baseURL: "https://express-service-app-zejj.onrender.com",
+  baseURL: "http://localhost:10000",
+
   headers: {
     "Content-Type": "application/json",
   },

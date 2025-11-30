@@ -108,13 +108,19 @@ export default function OrderDetails() {
   const navigate = useNavigate();
   const [selectedDriver, setSelectedDriver] = useState("");
   const [groupedOrders, setGroupedOrders] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState(mockOrder.category);
+  const query = new URLSearchParams(location.search);
 
+  const orderDetail = query.get("order")
+    ? JSON.parse(query.get("order")!)
+    : null;
+    const [selectedCategory, setSelectedCategory] = useState(orderDetail.category);
+
+console.log("orderdetail: ",orderDetail)
   const initialValues = {
-    fulfillmentDestination: "In-town",
-    serviceType: mockOrder.serviceType,
+    fulfillmentDestination: orderDetail?.shippingScope,
+    serviceType: orderDetail.serviceType,
     driverId: "",
-    fragilityLevel: mockOrder.isFragile ? "High" : "Low",
+    fragilityLevel: orderDetail.isFragile ? "true" : "false",
     category: mockOrder.category,
     specialInstructions: "",
     priority: "Normal",
@@ -181,7 +187,7 @@ export default function OrderDetails() {
                 </Button>
                 <div>
                   <h1 className="text-2xl font-medium text-gray-700">
-                    Order Details - {mockOrder.id}
+                    Order Details - {orderDetail.trackingCode}
                   </h1>
                   <p className="text-gray-500">
                     Manage order fulfillment and delivery
@@ -223,13 +229,13 @@ export default function OrderDetails() {
                           Customer
                         </Label>
                         <p className="text-lg font-semibold">
-                          {mockOrder.customer}
+                          {orderDetail?.customer?.name}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {mockOrder.email}
+                          {orderDetail?.customer?.email}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {mockOrder.phone}
+                          {orderDetail?.customer?.phone}
                         </p>
                       </div>
                       <div>
@@ -241,13 +247,13 @@ export default function OrderDetails() {
                             variant="secondary"
                             className="bg-orange-100 text-orange-700"
                           >
-                            {mockOrder.payment}
+                            {orderDetail.status}
                           </Badge>
                           <Badge
                             variant="secondary"
                             className="bg-red-100 text-red-700"
                           >
-                            {mockOrder.fulfillment}
+                            {orderDetail.fulfillmentType}
                           </Badge>
                         </div>
                       </div>
@@ -259,7 +265,7 @@ export default function OrderDetails() {
                           Total
                         </Label>
                         <p className="text-lg font-semibold">
-                          {mockOrder.total}
+                          {orderDetail?.finalPrice} ETB
                         </p>
                       </div>
                       <div>
@@ -267,7 +273,7 @@ export default function OrderDetails() {
                           Weight
                         </Label>
                         <p className="text-lg font-semibold">
-                          {mockOrder.weight} kg
+                          {orderDetail?.weight} kg
                         </p>
                       </div>
                       <div>
@@ -275,7 +281,7 @@ export default function OrderDetails() {
                           Items
                         </Label>
                         <p className="text-lg font-semibold">
-                          {mockOrder.items}
+                          {orderDetail?.items}
                         </p>
                       </div>
                     </div>
@@ -304,11 +310,11 @@ export default function OrderDetails() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="In-town">Town</SelectItem>
-                            <SelectItem value="Regional">Regional</SelectItem>
-                            <SelectItem value="International">
-                              International
-                            </SelectItem>
+                          <SelectItem value="TOWN">TOWN</SelectItem>
+                      <SelectItem value="REGIONAL">REGIONAL</SelectItem>
+                      <SelectItem value="INTERNATIONAL">
+                        INTERNATIONAL
+                      </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -325,10 +331,10 @@ export default function OrderDetails() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Standard">Standard</SelectItem>
-                            <SelectItem value="Same-day">Same-day</SelectItem>
-                            <SelectItem value="Overnight">Overnight</SelectItem>
-                            <SelectItem value="Others">Others</SelectItem>
+                          <SelectItem value="STANDARD">STANDARD</SelectItem>
+                    <SelectItem value="EXPRESS">EXPRESS</SelectItem>
+                    <SelectItem value="SAME_DAY">SAME DAY</SelectItem>
+                    <SelectItem value="OVERNIGHT">OVERNIGHT</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -417,66 +423,58 @@ export default function OrderDetails() {
                 </Card>
 
                 {/* Fragility & Category */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <IoShield className="h-5 w-5" />
-                      Fragility & Category
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="mb-2">Fragility Level</Label>
-                        <Select
-                          value={values.fragilityLevel}
-                          onValueChange={(val) =>
-                            setFieldValue("fragilityLevel", val)
-                          }
-                        >
-                          <SelectTrigger className="bg-gray-50 border-0 py-3">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Low">Low</SelectItem>
-                            <SelectItem value="Medium">Medium</SelectItem>
-                            <SelectItem value="High">High</SelectItem>
-                            <SelectItem value="Extreme">Extreme</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+           {/* Fragility & Category */}
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <IoShield className="h-5 w-5" />
+      Fragility & Category
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Fragility Level */}
+      <div>
+        <Label className="mb-2">Fragility Level</Label>
+        <Select
+          value={values.fragilityLevel}
+          onValueChange={(val) => setFieldValue("fragilityLevel", val)}
+        >
+          <SelectTrigger className="bg-gray-50 border-0 py-3">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Yes</SelectItem>
+            <SelectItem value="false">No</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-                      <div>
-                        <Label className="mb-2">Category</Label>
-                        <Select
-                          value={selectedCategory}
-                          onValueChange={setSelectedCategory}
-                        >
-                          <SelectTrigger className="bg-gray-50 border-0 py-3">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+      {/* Multi-select Categories */}
+      <div>
+        <Label className="mb-2">Category</Label>
+        <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto border p-2 rounded">
+          {categories.map((category) => (
+            <div key={category} className="flex items-center gap-2">
+              <Checkbox
+                checked={selectedCategory.includes(category)}
+                onCheckedChange={(checked) => {
+                  let updated = [...selectedCategory];
+                  if (checked) updated.push(category);
+                  else updated = updated.filter((c) => c !== category);
+                  setSelectedCategory(updated);
+                  setFieldValue("category", updated);
+                }}
+              />
+              <span>{category}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </CardContent>
+</Card>
 
-                    <div>
-                      <Label className="mb-2">Special Instructions</Label>
-                      <Field
-                        as={Textarea}
-                        name="specialInstructions"
-                        placeholder="Any special handling requirements..."
-                        className="bg-gray-50 border-0 py-3"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
 
               {/* Sidebar */}
@@ -495,11 +493,11 @@ export default function OrderDetails() {
                         Pickup Address
                       </Label>
                       <p className="text-sm text-gray-800 mt-1">
-                        {mockOrder.pickupAddress}
+                        {orderDetail?.pickupAddress?.addressLine}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         <IoTime className="inline h-3 w-3 mr-1" />
-                        {new Date(mockOrder.pickupDate).toLocaleString()}
+                        {new Date(orderDetail.pickupAddress?.createdAt).toLocaleString()}
                       </p>
                     </div>
                     <div>
@@ -507,18 +505,18 @@ export default function OrderDetails() {
                         Delivery Address
                       </Label>
                       <p className="text-sm text-gray-800 mt-1">
-                        {mockOrder.deliveryAddress}
+                        {orderDetail.deliveryAddress?.addressLine}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         <IoTime className="inline h-3 w-3 mr-1" />
-                        {new Date(mockOrder.deliveryDate).toLocaleString()}
+                        {new Date(orderDetail?.deliveryAddress?.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Related Orders Grouping */}
-                <Card>
+                {/* <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <IoPeople className="h-5 w-5" />
@@ -599,7 +597,7 @@ export default function OrderDetails() {
                       )}
                     </div>
                   </CardContent>
-                </Card>
+                </Card> */}
 
                 {/* Order Summary */}
                 <Card>
@@ -610,26 +608,26 @@ export default function OrderDetails() {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Weight:</span>
                       <span className="text-sm font-medium">
-                        {mockOrder.weight} kg
+                        {orderDetail.weight} kg
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Dimensions:</span>
                       <span className="text-sm font-medium">
-                        {mockOrder.length}×{mockOrder.width}×{mockOrder.height}{" "}
+                        {orderDetail.length}×{orderDetail.width}×{orderDetail.height}{" "}
                         cm
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Cost:</span>
                       <span className="text-sm font-medium">
-                        ${mockOrder.cost}
+                        {orderDetail.cost} ETB
                       </span>
                     </div>
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between">
                         <span className="font-medium">Total:</span>
-                        <span className="font-bold">{mockOrder.total}</span>
+                        <span className="font-bold">{orderDetail.finalPrice} ETB</span>
                       </div>
                     </div>
                   </CardContent>

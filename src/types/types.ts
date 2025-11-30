@@ -188,7 +188,12 @@ export interface Branch {
   createdAt?: string;
   updatedAt?: string;
   address: any;
-  analytics: any;
+  totalOrders: number;
+  activeOrders: number;
+  interbranchActive: number;
+  staffCount: number;
+  revenue: number;
+  efficiency: number;
 }
 
 export interface Staff {
@@ -196,12 +201,47 @@ export interface Staff {
   name: string;
   email: string;
   phone: string;
+  manager: any;
   emailVerified: boolean;
   role: Role;
   branch: Branch;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface FleetDriver {
+  id: string;
+  userId: string;
+  vehicleId: string;
+  status: string;
+  availablityStatus: string;
+  type: string;
+  licenseNumber: string | null;
+  licenseExpiry: string | null;
+  licenseIssue: string | null;
+  frontImageUrl: string | null;
+  backImageUrl: string | null;
+  verifiedByOCR: boolean;
+  currentLat: number;
+  currentLon: number;
+  updatedAt: string;
+  createdBy: string | null;
+  user: any;
+}
+
+export interface FleetVehicle {
+  id: string;
+  plateNumber: string;
+  type: string;
+  status: string;
+  model: string;
+  driverId: string;
+  maxLoad: number;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+  driver: FleetDriver;
 }
 
 /** ───── Vehicle ───── */
@@ -214,47 +254,126 @@ export interface Vehicle {
   driverId?: string;
   createdAt: string;
   updatedAt: string;
+  user: any;
 }
 
 /** ───── Order ───── */
+export interface CustomerAddress {
+  id: string;
+  label: string;
+  addressLine: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  lat: string;
+  long: string;
+  purpose: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  branchId: string | null;
+  createdBy: string | null;
+}
+
+export interface CustomerRole {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+}
+
+export interface CustomerCorporateInfo {
+  // Assuming corporate info can have its own fields
+  // Keep as nullable for now since the JSON shows null
+}
+
+export interface CustomerPreferences {
+  // Assuming preferences structure, nullable for now
+}
+
+export interface Customer {
+  id: string;
+  customerId: string;
+  name: string;
+  email: string;
+  phone: string;
+  type: "Individual" | "Corporate";
+  status: "Active" | "Inactive" | "Suspended";
+  registrationDate: string;
+  lastOrderDate: string;
+  totalOrders: number;
+  totalSpent: number;
+  loyaltyPoints: number;
+  address: string;
+  city: string;
+  notes: string;
+  // Corporate specific fields
+  companyName?: string;
+  contactPerson?: string;
+  contractNumber?: string;
+  creditLimit?: number;
+  paymentTerms?: string;
+  // Additional fields
+  preferredLanguage: string;
+  communicationPreference: "Email" | "SMS" | "Phone";
+  marketingOptIn: boolean;
+
+  isStaff: boolean;
+  isSuperAdmin: boolean;
+  createdAt: string;
+  branch: string | null;
+  addresses: CustomerAddress[];
+  customerType: string;
+  role: CustomerRole;
+  corporateInfo: CustomerCorporateInfo | null;
+  preferences: CustomerPreferences | null;
+}
+
+export interface Receiver {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+}
+
 export interface Order {
   id: string;
   trackingCode: string;
-  customerId: string;
-  receiverId?: string;
-  branchId?: string;
-  pickupDriverId?: string;
-  deliveryDriverId?: string;
-  status: OrderStatus;
-  serviceType: ServiceType;
-  fulfillmentType: FulfillmentType;
+  serviceType: "EXPRESS" | string;
+  fulfillmentType: "PICKUP" | string;
+  pickupDriverId: string | null;
+  deliveryDriverId: string | null;
+  status: string;
   weight: number;
-  length?: number;
-  width?: number;
-  height?: number;
-  category?: ParcelCategory;
+  length: number;
+  width: number;
+  height: number;
+  category: string[];
   isFragile: boolean;
-  shipmentType?: ShipmentType;
-  shippingScope?: ShippingScope;
+  shipmentType: "PARCEL" | string;
+  shippingScope: "TOWN" | string;
   isUnusual: boolean;
-  unusualReason?: string;
-  pickupAddressId?: string;
-  pickupDate?: string;
-  deliveryAddressId?: string;
-  deliveryDate?: string;
-  pickupConfirmed: boolean;
-  dropoffConfirmed: boolean;
-  actualPickupDate?: string;
-  actualDropoffDate?: string;
-  notes?: string;
-  cost?: number;
-  distance?: number;
-  validatedBy?: string;
-  validatedAt?: string;
-  validatedNotes?: string;
-  quantity?: number;
-  createdAt: string;
-  updatedAt: string;
+  unusualReason: string | null;
+  pickupAddressId: string;
+  pickupDate: string; // ISO date string
+  deliveryAddressId: string;
+  deliveryAddress: any;
+  deliveryDate: string; // ISO date string
+  distance: number;
+  validatedBy: string | null;
+  validatedNotes: string | null;
+  estimatedDeliveryAt: string | null;
+  actualDeliveryAt: string | null;
+  batchId: string | null;
+  finalPrice: number;
+  currency: string;
+  customer: Customer;
+  receiver: Receiver;
+  branch: any | null; // Replace 'any' with proper type if known
+  payment: any | null; // Replace 'any' with proper type if known
 }
 
 /** ───── Driver ───── */
@@ -354,6 +473,12 @@ export type BranchDetailResponse = ApiResponse<Branch>;
 
 // Branch list
 export type BranchListResponse = PaginatedResponse<Branch>;
+
+export type CustomerDetailResponse = ApiResponse<Customer>;
+export type CustomerListResponse = PaginatedResponse<Customer>;
+
+export type FleetDetailResponse = ApiResponse<FleetVehicle>;
+export type FleetListResponse = PaginatedResponse<FleetVehicle>;
 
 // Generic create/update/delete response
 export interface GenericResponse {

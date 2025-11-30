@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,16 @@ import {
   TrendingUp,
   DollarSign,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import type {
+  Branch,
+  BranchDetailResponse,
+  Pagination,
+  Staff,
+  StaffListResponse,
+} from "@/types/types";
+import api from "@/lib/api/api";
+import { Input } from "@/components/ui/input";
 
 // Mock branch data - in real app, this would come from API
 const branchData = {
@@ -111,7 +121,112 @@ const operationsHistory = [
 export default function BranchDetailsPage() {
   const navigate = useNavigate();
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  const [loadingBrand, setLoadingBrand] = useState(false);
+  const [branch, setBranch] = useState<Branch | null>(null);
+  const { id } = useParams();
+  const [staffs, setStaffs] = useState<Staff[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [showManagerDropdown, setShowManagerDropdown] = useState(false);
+  const [managerSearch, setManagerSearch] = useState("");
+  const [managerId, setManagerId] = useState("");
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
 
+  const branchDetail = query.get("branch")
+    ? JSON.parse(query.get("branch")!)
+    : null;
+console.log(branchDetail)
+  const getPerformanceLevel = (eff: number) => {
+    if (eff > 85) return "Excellent";
+    if (eff > 70) return "Good";
+    if (eff > 60) return "Average";
+    return "Needs Improvement";
+  };
+  const featchBranchDetail = async () => {
+    try {
+      setLoadingBrand(true);
+
+      const branch = await api.get<BranchDetailResponse>(`/branch/${id}`);
+      setManagerSearch(
+        `${branch.data.data?.manager?.name} (${branch.data.data?.manager?.id})`
+      );
+
+      setBranch(branch.data.data);
+      setLoadingBrand(false);
+    } catch (error: any) {
+      setLoadingBrand(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchBranchDetail();
+  }, []);
+
+  const featchStaffs = async (page = 1, limit = 10) => {
+    try {
+      setLoadingStaff(true);
+
+      const staffs = await api.get<StaffListResponse>(
+        `/staff?search=all:${searchText}&page=${1}&pageSize=${20}`
+      );
+      setStaffs(staffs.data.data);
+      setPagination(staffs.data.pagination);
+
+      toast.success(staffs.data.message);
+      setLoadingStaff(false);
+    } catch (error: any) {
+      setLoadingStaff(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchStaffs();
+  }, [searchText]);
+
+  const selectManager = async (
+    manager: { id: string; name: string; email: string }
+    // setFieldValue: (field: string, value: string) => void
+  ) => {
+    // setFieldValue("managerID", manager.id);
+    // setFieldValue("managerName", manager.name);
+    setManagerId(manager.id);
+    setManagerSearch(`${manager.name} (${manager.id})`);
+    setShowManagerDropdown(false);
+    try {
+      // setLoading(true);
+      const data = { managerId: manager.id, branchId: id };
+
+      const res = await api.post("/branch/assign-manager", data);
+      toast.success(res.data?.message);
+      // navigate("/branch");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Somethign went wrong!");
+    } finally {
+      // setLoading(false);
+    }
+  };
+
+  const clearManager = () => {
+    // setFieldValue("managerID", "");
+    // setFieldValue("managerName", "");
+    setManagerId("");
+
+    setManagerSearch("");
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Active":
@@ -159,7 +274,7 @@ export default function BranchDetailsPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Branch Details - #{branchData.id}
+              Branch Details - #{branch?.name}
             </h1>
             <p className="text-gray-500 text-sm">
               Manage branch operations and staff coordination
@@ -198,10 +313,10 @@ export default function BranchDetailsPage() {
                     Branch Name
                   </Label>
                   <p className="text-lg font-semibold text-gray-900">
-                    {branchData.name}
+                    {branch?.name}
                   </p>
-                  <p className="text-sm text-gray-500">{branchData.id}</p>
-                  <p className="text-sm text-gray-500">{branchData.location}</p>
+                  <p className="text-sm text-gray-500">{branch?.id}</p>
+                  <p className="text-sm text-gray-500">{branch?.location}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">
@@ -209,15 +324,15 @@ export default function BranchDetailsPage() {
                   </Label>
                   <div className="flex items-center space-x-2 mt-1">
                     <Badge className={getStatusColor(branchData.status)}>
-                      ● {branchData.status}
+                      ● {branchDetail?.status}
                     </Badge>
-                    <Badge
+                    {/* <Badge
                       className={getManagerStatusColor(
                         branchData.managerStatus
                       )}
                     >
                       {branchData.managerStatus}
-                    </Badge>
+                    </Badge> */}
                   </div>
                 </div>
               </div>
@@ -227,7 +342,7 @@ export default function BranchDetailsPage() {
                     Total Orders
                   </Label>
                   <p className="text-lg font-semibold text-gray-900">
-                    {branchData.totalOrders.toLocaleString()}
+                    {Number(branchDetail?.totalOrders)}
                   </p>
                 </div>
                 <div>
@@ -235,7 +350,7 @@ export default function BranchDetailsPage() {
                     Active Orders
                   </Label>
                   <p className="text-lg font-semibold text-gray-900">
-                    {branchData.activeOrders}
+                    {Number(branchDetail?.activeOrders)}
                   </p>
                 </div>
                 <div>
@@ -243,7 +358,7 @@ export default function BranchDetailsPage() {
                     Staff Count
                   </Label>
                   <p className="text-lg font-semibold text-gray-900">
-                    {branchData.staff}
+                    {Number(branchDetail?.staffCount)}
                   </p>
                 </div>
               </div>
@@ -319,21 +434,63 @@ export default function BranchDetailsPage() {
                 <Label className="text-sm font-medium text-gray-600">
                   Select Manager
                 </Label>
-                <Select defaultValue="assigned">
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Choose a manager" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="assigned">John Doe (Current)</SelectItem>
-                    <SelectItem value="stf-002">
-                      Tigist Hailu (STF-002)
-                    </SelectItem>
-                    <SelectItem value="stf-005">
-                      Yohannes Desta (STF-005)
-                    </SelectItem>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                  </SelectContent>
-                </Select>
+
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Search managers by name, ID, or email..."
+                    value={managerSearch}
+                    onChange={(e) => {
+                      setManagerSearch(e.target.value);
+                      setShowManagerDropdown(true);
+                      if (!e.target.value) {
+                        clearManager();
+                      }
+                    }}
+                    onFocus={() => setShowManagerDropdown(true)}
+                    onBlur={() =>
+                      setTimeout(() => setShowManagerDropdown(false), 200)
+                    }
+                    className="py-7"
+                  />
+                  {managerId && (
+                    <button
+                      type="button"
+                      onClick={() => clearManager()}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {showManagerDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {staffs.length > 0 ? (
+                      staffs.map((manager) => (
+                        <div
+                          key={manager.id}
+                          onClick={() => selectManager(manager)}
+                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">
+                            {manager.name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            ID: {manager.id}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {manager.email}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-gray-500 text-center">
+                        No managers found
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -352,35 +509,20 @@ export default function BranchDetailsPage() {
                   <Label className="text-sm font-medium text-gray-600">
                     Performance Level
                   </Label>
-                  <Select defaultValue="excellent">
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="excellent">Excellent</SelectItem>
-                      <SelectItem value="good">Good</SelectItem>
-                      <SelectItem value="average">Average</SelectItem>
-                      <SelectItem value="needs-improvement">
-                        Needs Improvement
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  <div className="mt-1 border rounded-md px-3 py-2 bg-gray-50 text-gray-800">
+                    {getPerformanceLevel(branchDetail?.efficiency ?? 0)}
+                  </div>
                 </div>
+
                 <div>
                   <Label className="text-sm font-medium text-gray-600">
-                    Efficiency Target
+                    Efficiency
                   </Label>
-                  <Select defaultValue="95">
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select target" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="95">95%</SelectItem>
-                      <SelectItem value="90">90%</SelectItem>
-                      <SelectItem value="85">85%</SelectItem>
-                      <SelectItem value="80">80%</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  <div className="mt-1 border rounded-md px-3 py-2 bg-gray-50 text-gray-800">
+                    {branch?.efficiency ?? 0}%
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -404,7 +546,7 @@ export default function BranchDetailsPage() {
                     Full Address
                   </Label>
                   <span className="text-sm text-gray-900">
-                    {branchData.address}
+                    {branch?.location}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -504,7 +646,7 @@ export default function BranchDetailsPage() {
                   <div className="flex items-center space-x-1">
                     <DollarSign className="h-4 w-4 text-gray-400" />
                     <p className="text-sm font-semibold text-gray-900">
-                      {branchData.revenue}
+                      {branchDetail?.revenue}
                     </p>
                   </div>
                 </div>
@@ -518,22 +660,22 @@ export default function BranchDetailsPage() {
                     <div className="w-20 bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${branchData.efficiency}%` }}
+                        style={{ width: `${branchDetail?.efficiency}%` }}
                       ></div>
                     </div>
                     <span className="text-sm font-medium">
-                      {branchData.efficiency}%
+                      {branchDetail?.efficiency}%
                     </span>
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">
-                    Daily Capacity
+                  Total Orders
                   </Label>
                   <div className="flex items-center space-x-1">
                     <Package className="h-4 w-4 text-gray-400" />
                     <span className="text-sm text-gray-900">
-                      {branchData.capacity}
+                      {branchDetail?.totalOrders}
                     </span>
                   </div>
                 </div>

@@ -19,6 +19,7 @@ interface ConfirmationModalProps {
   cancelText?: string;
   variant?: "danger" | "warning" | "info";
   isLoading?: boolean;
+  children:any
 }
 
 export default function ConfirmationModal({
@@ -31,6 +32,7 @@ export default function ConfirmationModal({
   cancelText = "Cancel",
   variant = "danger",
   isLoading = false,
+  children
 }: ConfirmationModalProps) {
   if (!isOpen) return null;
 
@@ -94,6 +96,9 @@ export default function ConfirmationModal({
 
         <CardContent className="space-y-6">
           {/* Icon and Description */}
+          <div className="my-2">
+            {children}
+          </div>
           <div className="flex flex-col items-center text-center">
             <div
               className={`w-16 h-16 ${variantStyles.iconBg} rounded-full flex items-center justify-center mb-4`}

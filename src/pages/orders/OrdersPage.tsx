@@ -27,6 +27,7 @@ import TablePagination from "@/components/common/TablePagination";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
 import type { Order, OrderListResponse, Pagination } from "@/types/types";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export interface OrderStats {
   totalOrders: {
@@ -258,15 +259,20 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  const [isApproveLoading, setIsApproveLoading] = useState(false);
+  const [selectedTab,setSelectedTab] =useState("All")
 
+  const [reason, setReason] = useState("");
 
 
   const featchOrders = async (page=1,limit=10) => {
     try {
       setLoading(true);
 
-      const staffs = await api.get<OrderListResponse>(`/order`);
+      const staffs = await api.get<OrderListResponse>(`/order?search=all:${searchText}&page=${page}&pageSize=${limit}`)
       setOrders(staffs.data.data);
       setPagination(staffs.data.pagination);
       toast.success(staffs.data.message);
@@ -284,7 +290,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     featchOrders(currentPage,pageSize);
-  }, [searchText,currentPage,pageSize]);
+  }, [searchText,currentPage,pageSize,activeTab]);
 
 
   const fetchOrderSummary = async () => {
@@ -347,6 +353,28 @@ export default function OrdersPage() {
     setPageSize(size);
     setCurrentPage(1); // Reset to first page when changing page size
   };
+
+
+
+const handleApprove = async ()=>{
+  try {
+    setIsApproveLoading(true)
+    const res = await api.post('order/approve',{
+       "orderId": selectedOrder?.id,
+    "reason": reason
+
+    })
+    toast.success(res.data.message)
+    featchOrders(currentPage,pageSize)
+    setIsDialogOpen(false)
+    setIsApproveLoading(false)
+
+  } catch (error:any) {
+    toast.error(error?.response.data.message||"Something went wrong!")
+    setIsApproveLoading(false)
+    
+  }
+}
 
   return (
     <div className="min-h-screen">
@@ -425,7 +453,7 @@ export default function OrdersPage() {
                 className={`hover:bg-white cursor-pointer ${
                   activeTab === tab
                     ? "bg-white text-gray-900 "
-                    : "text-gray-600 hover:text-gray-900"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
                 {tab}
@@ -435,7 +463,11 @@ export default function OrdersPage() {
           {/* Search */}
           <div className="relative w-80">
             <Search className="absolute left-3 top-4 text-gray-400 h-4 w-4" />
-            <Input placeholder="Search..." className="pl-10 pr-3 w-full py-6" />
+            <Input
+            onChange={(val) => setSearchText(val.target.value)}
+            value={searchText}
+            
+            placeholder="Search..." className="pl-10 pr-3 w-full py-6" />
           </div>
         </div>
 
@@ -486,12 +518,12 @@ export default function OrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedOrders.map((order, index) => (
+              {orders.map((order, index) => (
                 <TableRow
                   key={index}
                   className="border-gray-100 hover:bg-gray-50 cursor-pointer"
                   onClick={() =>
-                    navigate(`/order/details/${order.id.replace("#", "")}`)
+                    navigate(`/order/details/${order.id.replace("#", "")}?order=${encodeURIComponent(JSON.stringify(order))}`)
                   }
                 >
                   <TableCell>
@@ -502,12 +534,12 @@ export default function OrdersPage() {
                       variant="ghost"
                       className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
                     >
-                      {order.id}
+                      {order?.trackingCode}
                     </Button>
                   </TableCell>
-                  <TableCell className="text-gray-600">{order.date}</TableCell>
+                  <TableCell className="text-gray-600">{order.pickupDate}</TableCell>
                   <TableCell className="text-gray-900">
-                    {order.customer}
+                    {order.customer.name}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -520,33 +552,36 @@ export default function OrdersPage() {
                           : "bg-orange-100 text-orange-700 hover:bg-orange-100"
                       }
                     >
-                      ● {order.payment}
+                      ● {order?.payment?.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
-                    {order.total}
+                    {order.finalPrice} ETB
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {order.delivery}
+                    {/* {order.delivery} */} N/A
                   </TableCell>
-                  <TableCell className="text-gray-600">{order.items}</TableCell>
                   <TableCell className="text-gray-600">
-                    {order.destination}
+                    {/* {order.items} */} 2 Items
+
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {order.deliveryAddress?.addressLine}
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant={
-                        order.fulfillment === "Fulfilled"
+                        order.fulfillmentType === "Fulfilled"
                           ? "default"
                           : "secondary"
                       }
                       className={
-                        order.fulfillment === "Fulfilled"
+                        order.fulfillmentType === "Fulfilled"
                           ? "bg-green-100 text-green-700 hover:bg-green-100"
                           : "bg-red-100 text-red-700 hover:bg-red-100"
                       }
                     >
-                      ● {order.fulfillment}
+                      ● {order.fulfillmentType}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -566,6 +601,12 @@ export default function OrdersPage() {
                       variant="ghost"
                       size="sm"
                       className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // navigate(`/staff/edit/${member.id}`);
+                        setIsDialogOpen(true); //
+                        setSelectedOrder(order)
+                      }}
                     >
                       Approve
                     </Button>
@@ -584,6 +625,23 @@ export default function OrdersPage() {
           />
         </Card>
       </main>
+
+      <ConfirmationModal
+  isOpen={isDialogOpen}
+  onClose={()=>setIsDialogOpen(false)}
+  title="Delete Staff Member"
+  description="Are you sure you want to delete this staff member? This action cannot be undone."
+  onConfirm={handleApprove}
+  variant="info"
+  confirmText='Approve'
+  // loading={deleteLaoding}
+>
+<textarea
+      value={reason}
+      onChange={(e) => setReason(e.target.value)}
+      placeholder="reason "
+      className=" placeholder-gray-500 py-4 h-32 resize-none border rounded-md px-4 w-full"
+    /></ConfirmationModal>
     </div>
   );
 }

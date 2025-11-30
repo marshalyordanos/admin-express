@@ -19,6 +19,8 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import * as Yup from "yup";
+import api from "@/lib/api/api";
+import toast from "react-hot-toast";
 // import { useOrders } from "@/hooks/useOrders"; // custom hook
 
 const OrderValidationSchema = Yup.object().shape({
@@ -80,6 +82,7 @@ export default function OrderForm() {
   const [estimatePrice, setEstimatePrice] = useState(""); // sample estimate
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const onEstimate = () => {
     const price = Math.ceil(Math.random() * 6000 + 1000);
@@ -101,22 +104,88 @@ export default function OrderForm() {
     return `${prefix}${timestamp}${random}`;
   };
 
-  const handleSubmit = (
-    _values: unknown,
+  const handleSubmit = async(
+    _values: any,
     { resetForm }: { resetForm: () => void }
   ) => {
+    console.log("-----------------------------------------: ========: ",_values)
+    const converted = {
+      name:_values.name,
+      email:_values.email,
+      phone:_values.phone,
+
+      // receiver info
+      receiverName: _values.receiverName,
+      receiverEmail: _values.receiverEmail,
+      receiverPhone: _values.receiverPhone,
+    
+      // service
+      serviceType: _values.serviceType,
+      fulfillmentType: _values.fulfillmentType,
+    
+      // package details
+      weight: _values.weight,
+      category: [_values.category],
+      isFragile: _values.isFragile,
+      shipmentType: _values.shipmentType,
+      shippingScope: _values.destination,
+      length: _values.length,
+      width: _values.width,
+      height: _values.height,
+    
+      // locations (converted to template structure)
+      pickupAddress: {
+        lat: _values.pickupLatitude,
+        long: _values.pickupLongitude
+      },
+    
+      deliveryAddress: {
+        lat: _values.receiverLatitude,
+        long: _values.receiverLongitude
+      },
+    
+      // unusual item fields
+      isUnusual: _values.unUsualItem,
+      unusualReason: _values.unUsualityReason,
+    
+      // extra from your input (since they exist)
+      quantity: _values.quantity,
+      // pickupAddressText: _values.pickupAddress,
+      // deliveryAddressText: _values.receiverAddress,
+      // senderName: _values.name,
+      // senderPhone: _values.phone,
+      // senderEntity: _values.senderEntity,
+      // shippingScope: _values.destination,
+      cost: _values.cost
+    };
+    console.log("values: ",converted)
+
+    try {
+      setLoading(true);
+      
+      const res = await api.post("/order",converted);
+      console.log("res of create order: ",res.data)
+      toast.success(res.data?.message);
+      const tracking = generateTrackingNumber();
+      setTrackingNumber(tracking);
+      setIsSuccessModalOpen(true);
+      // resetForm();
+      // setEstimatePrice("");
+    } catch (error: any) {
+      console.log(error.response?.data)
+      toast.error(error?.response?.data?.message || "Somethign went wrong!");
+    } finally {
+      setLoading(false);
+    }
     // Generate tracking number
-    const tracking = generateTrackingNumber();
-    setTrackingNumber(tracking);
+   
 
     // Show success modal
-    setIsSuccessModalOpen(true);
 
     // Reset form after a short delay
-    setTimeout(() => {
-      resetForm();
-      setEstimatePrice("");
-    }, 1000);
+    // setTimeout(() => {
+    
+    // }, 1000);
   };
 
   const handleCloseModal = () => {
@@ -324,9 +393,10 @@ export default function OrderForm() {
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="sameday">Same-day</SelectItem>
-                    <SelectItem value="overnight">Overnight</SelectItem>
+                    <SelectItem value="STANDARD">STANDARD</SelectItem>
+                    <SelectItem value="EXPRESS">EXPRESS</SelectItem>
+                    <SelectItem value="SAME_DAY">SAME DAY</SelectItem>
+                    <SelectItem value="OVERNIGHT">OVERNIGHT</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.serviceType && touched.serviceType && (
@@ -394,8 +464,8 @@ export default function OrderForm() {
                       <SelectValue placeholder="Select shipment type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="parcel">Parcel</SelectItem>
-                      <SelectItem value="courier">Courier</SelectItem>
+                      <SelectItem value="PARCEL">PARCEL</SelectItem>
+                      <SelectItem value="CARRIER">CARRIER</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -426,7 +496,7 @@ export default function OrderForm() {
                     <p className="text-red-500 text-sm mt-1">{errors.weight}</p>
                   )}
                 </div>
-                {values.shipmentType === "courier" ? (
+                {values.shipmentType === "PARCEL" ? (
                   <>
                     <div>
                       <Label className="mb-1">Length</Label>
@@ -545,10 +615,10 @@ export default function OrderForm() {
                       <SelectValue placeholder="Select destination" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="town">Town</SelectItem>
-                      <SelectItem value="regional">Regional</SelectItem>
-                      <SelectItem value="international">
-                        International
+                      <SelectItem value="TOWN">TOWN</SelectItem>
+                      <SelectItem value="REGIONAL">REGIONAL</SelectItem>
+                      <SelectItem value="INTERNATIONAL">
+                        INTERNATIONAL
                       </SelectItem>
                     </SelectContent>
                   </Select>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import api from "@/lib/api/api";
+import type { Pagination } from "@/types/types";
+import toast from "react-hot-toast";
 
 const maintenanceLogs = [
   {
@@ -194,8 +197,37 @@ export default function MaintenanceLog() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchText, setSearchText] = useState("");
+  const [fleetLogs,setFleetLogs] =useState<any>([])
   const navigate = useNavigate();
+
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+
+  const featchFleetLogs = async (page=1,limit=10) => {
+    try {
+      setLoading(true);
+
+      const staffs = await api.get<any>(`/fleet/maintenance?search=all:${searchText}&page=${page}&pageSize=${limit}`);
+      setFleetLogs(staffs.data.data);
+      setPagination(staffs.data.pagination);
+      toast.success(staffs.data.message)
+      setLoading(false);
+    } catch (error: any) {
+      setLoading(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchFleetLogs(currentPage,pageSize);
+  }, [searchText,currentPage,pageSize]);
+
 
   // Filter logs
   const filteredLogs = maintenanceLogs.filter((log) => {
@@ -320,7 +352,7 @@ export default function MaintenanceLog() {
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {metrics.map((metric, index) => (
                 <Card key={index} className="border-gray-200">
                   <CardContent className="p-4">
@@ -343,7 +375,7 @@ export default function MaintenanceLog() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+            </div> */}
 
             {/* Filters and Search */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -400,43 +432,43 @@ export default function MaintenanceLog() {
                     >
                       Vehicle
                     </TableHead>
-                    <TableHead
+                    {/* <TableHead
                       className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort("type")}
                     >
                       Type
-                    </TableHead>
+                    </TableHead> */}
                     <TableHead className="text-gray-600 font-medium">
                       Service Description
                     </TableHead>
-                    <TableHead className="text-gray-600 font-medium">
+                    {/* <TableHead className="text-gray-600 font-medium">
                       Provider
-                    </TableHead>
-                    <TableHead
+                    </TableHead> */}
+                    {/* <TableHead
                       className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort("mileage")}
                     >
                       Mileage
-                    </TableHead>
+                    // </TableHead> */}
                     <TableHead
                       className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort("cost")}
                     >
                       Cost
                     </TableHead>
-                    <TableHead
+                    {/* <TableHead
                       className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort("status")}
                     >
                       Status
-                    </TableHead>
-                    <TableHead className="text-gray-600 font-medium">
+                    </TableHead> */}
+                    {/* <TableHead className="text-gray-600 font-medium">
                       Next Service
-                    </TableHead>
+                    </TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedLogs.map((log) => (
+                  {fleetLogs.map((log:any) => (
                     <TableRow
                       key={log.id}
                       className="cursor-pointer hover:bg-gray-50"
@@ -457,45 +489,45 @@ export default function MaintenanceLog() {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium text-blue-600">
-                            {log.plateNumber}
+                            {log?.vehicle?.plateNumber}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {log.vehicleId}
+                            {log?.vehicle?.model}
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <Badge
                           variant="secondary"
                           className={getTypeColor(log.type)}
                         >
                           {log.type}
                         </Badge>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         <div className="flex flex-col max-w-[250px]">
                           <span className="font-medium truncate">
                             {log.service}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {log.technician}
+                            {log.maintenance}
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{log.provider}</span>
-                      </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
+                        <span className="text-sm">{log.createdBy}</span>
+                      </TableCell> */}
+                      {/* <TableCell>
                         <span className="font-medium">
                           {log.mileage.toLocaleString()} km
                         </span>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         <span className="font-medium text-green-600">
                           {log.cost.toLocaleString()} ETB
                         </span>
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <Badge
                           variant="secondary"
                           className={getStatusColor(log.status)}
@@ -508,8 +540,8 @@ export default function MaintenanceLog() {
                           )}
                           {log.status}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
+                      </TableCell> */}
+                      {/* <TableCell>
                         {log.nextService ? (
                           <div className="flex flex-col">
                             <span className="text-sm">
@@ -529,7 +561,7 @@ export default function MaintenanceLog() {
                         ) : (
                           <span className="text-sm text-gray-400">N/A</span>
                         )}
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   ))}
                 </TableBody>

@@ -14,21 +14,23 @@ import Button from "@/components/common/Button";
 // import api from "@/lib/api/api";
 import * as Yup from "yup";
 import { IoArrowBack, IoCarSport } from "react-icons/io5";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import api from "@/lib/api/api";
 
 const VehicleValidationSchema = Yup.object().shape({
   plateNumber: Yup.string().required("Plate number is required"),
   type: Yup.string().required("Vehicle type is required"),
-  brand: Yup.string().required("Brand is required"),
+  // brand: Yup.string().required("Brand is required"),
   model: Yup.string().required("Model is required"),
-  year: Yup.number()
-    .min(1990, "Year must be 1990 or later")
-    .max(new Date().getFullYear() + 1, "Invalid year")
-    .required("Year is required"),
-  ownership: Yup.string().required("Ownership type is required"),
-  fuelType: Yup.string().required("Fuel type is required"),
-  capacity: Yup.string().required("Capacity is required"),
-  insuranceExpiry: Yup.date().required("Insurance expiry date is required"),
+  // year: Yup.number()
+  //   .min(1990, "Year must be 1990 or later")
+  //   .max(new Date().getFullYear() + 1, "Invalid year")
+  //   .required("Year is required"),
+  // ownership: Yup.string().required("Ownership type is required"),
+  // fuelType: Yup.string().required("Fuel type is required"),
+  // capacity: Yup.string().required("Capacity is required"),
+  // insuranceExpiry: Yup.date().required("Insurance expiry date is required"),
 });
 
 const CreateVehicle = () => {
@@ -37,110 +39,78 @@ const CreateVehicle = () => {
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initialValues] = useState({
+  const [initialValues,setInitialValues] = useState({
     plateNumber: "",
     type: "",
-    brand: "",
+    // brand: "",
     model: "",
-    year: new Date().getFullYear(),
-    ownership: "",
-    driverId: "",
-    fuelType: "",
-    capacity: "",
-    currentMileage: 0,
-    insuranceNumber: "",
-    insuranceProvider: "",
-    insuranceExpiry: "",
-    registrationDate: "",
-    chassisNumber: "",
-    engineNumber: "",
-    color: "",
-    notes: "",
+    // year: new Date().getFullYear(),
+    // ownership: "",
+    // driverId: "",
+    // fuelType: "",
+    // capacity: "",
+    // currentMileage: 0,
+    // insuranceNumber: "",
+    // insuranceProvider: "",
+    // insuranceExpiry: "",
+    // registrationDate: "",
+    // chassisNumber: "",
+    // engineNumber: "",
+    // color: "",
+    // notes: "",
   });
+  const [fleet,setFleet] = useState(null)
 
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
 
+  const fleetDetail = query.get("fleet")
+    ? JSON.parse(query.get("fleet")!)
+    : null;
+console.log(fleetDetail,"fleetDetail")
   // Fetch vehicle data if in edit mode
   useEffect(() => {
     const fetchVehicleData = async () => {
       if (!isEditMode) return;
+   
+      // setLoading(true);
+      setFleet(fleetDetail)
+      setInitialValues({
+        plateNumber: fleetDetail.plateNumber,
+    type: fleetDetail.type,
+    // brand: "",
+    model: fleetDetail.model,
+      });
 
-      setLoading(true);
-      // try {
-      //   const response = await api.get(`/fleet/vehicle/${id}`);
-      //   const { success, data } = response.data;
-
-      //   if (success && data) {
-      //     // Pre-fill form with existing data
-      //     setInitialValues({
-      //       plateNumber: data.plateNumber || "",
-      //       type: data.type || "",
-      //       brand: data.brand || "",
-      //       model: data.model || "",
-      //       year: data.year || new Date().getFullYear(),
-      //       ownership: data.ownership || "",
-      //       driverId: data.driverId || "",
-      //       fuelType: data.fuelType || "",
-      //       capacity: data.capacity || "",
-      //       currentMileage: data.currentMileage || 0,
-      //       insuranceNumber: data.insuranceNumber || "",
-      //       insuranceProvider: data.insuranceProvider || "",
-      //       insuranceExpiry: data.insuranceExpiry || "",
-      //       registrationDate: data.registrationDate || "",
-      //       chassisNumber: data.chassisNumber || "",
-      //       engineNumber: data.engineNumber || "",
-      //       color: data.color || "",
-      //       notes: data.notes || "",
-      //     });
-      //   }
-      // } catch (error) {
-      //   console.error("Error fetching vehicle data:", error);
-      //   setMessage("Failed to load vehicle data");
-      //   setStatus("error");
-      // } finally {
-      //   setLoading(false);
-      // }
+    
     };
 
     fetchVehicleData();
   }, [id, isEditMode]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (values:any) => {
     try {
-      setStatus("submitting");
-      setMessage(null);
-
-      // const endpoint = isEditMode ? `/fleet/vehicle/${id}` : "/fleet/vehicle";
-      // const method = isEditMode ? "put" : "post";
-
-      // const response = await api[method](endpoint, values);
-      // const { success, message: responseMessage } = response.data;
-
-      // if (success) {
-      //   setStatus("success");
-      //   setMessage(
-      //     responseMessage ||
-      //       (isEditMode
-      //         ? "Vehicle updated successfully!"
-      //         : "Vehicle registered successfully!")
-      //   );
-      //   if (!isEditMode) {
-      //     resetForm();
-      //   }
-      //   setTimeout(() => {
-      //     navigate("/fleet");
-      //   }, 2000);
-      // } else {
-      //   setStatus("error");
-      //   setMessage(
-      //     responseMessage ||
-      //       (isEditMode
-      //         ? "Failed to update vehicle"
-      //         : "Failed to register vehicle")
-      //   );
-      // }
+      console.log("values",values)
+      try {
+        setLoading(true);
+        
+       let res 
+       
+       if(isEditMode){
+         res = await api.patch("/fleet/"+id,values);
+       }else{
+         res = await api.post("/fleet",values);
+       }
+        toast.success(res.data?.message);
+  navigate("/fleet")
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || "Somethign went wrong!");
+      } finally {
+        setLoading(false);
+      }
     } catch (error) {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");
@@ -211,7 +181,7 @@ const CreateVehicle = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
               {/* Basic Vehicle Information */}
               <div className="bg-gray-50 p-6 rounded-lg space-y-4">
                 <h2 className="text-lg font-medium mb-4">
@@ -260,7 +230,7 @@ const CreateVehicle = () => {
                     <p className="text-red-500 text-sm mt-1">{errors.type}</p>
                   )}
                 </div>
-                <div>
+                {/* <div>
                   <Label className="mb-1">Brand *</Label>
                   <Field
                     as={Input}
@@ -273,7 +243,7 @@ const CreateVehicle = () => {
                   {errors.brand && touched.brand && (
                     <p className="text-red-500 text-sm mt-1">{errors.brand}</p>
                   )}
-                </div>
+                </div> */}
                 <div>
                   <Label className="mb-1">Model *</Label>
                   <Field
@@ -288,7 +258,7 @@ const CreateVehicle = () => {
                     <p className="text-red-500 text-sm mt-1">{errors.model}</p>
                   )}
                 </div>
-                <div>
+                {/* <div>
                   <Label className="mb-1">Year *</Label>
                   <Field
                     as={Input}
@@ -302,8 +272,8 @@ const CreateVehicle = () => {
                   {errors.year && touched.year && (
                     <p className="text-red-500 text-sm mt-1">{errors.year}</p>
                   )}
-                </div>
-                <div>
+                </div> */}
+                {/* <div>
                   <Label className="mb-1">Color</Label>
                   <Field
                     as={Input}
@@ -311,11 +281,11 @@ const CreateVehicle = () => {
                     placeholder="e.g., White, Blue, Black"
                     className="py-7"
                   />
-                </div>
+                </div> */}
               </div>
 
               {/* Ownership & Specifications */}
-              <div className="bg-gray-50 p-6 rounded-lg space-y-4">
+              {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4">
                 <h2 className="text-lg font-medium mb-4">
                   Ownership & Specifications
                 </h2>
@@ -421,11 +391,11 @@ const CreateVehicle = () => {
                     className="py-7"
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Insurance Information */}
-            <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
+            {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
               <h2 className="text-lg font-medium mb-4">Insurance Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -465,10 +435,10 @@ const CreateVehicle = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Technical Details */}
-            <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
+            {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
               <h2 className="text-lg font-medium mb-4">Technical Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -499,7 +469,7 @@ const CreateVehicle = () => {
                   className="py-4 min-h-[100px]"
                 />
               </div>
-            </div>
+            </div> */}
 
             {/* Action buttons */}
             <div className="bg-gray-50 p-6 rounded-lg space-y-4">
