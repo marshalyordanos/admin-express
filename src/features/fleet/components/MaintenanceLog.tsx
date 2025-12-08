@@ -34,6 +34,7 @@ import {
 import api from "@/lib/api/api";
 import type { Pagination } from "@/types/types";
 import toast from "react-hot-toast";
+import { Spinner } from "@/utils/spinner";
 
 const maintenanceLogs = [
   {
@@ -208,10 +209,10 @@ export default function MaintenanceLog() {
     try {
       setLoading(true);
 
-      const staffs = await api.get<any>(`/fleet/maintenance?search=all:${searchText}&page=${page}&pageSize=${limit}`);
+      const staffs = await api.get<any>(`/fleet/maintenance?search=all:${searchTerm}&page=${page}&pageSize=${limit}`);
       setFleetLogs(staffs.data.data);
       setPagination(staffs.data.pagination);
-      toast.success(staffs.data.message)
+      // toast.success(staffs.data.message)
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
@@ -226,7 +227,7 @@ export default function MaintenanceLog() {
 
   useEffect(() => {
     featchFleetLogs(currentPage,pageSize);
-  }, [searchText,currentPage,pageSize]);
+  }, [searchTerm,currentPage,pageSize]);
 
 
   // Filter logs
@@ -379,7 +380,7 @@ export default function MaintenanceLog() {
 
             {/* Filters and Search */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1 relative">
+              <div className="flex-1 relative max-w-[550px]">
                 <IoSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
                   type="text"
@@ -389,7 +390,7 @@ export default function MaintenanceLog() {
                   className="pl-10 py-7"
                 />
               </div>
-              <Select value={filterType} onValueChange={setFilterType}>
+              {/* <Select value={filterType} onValueChange={setFilterType}>
                 <SelectTrigger className="w-full md:w-[200px] py-7">
                   <IoFilter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Type" />
@@ -412,7 +413,7 @@ export default function MaintenanceLog() {
                   <SelectItem value="In Progress">In Progress</SelectItem>
                   <SelectItem value="Scheduled">Scheduled</SelectItem>
                 </SelectContent>
-              </Select>
+              </Select> */}
             </div>
 
             {/* Table */}
@@ -468,6 +469,18 @@ export default function MaintenanceLog() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                <TableRow>
+                {loading && (
+                  <TableCell colSpan={11}>
+                    <div className="flex justify-center items-center py-8">
+                      <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                      <span className="text-gray-600 font-medium">
+                        Loading Maintenance logs data...
+                      </span>
+                    </div>
+                  </TableCell>
+                )}
+              </TableRow>
                   {fleetLogs.map((log:any) => (
                     <TableRow
                       key={log.id}

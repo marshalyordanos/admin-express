@@ -16,6 +16,8 @@ import Button from "../../../components/common/Button";
 import { CustomerSchema } from "../schemas/CustomerSchema";
 import { IoArrowBack, IoPersonAdd, IoBusiness } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import api from "@/lib/api/api";
 
 const CreateCustomer = () => {
   const [status, setStatus] = useState<
@@ -27,18 +29,18 @@ const CreateCustomer = () => {
     name: "",
     email: "",
     phone: "",
-    type: "",
-    address: "",
-    city: "",
+    role:"cmgzw1bdm0000f73oogrss9bh",
+    customerType:"",
+    companyName:"",
+    taxId:"",
+    contactPerson:"",
+    contactPhone:"",
+    contactEmail:"",
+   
     notes: "",
-    companyName: "",
-    contactPerson: "",
-    contractNumber: "",
-    creditLimit: "",
-    paymentTerms: "",
-    preferredLanguage: "",
-    communicationPreference: "",
-    marketingOptIn: false,
+    
+    
+   
   });
 
   const navigate = useNavigate();
@@ -86,25 +88,29 @@ const CreateCustomer = () => {
     fetchCustomerData();
   }, [id, isEditMode]);
 
-  const handleSubmit = async () =>
+  const handleSubmit = async (value:any) =>{
     // values: typeof initialValues,
     // { resetForm }: { resetForm: () => void }
-    {
-      try {
-        setStatus("submitting");
-        setMessage(null);
+    console.log(initialValues, value);
+    try {
+      setLoading(true);
+      const data = {...value}
+      // if(data?.email){
+      //   data.password = data.email?.split("@")[0]+"@2026"
+      // }
+      if( value.customerType !== "CORPORATE"  ){
+                     delete data.contactEmail
+                     delete data.contactPhone
 
-        
-      } catch (error) {
-        setStatus("error");
-        setMessage("Something went wrong. Please try again.");
-        console.error(
-          isEditMode ? "Update customer error:" : "Add customer error:",
-          error
-        );
-      } finally {
-        setTimeout(() => setStatus("idle"), 2500);
       }
+      const res = await api.post("/users/customer",data);
+      toast.success(res.data?.message);
+navigate("/customer")
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Somethign went wrong!");
+    } finally {
+      setLoading(false);
+    }
     };
 
   if (loading) {
@@ -143,7 +149,7 @@ const CreateCustomer = () => {
               </div>
               <div className="flex gap-5 items-center justify-center mb-6">
                 <div className="flex gap-4 items-center">
-                  {values.type === "Corporate" ? (
+                  {values.customerType === "CORPORATE" ? (
                     <IoBusiness className="text-3xl text-purple-500" />
                   ) : (
                     <IoPersonAdd className="text-3xl text-blue-500" />
@@ -175,23 +181,23 @@ const CreateCustomer = () => {
                 <div>
                   <Label className="mb-1">Customer Type *</Label>
                   <Select
-                    value={values.type}
-                    onValueChange={(val) => setFieldValue("type", val)}
+                    value={values.customerType}
+                    onValueChange={(val) => setFieldValue("customerType", val)}
                   >
                     <SelectTrigger
                       className={`py-7 !w-full ${
-                        errors.type && touched.type ? "border-red-500" : ""
+                        errors.customerType && touched.customerType ? "border-red-500" : ""
                       }`}
                     >
                       <SelectValue placeholder="Select customer type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Individual">Individual</SelectItem>
-                      <SelectItem value="Corporate">Corporate</SelectItem>
+                      <SelectItem value="INDIVIDUAL">Individual</SelectItem>
+                      <SelectItem value="CORPORATE">Corporate</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.type && touched.type && (
-                    <p className="text-red-500 text-sm mt-1">{errors.type}</p>
+                  {errors.customerType && touched.customerType && (
+                    <p className="text-red-500 text-sm mt-1">{errors.customerType}</p>
                   )}
                 </div>
                 <div>
@@ -238,107 +244,13 @@ const CreateCustomer = () => {
                     <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
                   )}
                 </div>
+                
               </div>
 
-              {/* Address & Location */}
-              <div className="bg-gray-50 p-6 rounded-lg space-y-4">
-                <h2 className="text-lg font-medium mb-4">Address & Location</h2>
-                <div>
-                  <Label className="mb-1">Address *</Label>
-                  <Field
-                    as={Input}
-                    name="address"
-                    placeholder="Enter full address"
-                    className={`py-7 ${
-                      errors.address && touched.address ? "border-red-500" : ""
-                    }`}
-                  />
-                  {errors.address && touched.address && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.address}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label className="mb-1">City *</Label>
-                  <Field
-                    as={Input}
-                    name="city"
-                    placeholder="e.g., Addis Ababa, Dire Dawa"
-                    className={`py-7 ${
-                      errors.city && touched.city ? "border-red-500" : ""
-                    }`}
-                  />
-                  {errors.city && touched.city && (
-                    <p className="text-red-500 text-sm mt-1">{errors.city}</p>
-                  )}
-                </div>
-                <div>
-                  <Label className="mb-1">Preferred Language *</Label>
-                  <Select
-                    value={values.preferredLanguage}
-                    onValueChange={(val) =>
-                      setFieldValue("preferredLanguage", val)
-                    }
-                  >
-                    <SelectTrigger
-                      className={`py-7 !w-full ${
-                        errors.preferredLanguage && touched.preferredLanguage
-                          ? "border-red-500"
-                          : ""
-                      }`}
-                    >
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Amharic">Amharic</SelectItem>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="Oromo">Oromo</SelectItem>
-                      <SelectItem value="Tigrinya">Tigrinya</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.preferredLanguage && touched.preferredLanguage && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.preferredLanguage}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label className="mb-1">Communication Preference *</Label>
-                  <Select
-                    value={values.communicationPreference}
-                    onValueChange={(val) =>
-                      setFieldValue("communicationPreference", val)
-                    }
-                  >
-                    <SelectTrigger
-                      className={`py-7 !w-full ${
-                        errors.communicationPreference &&
-                        touched.communicationPreference
-                          ? "border-red-500"
-                          : ""
-                      }`}
-                    >
-                      <SelectValue placeholder="Select preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Email">Email</SelectItem>
-                      <SelectItem value="SMS">SMS</SelectItem>
-                      <SelectItem value="Phone">Phone</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.communicationPreference &&
-                    touched.communicationPreference && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.communicationPreference}
-                      </p>
-                    )}
-                </div>
-              </div>
             </div>
 
             {/* Corporate Information - Only show for Corporate type */}
-            {values.type === "Corporate" && (
+            {values.customerType === "CORPORATE" && (
               <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
                 <h2 className="text-lg font-medium mb-4">
                   Corporate Information
@@ -381,30 +293,38 @@ const CreateCustomer = () => {
                     )}
                   </div>
                   <div>
-                    <Label className="mb-1">Contract Number</Label>
+                    <Label className="mb-1">Phone Number</Label>
                     <Field
                       as={Input}
-                      name="contractNumber"
-                      placeholder="Enter contract number"
+                      name="contactPhone"
+                      placeholder="Enter phone number"
                       className="py-7"
                     />
                   </div>
                   <div>
-                    <Label className="mb-1">Credit Limit (ETB)</Label>
+                    <Label className="mb-1">Email</Label>
                     <Field
                       as={Input}
-                      type="number"
-                      name="creditLimit"
-                      placeholder="0"
+                      name="contactEmail"
+                      placeholder="Enter email"
                       className="py-7"
                     />
                   </div>
-                  <div className="lg:col-span-2">
-                    <Label className="mb-1">Payment Terms</Label>
+                 <div>
+                    <Label className="mb-1">TIN</Label>
                     <Field
                       as={Input}
-                      name="paymentTerms"
-                      placeholder="e.g., Net 30, Net 60"
+                      name="taxId"
+                      placeholder="Enter TIN"
+                      className="py-7"
+                    />
+                  </div>
+                  <div>
+                    <Label className="mb-1">Notes</Label>
+                    <Field
+                      as={Textarea}
+                      name="notes"
+                      placeholder="Enter contract number"
                       className="py-7"
                     />
                   </div>
@@ -413,7 +333,7 @@ const CreateCustomer = () => {
             )}
 
             {/* Additional Information */}
-            <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
+            {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
               <h2 className="text-lg font-medium mb-4">
                 Additional Information
               </h2>
@@ -436,7 +356,7 @@ const CreateCustomer = () => {
                   Customer has opted in for marketing communications
                 </Label>
               </div>
-            </div>
+            </div> */}
 
             {/* Action buttons */}
             <div className="bg-gray-50 p-6 rounded-lg mt-6 space-y-4">

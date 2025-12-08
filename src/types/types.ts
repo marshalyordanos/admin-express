@@ -361,6 +361,7 @@ export interface Order {
   pickupDate: string; // ISO date string
   deliveryAddressId: string;
   deliveryAddress: any;
+  pickupAddress: any;
   deliveryDate: string; // ISO date string
   distance: number;
   validatedBy: string | null;

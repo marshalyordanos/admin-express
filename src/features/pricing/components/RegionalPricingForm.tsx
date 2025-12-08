@@ -6,360 +6,426 @@ import { Label } from "@/components/ui/label";
 import Button from "@/components/common/Button";
 import { IoArrowBack, IoPricetags } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import * as Yup from "yup";
-import SuccessModal from "@/components/common/SuccessModal";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import api from "@/lib/api/api";
+import type { Pagination } from "@/types/types";
+import { Spinner } from "@/utils/spinner";
+import toast from "react-hot-toast";
 
-const RegionalPricingSchema = Yup.object().shape({
-  standard: Yup.number()
-    .min(0, "Price must be positive")
-    .required("Standard service price is required"),
-  sameDay: Yup.number()
-    .min(0, "Price must be positive")
-    .required("Same Day service price is required"),
-  overnight: Yup.number()
-    .min(0, "Price must be positive")
-    .required("Overnight service price is required"),
-  costPerKm: Yup.number()
-    .min(0, "Cost must be positive")
-    .required("Cost per km is required"),
-  airportFee: Yup.number()
-    .min(0, "Airport fee must be positive")
-    .required("Airport fee is required"),
-  profitMargin: Yup.number()
-    .min(0, "Profit margin must be positive")
-    .max(100, "Profit margin cannot exceed 100%")
-    .required("Profit margin is required"),
-});
-
-export default function RegionalPricingForm() {
+export default function TownPricingForm() {
   const navigate = useNavigate();
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
   const [isWeightExpanded, setIsWeightExpanded] = useState(true);
 
+  const [vehicleSearch, setVehicleSearch] = useState<{ [key: number]: string }>({});
+  const [showVehicleDropdown, setShowVehicleDropdown] = useState<{ [key: number]: boolean }>({});
+  const [paginationVehicles, setPaginationVehicles] = useState<Pagination | null>(null);
+  const [loadingVehicles, setLoadingVehicles] = useState(false);
+  const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<{ [key: number]: any | null }>({});
+const [loading,setLaoding] = useState(false)
+
   const initialValues = {
-    zone: "regional",
     standard: 0,
     sameDay: 0,
     overnight: 0,
     costPerKm: 0,
-    airportFee: 0,
     profitMargin: 0,
-    // Weight ranges
-    weightRanges: [{ from: "1", to: "3", price: 0 }],
+
+    weightRanges: [
+      { from: "0", to: "5", price: 0 }
+    ],
+
+    driverCommissions: [
+      {
+        vehicleTypeId: "",
+        type: "fixed",
+        value: 0,
+      },
+    ],
+
+    airportFees: [
+      {
+        serviceType: "EXPRESS",
+        brackets: [
+          { minKg: 0, maxKg: 5, rate: 0 }
+        ]
+      }
+    ]
   };
 
-  const handleSubmit = (
-    values: typeof initialValues,
-    { resetForm }: { resetForm: () => void }
-  ) => {
-    console.log("Regional Pricing Data:", values);
-    setSuccessMessage("Regional pricing configuration saved successfully!");
-    setIsSuccessModalOpen(true);
+  const handleSubmit = async (values: typeof initialValues) => {
+    setLaoding(true)
+    try {
+      const payload = {
+        name: "REGIONAL Delivery Tariff",
+        shippingScope: "REGIONAL",
+        currency: "ETB",
 
-    setTimeout(() => {
-      resetForm();
-    }, 1000);
+        serviceTypes: [
+          { serviceType: "STANDARD", baseFee: Number(values.standard) },
+          { serviceType: "EXPRESS", baseFee: Number(values.sameDay) },
+          { serviceType: "OVERNIGHT", baseFee: Number(values.overnight) },
+        ],
+
+        weightBrackets: values.weightRanges.map((range) => ({
+          startKg: Number(range.from),
+          endKg: Number(range.to),
+          price: Number(range.price),
+        })),
+
+        driverCommissions: values.driverCommissions.map((d) => {
+          const base: any = { vehicleTypeId: d.vehicleTypeId };
+
+          if (d.type === "fixed") base.fixed = Number(d.value);
+          if (d.type === "perKm") base.perKm = Number(d.value);
+          if (d.type === "percentage") base.percentage = Number(d.value);
+
+          return base;
+        }),
+
+        additionalCharges: {
+          costPerKm: Number(values.costPerKm),
+          profitMargin: Number(values.profitMargin),
+        },
+
+        airportFees: values.airportFees.map((fee) => ({
+          serviceType: fee.serviceType,
+          brackets: fee.brackets.map((b) => ({
+            minKg: Number(b.minKg),
+            maxKg: Number(b.maxKg),
+            rate: Number(b.rate),
+          })),
+        })),
+      };
+
+      console.log("✅ SENDING PAYLOAD:", payload);
+      await api.post(`/pricing/tariff`, payload);
+
+      toast.success("Town pricing configuration saved successfully!");
+
+      navigate('/pricing')
+    setLaoding(false)
+
+
+    } catch (error) {
+      console.error(error);
+    setLaoding(false)
+
+    }
   };
 
-  const handleCloseModal = () => {
-    setIsSuccessModalOpen(false);
-    navigate("/pricing");
+  const fetchVehicleTypes = async (search = "", page = 1, limit = 10) => {
+    try {
+      setLoadingVehicles(true);
+
+      const res = await api.get(
+        `/fleet/type?search=${search}&page=${page}&limit=${limit}`
+      );
+
+      setVehicleTypes(res.data.data?.vehicleTypes || []);
+      setPaginationVehicles(res.data.pagination);
+    } catch (error) {
+      console.error("Error fetching vehicle types", error);
+    } finally {
+      setLoadingVehicles(false);
+    }
   };
+
+  useEffect(() => {
+    fetchVehicleTypes();
+  }, [vehicleSearch]);
 
   return (
     <div className="max-w-4xl p-6 bg-white">
-      <Formik
-        initialValues={initialValues}
-        validationSchema={RegionalPricingSchema}
-        onSubmit={handleSubmit}
-      >
-        {({ values, setFieldValue, errors, touched }) => (
+      <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+        {({ values, setFieldValue }) => (
           <Form>
-            {/* Header */}
-            <header className="relative">
-              <div className="absolute h-full top-0 left-0 flex items-center">
-                <Button
-                  type="button"
-                  className="!text-white !size-[40px] bg-blue-500 hover:bg-blue-400 !rounded-full !p-0 !py-0 flex items-center justify-center !cursor-pointer"
-                  onClick={() => navigate("/pricing")}
-                >
-                  <IoArrowBack className="text-white text-lg" />
+
+            {/* HEADER */}
+            <header className="relative mb-8">
+              <div className="absolute left-0 top-0">
+                <Button type="button" onClick={() => navigate("/pricing")}>
+                  <IoArrowBack />
                 </Button>
               </div>
-              <div className="flex gap-5 items-center justify-center mb-6">
-                <div className="flex gap-4 items-center">
-                  <IoPricetags className="text-4xl text-blue-500" />
-                  <h1 className="text-3xl font-medium text-gray-700">
-                    Regional Pricing Configuration
-                  </h1>
-                </div>
+
+              <div className="flex justify-center items-center gap-2">
+                <IoPricetags className="text-2xl text-blue-500" />
+                <h1 className="text-2xl font-bold">
+                  International Pricing Configuration
+                </h1>
               </div>
             </header>
 
-            {/* Service Types Pricing */}
+            {/* SERVICE TYPES */}
             <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
-              <h2 className="text-lg font-medium mb-4">Service Types</h2>
+              <h2 className="font-semibold">Service Types</h2>
 
-              <div>
-                <Label className="mb-1">Standard Service Price ($)</Label>
-                <Field
-                  as={Input}
-                  type="number"
-                  step="0.01"
-                  name="standard"
-                  placeholder="Enter standard service price"
-                  className={`py-7 ${
-                    errors.standard && touched.standard ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.standard && touched.standard && (
-                  <p className="text-red-500 text-sm mt-1">{errors.standard}</p>
-                )}
-              </div>
+              <Label>Standard</Label>
+              <Field as={Input} type="number" name="standard" />
 
-              <div>
-                <Label className="mb-1">Same Day Service Price ($)</Label>
-                <Field
-                  as={Input}
-                  type="number"
-                  step="0.01"
-                  name="sameDay"
-                  placeholder="Enter same day service price"
-                  className={`py-7 ${
-                    errors.sameDay && touched.sameDay ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.sameDay && touched.sameDay && (
-                  <p className="text-red-500 text-sm mt-1">{errors.sameDay}</p>
-                )}
-              </div>
+              <Label>Express</Label>
+              <Field as={Input} type="number" name="sameDay" />
 
-              <div>
-                <Label className="mb-1">Overnight Service Price ($)</Label>
-                <Field
-                  as={Input}
-                  type="number"
-                  step="0.01"
-                  name="overnight"
-                  placeholder="Enter overnight service price"
-                  className={`py-7 ${
-                    errors.overnight && touched.overnight
-                      ? "border-red-500"
-                      : ""
-                  }`}
-                />
-                {errors.overnight && touched.overnight && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.overnight}
-                  </p>
-                )}
-              </div>
+              <Label>Overnight</Label>
+              <Field as={Input} type="number" name="overnight" />
             </div>
 
-            {/* Weight Ranges */}
+            {/* WEIGHT BRACKETS */}
             <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium">Weight Ranges</h2>
-                <button
-                  type="button"
-                  className="p-2 !bg-gray-200 rounded-lg cursor-pointer transition-colors"
-                  onClick={() => setIsWeightExpanded(!isWeightExpanded)}
-                >
-                  {isWeightExpanded ? (
-                    <ChevronUp className="h-5 w-5" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5" />
-                  )}
+              <div className="flex justify-between">
+                <h2 className="font-semibold">Weight Brackets</h2>
+                <button type="button" onClick={() => setIsWeightExpanded(!isWeightExpanded)}>
+                  {isWeightExpanded ? <ChevronUp /> : <ChevronDown />}
                 </button>
               </div>
 
-              {isWeightExpanded && (
-                <>
-                  {values.weightRanges.map((_, index) => (
-                    <div
-                      key={index}
-                      className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-gray-200 rounded-lg items-center"
+              {isWeightExpanded &&
+                values.weightRanges.map((_, index) => (
+                  <div key={index} className="grid grid-cols-4 gap-4">
+                    <Field as={Input} name={`weightRanges.${index}.from`} placeholder="From KG" />
+                    <Field as={Input} name={`weightRanges.${index}.to`} placeholder="To KG" />
+                    <Field as={Input} name={`weightRanges.${index}.price`} placeholder="Price" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newRanges = values.weightRanges.filter((_, i) => i !== index);
+                        setFieldValue("weightRanges", newRanges);
+                      }}
                     >
-                      <div>
-                        <Label className="mb-1">From (kg)</Label>
-                        <Field
-                          as={Input}
-                          type="number"
-                          name={`weightRanges.${index}.from`}
-                          placeholder="From weight"
-                          className="py-7"
-                        />
-                      </div>
-                      <div>
-                        <Label className="mb-1">To (kg)</Label>
-                        <Field
-                          as={Input}
-                          type="number"
-                          name={`weightRanges.${index}.to`}
-                          placeholder="To weight"
-                          className="py-7"
-                        />
-                      </div>
-                      <div>
-                        <Label className="mb-1">Price ($)</Label>
-                        <Field
-                          as={Input}
-                          type="number"
-                          step="0.01"
-                          name={`weightRanges.${index}.price`}
-                          placeholder="Price"
-                          className="py-7"
-                        />
-                      </div>
-                      <div className="flex items-end">
-                        <button
-                          type="button"
-                          className={`p-2 !bg-gray-100 hover:!bg-gray-200 rounded-lg cursor-pointer transition-colors ${
-                            values.weightRanges.length === 1
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-red-500 hover:bg-red-50 hover:text-red-700"
-                          }`}
-                          onClick={() => {
-                            if (values.weightRanges.length > 1) {
-                              const newRanges = values.weightRanges.filter(
-                                (_, i) => i !== index
-                              );
-                              setFieldValue("weightRanges", newRanges);
-                            }
-                          }}
-                          disabled={values.weightRanges.length === 1}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+
+              <Button
+                type="button"
+                onClick={() =>
+                  setFieldValue("weightRanges", [
+                    ...values.weightRanges,
+                    { from: "", to: "", price: 0 },
+                  ])
+                }
+              >
+                Add Weight Range
+              </Button>
+            </div>
+
+            {/* DRIVER COMMISSIONS */}
+            <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
+              <h2 className="font-semibold">Driver Commissions</h2>
+
+              {values.driverCommissions.map((_, index) => (
+                <div key={index} className="grid grid-cols-4 gap-4 items-center">
+                  {/* <Field
+                    as={Input}
+                    name={`driverCommissions.${index}.vehicleTypeId`}
+                    placeholder="Vehicle Type ID"
+                  /> */}
+<div className="relative">
+  {/* <Label className="mb-2">Vehicle Type *</Label> */}
+
+  <div className="relative">
+    <Input
+      placeholder="Search vehicle type"
+      value={vehicleSearch[index] || ""}
+      onChange={(e) => {
+        const value = e.target.value;
+        setVehicleSearch((prev) => ({ ...prev, [index]: value }));
+        setShowVehicleDropdown((prev) => ({ ...prev, [index]: true }));
+
+        if (!value) {
+          setSelectedVehicle((prev) => ({ ...prev, [index]: null }));
+          setFieldValue(`driverCommissions.${index}.vehicleTypeId`, "");
+        }
+      }}
+      onFocus={() =>
+        setShowVehicleDropdown((prev) => ({ ...prev, [index]: true }))
+      }
+      onBlur={() =>
+        setTimeout(
+          () =>
+            setShowVehicleDropdown((prev) => ({ ...prev, [index]: false })),
+          200
+        )
+      }
+      className="py-5"
+    />
+
+    {selectedVehicle?.[index] && (
+      <button
+        type="button"
+        onClick={() => {
+          setSelectedVehicle((prev) => ({ ...prev, [index]: null }));
+          setVehicleSearch((prev) => ({ ...prev, [index]: "" }));
+          setFieldValue(`driverCommissions.${index}.vehicleTypeId`, "");
+        }}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      >
+        ✕
+      </button>
+    )}
+  </div>
+
+  {showVehicleDropdown?.[index] && (
+    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+      {loadingVehicles ? (
+        <div className="flex justify-center items-center py-8">
+          <Spinner className="h-6 w-6 mr-2" />
+        </div>
+      ) : vehicleTypes.length > 0 ? (
+        vehicleTypes.map((vehicle) => (
+          <div
+            key={vehicle.id}
+            onClick={() => {
+              setSelectedVehicle((prev) => ({ ...prev, [index]: vehicle }));
+              setVehicleSearch((prev) => ({ ...prev, [index]: vehicle.name }));
+
+              // 👇 This keeps your payload EXACTLY the same
+              setFieldValue(
+                `driverCommissions.${index}.vehicleTypeId`,
+                vehicle.id
+              );
+            }}
+            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+          >
+            <div className="font-medium text-gray-900">
+              {vehicle.name}
+            </div>
+            <div className="text-sm text-gray-600">
+              ID: {vehicle.id}
+            </div>
+            <div className="text-sm text-gray-500">
+              {vehicle.type}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="px-4 py-3 text-gray-500 text-center">
+          No vehicle types found
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
+
+                  <Field as="select" name={`driverCommissions.${index}.type`} className="border p-2 rounded">
+                    <option value="fixed">Fixed</option>
+                    <option value="perKm">Per Km</option>
+                    <option value="percentage">Percentage</option>
+                  </Field>
+
+                  <Field
+                    as={Input}
+                    type="number"
+                    name={`driverCommissions.${index}.value`}
+                    placeholder="Value"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newList = values.driverCommissions.filter((_, i) => i !== index);
+                      setFieldValue("driverCommissions", newList);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                onClick={() =>
+                  setFieldValue("driverCommissions", [
+                    ...values.driverCommissions,
+                    { vehicleTypeId: "", type: "fixed", value: 0 },
+                  ])
+                }
+              >
+                Add Vehicle
+              </Button>
+            </div>
+            {/* AIRPORT FEES */}
+            <div className="bg-gray-50 p-6 rounded-lg mb-6 space-y-6">
+              <h2 className="font-semibold">Airport Fees</h2>
+
+              {values.airportFees.map((fee, feeIndex) => (
+                <div key={feeIndex} className="border p-4 rounded space-y-4">
+
+                  <Field
+                    as="select"
+                    name={`airportFees.${feeIndex}.serviceType`}
+                    className="border p-2 rounded w-full"
+                  >
+                    <option value="STANDARD">STANDARD</option>
+                    <option value="EXPRESS">EXPRESS</option>
+                    <option value="OVERNIGHT">OVERNIGHT</option>
+                  </Field>
+
+                  {fee.brackets.map((_, bracketIndex) => (
+                    <div key={bracketIndex} className="grid grid-cols-4 gap-4">
+                      <Field as={Input} name={`airportFees.${feeIndex}.brackets.${bracketIndex}.minKg`} placeholder="Min KG" />
+                      <Field as={Input} name={`airportFees.${feeIndex}.brackets.${bracketIndex}.maxKg`} placeholder="Max KG" />
+                      <Field as={Input} name={`airportFees.${feeIndex}.brackets.${bracketIndex}.rate`} placeholder="Rate" />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...values.airportFees];
+                          updated[feeIndex].brackets = updated[feeIndex].brackets.filter((_, i) => i !== bracketIndex);
+                          setFieldValue("airportFees", updated);
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   ))}
 
                   <Button
                     type="button"
-                    className="!text-white !bg-blue-600 !border-blue-400 hover:bg-blue-700 !cursor-pointer mt-4"
                     onClick={() => {
-                      const lastRange =
-                        values.weightRanges[values.weightRanges.length - 1];
-                      setFieldValue("weightRanges", [
-                        ...values.weightRanges,
-                        {
-                          from: lastRange.to,
-                          to: String(Number(lastRange.to) + 5),
-                          price: 0,
-                        },
-                      ]);
+                      const updated = [...values.airportFees];
+                      updated[feeIndex].brackets.push({ minKg: 0, maxKg: 0, rate: 0 });
+                      setFieldValue("airportFees", updated);
                     }}
                   >
-                    Add Weight Range
+                    Add Bracket
                   </Button>
-                </>
-              )}
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                onClick={() =>
+                  setFieldValue("airportFees", [
+                    ...values.airportFees,
+                    { serviceType: "EXPRESS", brackets: [{ minKg: 0, maxKg: 0, rate: 0 }] },
+                  ])
+                }
+              >
+                Add Airport Fee
+              </Button>
             </div>
 
-            {/* Additional Charges */}
+            {/* ADDITIONAL CHARGES */}
             <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
-              <h2 className="text-lg font-medium mb-4">Additional Charges</h2>
-
-              <div>
-                <Label className="mb-1">Cost Per Km ($)</Label>
-                <Field
-                  as={Input}
-                  type="number"
-                  step="0.01"
-                  name="costPerKm"
-                  placeholder="Enter cost per km"
-                  className={`py-7 ${
-                    errors.costPerKm && touched.costPerKm
-                      ? "border-red-500"
-                      : ""
-                  }`}
-                />
-                {errors.costPerKm && touched.costPerKm && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.costPerKm}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label className="mb-1">Airport Fee ($)</Label>
-                <Field
-                  as={Input}
-                  type="number"
-                  step="0.01"
-                  name="airportFee"
-                  placeholder="Enter airport fee"
-                  className={`py-7 ${
-                    errors.airportFee && touched.airportFee
-                      ? "border-red-500"
-                      : ""
-                  }`}
-                />
-                {errors.airportFee && touched.airportFee && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.airportFee}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label className="mb-1">Profit Margin (%)</Label>
-                <Field
-                  as={Input}
-                  type="number"
-                  step="0.01"
-                  name="profitMargin"
-                  placeholder="Enter profit margin percentage"
-                  className={`py-7 ${
-                    errors.profitMargin && touched.profitMargin
-                      ? "border-red-500"
-                      : ""
-                  }`}
-                />
-                {errors.profitMargin && touched.profitMargin && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.profitMargin}
-                  </p>
-                )}
-              </div>
+              <h2 className="font-semibold">Additional Charges</h2>
+              <Label>Cost Per Km</Label>
+              <Field as={Input} type="number" name="costPerKm" />
+              <Label>Profit Margin (%)</Label>
+              <Field as={Input} type="number" name="profitMargin" />
             </div>
 
-            {/* Action Buttons */}
-            <div className="bg-gray-50 p-6 rounded-lg space-y-4">
-              <h2 className="text-lg font-medium mb-4">
-                Complete Configuration
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button
-                  type="submit"
-                  className="cursor-pointer hover:bg-blue-700"
-                >
-                  Save Configuration
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => navigate("/pricing")}
-                  className="bg-gray-100 hover:bg-gray-200 cursor-pointer !text-black border border-gray-300 !w-full"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
+            <Button type="submit" className="w-full flex flex-row justify-center items-center">
+             {loading?<Spinner className="h-6 w-6 mr-2 text-white"/>:" Save Configuration"}
+            </Button> 
           </Form>
         )}
-      </Formik>
-
-      {/* Success Modal */}
-      <SuccessModal
-        isOpen={isSuccessModalOpen}
-        onClose={handleCloseModal}
-        trackingNumber={successMessage}
-      />
+      </Formik> 
     </div>
   );
 }

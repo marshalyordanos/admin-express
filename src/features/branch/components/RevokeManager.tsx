@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "@/lib/api/api";
 import type { Branch, BranchListResponse, Pagination, Staff, StaffListResponse } from "@/types/types";
+import { Spinner } from "@/utils/spinner";
 
 // Demo data - replace with actual API calls
 const demoManagers = [
@@ -65,11 +66,11 @@ const RevokeManager = () => {
       setLoadingStaff(true);
 
       const staffs = await api.get<StaffListResponse>(
-        `/staff?search=all:${searchText}&page=${1}&pageSize=${20}`
+        `/staff?search=all:${managerSearch}&page=${1}&pageSize=${20}`
       );
       setStaffs(staffs.data.data);
       setPagination(staffs.data.pagination);
-      toast.success(staffs.data.message);
+      // toast.success(staffs.data.message);
       setLoadingStaff(false);
     } catch (error: any) {
       setLoadingStaff(false);
@@ -84,13 +85,13 @@ const RevokeManager = () => {
 
   useEffect(() => {
     featchStaffs();
-  }, [searchText]);
+  }, [managerSearch]);
 
   const featchBranch = async () => {
     try {
       setLoadingBrand(true);
 
-      const branch = await api.get<BranchListResponse>("/branch");
+      const branch = await api.get<BranchListResponse>(`/branch?search=all:${branchSearch}`);
       setBranches(branch.data.data);
       setLoadingBrand(false);
     } catch (error: any) {
@@ -106,7 +107,7 @@ const RevokeManager = () => {
 
   useEffect(() => {
     featchBranch();
-  }, []);
+  }, [branchSearch]);
 
   const handleSubmit = async (value: any) => {
     console.log(initialValues, value);
@@ -284,6 +285,9 @@ const RevokeManager = () => {
 
                   {showManagerDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                       {loadingStaff&&   <div className="flex justify-center items-center py-8">
+                        <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                      </div>}
                       {staffs.length > 0 ? (
                         staffs.map((manager) => (
                           <div
@@ -355,6 +359,9 @@ const RevokeManager = () => {
 
                   {showBranchDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {loadingBrand&&   <div className="flex justify-center items-center py-8">
+                        <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                      </div>} 
                       {branches.length > 0 ? (
                         branches.map((branch) => (
                           <div

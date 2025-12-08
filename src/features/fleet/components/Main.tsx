@@ -39,6 +39,9 @@ import type { FleetListResponse, FleetVehicle, Pagination } from "@/types/types"
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
 import ConfirmDialog from "@/components/common/DeleteModal";
+import { Skeleton } from "antd";
+import { Spinner } from "@/utils/spinner";
+import { exportToExcel } from "@/utils/exportToExcel";
 
 const vehicles = [
   {
@@ -211,36 +214,7 @@ const vehicles = [
   },
 ];
 
-const metrics2 = [
-  {
-    label: "Total Vehicles",
-    value: "8",
-    sublabel: "6 In-house, 2 External",
-    icon: <IoCarSport className="h-5 w-5" />,
-    color: "blue",
-  },
-  {
-    label: "Active Vehicles",
-    value: "6",
-    sublabel: "75% of fleet",
-    icon: <IoCheckmarkCircle className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    label: "Under Maintenance",
-    value: "1",
-    sublabel: "VH-003",
-    icon: <IoConstruct className="h-5 w-5" />,
-    color: "orange",
-  },
-  {
-    label: "Avg Utilization",
-    value: "86%",
-    sublabel: "+5% from last month",
-    icon: <IoSpeedometer className="h-5 w-5" />,
-    color: "purple",
-  },
-];
+
 export interface FleetDashboardStats {
   totalVehicles: number;
   inHouse: number;
@@ -291,12 +265,12 @@ export default function FleetMain() {
     try {
       setLoading(true);
 
-      const staffs = await api.get<FleetListResponse>(`/fleet`);
-      // const staffs = await api.get<FleetListResponse>(`/fleet?search=all:${searchText}&page=${page}&pageSize=${limit}`);
-
+      // const staffs = await api.get<FleetListResponse>(`/fleet?`);
+      const staffs = await api.get<FleetListResponse>(`/fleet?search=all:${searchTerm}&page=${page}&pageSize=${limit}&filter=${filterStatus=="all"?"":`status:${filterStatus}`}`);
+console.log(staffs.data)
       setFleets(staffs.data.data);
       setPagination(staffs.data.pagination);
-      toast.success(staffs.data.message)
+      // toast.success(staffs.data.message)
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
@@ -311,7 +285,7 @@ export default function FleetMain() {
 
   useEffect(() => {
     featchFleet(currentPage,pageSize);
-  }, [searchText,currentPage,pageSize]);
+  }, [searchTerm,currentPage,pageSize,filterStatus]);
 
   const featchSummary = async () => {
     try {
@@ -320,7 +294,7 @@ export default function FleetMain() {
       const staffs = await api.get<FleetDashboardStats>(
         "/report/dashboard/fleet-summary"
       );
-      setSummary(staffs.data);
+      setSummary(staffs.data?.data);
       // toast.success(staffs.data.message);
       setLoadingSummary(false);
     } catch (error: any) {
@@ -472,6 +446,19 @@ export default function FleetMain() {
     }
   
     }
+
+    const handleExport = () => {
+      exportToExcel("fleets", fleets, (fleet) => ({
+        "Plate Number": fleet.plateNumber ?? "",
+        Type: fleet.type ?? "",
+        "Model": fleet?.model ?? "",
+        "Driver":fleet?.driver?.user?.name ?? "",
+        "Max Load":fleet.maxLoad,
+        "Status": fleet?.status
+    }));
+
+    };
+
   return (
     <div className="min-h-screen">
       {/* Main Content */}
@@ -492,9 +479,8 @@ export default function FleetMain() {
                 <Button
                   variant="outline"
                   className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => {
-                    /* Export logic */
-                  }}
+                  onClick={handleExport}
+
                 >
                   <IoDownload className="mr-2 h-4 w-4" />
                   Export
@@ -518,7 +504,17 @@ export default function FleetMain() {
 
             {/* Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {metrics.map((metric, index) => (
+              {
+              loadingSummary?   Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="bg-white p-4">
+                  <Skeleton
+                    active
+                    title={{ width: "60%" }}
+                    paragraph={{ rows: 2, width: ["100%", "80%"] }}
+                  />
+                </Card>
+              )):
+              metrics.map((metric, index) => (
                 <Card key={index} className="border-gray-200">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -561,12 +557,12 @@ export default function FleetMain() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Maintenance">Maintenance</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                  <SelectItem value="INACTIVE">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-              <Select
+              {/* <Select
                 value={filterOwnership}
                 onValueChange={setFilterOwnership}
               >
@@ -579,7 +575,7 @@ export default function FleetMain() {
                   <SelectItem value="In-house">In-house</SelectItem>
                   <SelectItem value="External">External</SelectItem>
                 </SelectContent>
-              </Select>
+              </Select> */}
             </div>
 
             {/* Table */}
@@ -633,6 +629,18 @@ export default function FleetMain() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                <TableRow>
+                {loading && (
+                  <TableCell colSpan={11}>
+                    <div className="flex justify-center items-center py-8">
+                      <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                      <span className="text-gray-600 font-medium">
+                        Loading fleet data...
+                      </span>
+                    </div>
+                  </TableCell>
+                )}
+              </TableRow>
                   {fleets.map((vehicle) => (
                     <TableRow
                       key={vehicle.id}
@@ -755,13 +763,13 @@ export default function FleetMain() {
                           >
                             <MdEdit className="h-4 w-4" />
                           </Button>
-                          <Button
+                          {/* <Button
                             variant="ghost"
                             size="sm"
                             className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700"
                           >
                             <IoLockOpen className="h-6 w-6 font-bold" />
-                          </Button>
+                          </Button> */}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -772,7 +780,7 @@ export default function FleetMain() {
                          
                               setSelectedFeet(vehicle)
                             }}
-                            className="p-2 text-red-400 bg-red-50 cursor-not-allowed opacity-60 hover:bg-red-100 hover:text-red-700"
+                            className="p-2 text-red-400 bg-red-50 cursor-pointer opacity-60 hover:bg-red-100 hover:text-red-700"
                           >
                             <MdDelete className="h-4 w-4" />
                           </Button>
@@ -786,13 +794,14 @@ export default function FleetMain() {
 
             {/* Pagination */}
             <TablePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              totalItems={totalItems}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-            />
+            currentPage={currentPage}
+            totalPages={pagination?.totalPages||1}
+            pageSize={pagination?.pageSize||10}
+            totalItems={pagination?.total||0}
+            onPageChange={handlePageChange}
+            
+            onPageSizeChange={handlePageSizeChange}
+          />
           </CardContent>
         </Card>
       </main>

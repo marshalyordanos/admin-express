@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,11 @@ import DispatchModal from "@/components/common/DispatchModal";
 import DriversMapView from "@/components/common/DriversMapView";
 import CreateDriverModal from "@/components/common/CreateDriverModal";
 import TablePagination from "@/components/common/TablePagination";
+import toast from "react-hot-toast";
+import api from "@/lib/api/api";
+import { Skeleton } from "antd";
+import type { Order, OrderListResponse, Pagination } from "@/types/types";
+import { Spinner } from "@/utils/spinner";
 
 // Mock data for demonstration
 // const drivers = [
@@ -353,7 +358,66 @@ const orders = [
     status: "Pending Dispatch",
   },
 ];
+export interface Metric {
+  title: string;
+  value: string | number;
+  change: string;
+  trend: "up" | "down";
+  color: "green" | "blue" | "purple" | "orange" | "red";
+}
+export interface DashboardStats {
+  totalDispatches: number;
 
+  byStatus: {
+    COMPLETED: number;
+    ASSIGNED: number;
+    PENDING: number;
+  };
+
+  byScope: {
+    TOWN: number;
+    REGIONAL: number;
+  };
+
+  byServiceType: {
+    EXPRESS: number;
+    SAME_DAY: number;
+    STANDARD: number;
+  };
+
+  assignedToDrivers: number;
+  unassigned: number;
+
+  avgWeightPerDispatch: number;
+  totalWeight: number;
+
+  dispatchedOrders: number;
+  completedOrders: number;
+  failedOrders: number;
+
+  vehiclesUsed: number;
+  driversUsed: number;
+
+  originBranches: number;
+  destinationBranches: number;
+
+  dispatchesToday: number;
+  dispatchesThisWeek: number;
+
+  activeDrivers: number;
+  activeDriverChange: number;
+
+  deliveriesToday: number;
+  deliveryChange: number;
+
+  onTimeRate: number;
+  onTimeImprovement: number;
+
+  routeEfficiency: number;
+  routeEfficiencyChange: number;
+
+  utilizationChange: number;
+}
 export default function Dispatch() {
   const navigate = useNavigate();
   // const [selectedDriver, setSelectedDriver] = useState("");
@@ -376,12 +440,20 @@ export default function Dispatch() {
   } | null>(null);
 
   // Calculate pagination
-  const totalItems = orders.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
+  // const totalItems = orders.length;
+  // const totalPages = Math.ceil(totalItems / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const paginatedOrders = orders.slice(startIndex, endIndex);
+  // const paginatedOrders = orders.slice(startIndex, endIndex);
+  const [loadingSummary, setLoadingSummary] = useState<boolean>(true);
+  const [summary, setSummary] = useState<DashboardStats | null>(null);
+  const [metrics, setMetrics] = useState<Metric[]>([]);
 
+  const [orderSearchText, setOrderSearchText] = useState("");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [orderPagination, setOrderPagination] = useState<Pagination | null>(null);
+  const [orderLoading, setOrderLoading] = useState<boolean>(true);
+  
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -391,6 +463,89 @@ export default function Dispatch() {
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
+
+
+  const featchOrders = async (page=1,limit=10) => {
+    try {
+      setOrderLoading(true);
+
+      const staffs = await api.get<OrderListResponse>(`/order?search=all:${orderSearchText}&page=${page}&pageSize=${limit}`)
+      setOrders(staffs.data.data);
+      setOrderPagination(staffs.data.pagination);
+      // toast.success(staffs.data.message);
+      setOrderLoading(false);
+    } catch (error: any) {
+      setOrderLoading(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchOrders(currentPage,pageSize);
+  }, [orderSearchText,currentPage,pageSize,activeTab]);
+
+  const featchSummary = async () => {
+    try {
+      setLoadingSummary(true);
+
+      const staffs = await api.get<any>(
+        "/report/dashboard/dispatch-summary"
+      );
+      setSummary(staffs.data?.data);
+      // toast.success(staffs.data.message);
+      setLoadingSummary(false);
+    } catch (error: any) {
+      setLoadingSummary(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+  useEffect(() => {
+    featchSummary();
+  }, []);
+  useEffect(() => {
+    if (!summary) return;
+  
+    setMetrics([
+      {
+        title: "Active Drivers",
+        value: summary.activeDrivers,
+        change: `${summary.activeDriverChange >= 0 ? "+" : ""}${summary.activeDriverChange} from yesterday`,
+        trend: summary.activeDriverChange >= 0 ? "up" : "down",
+        color: "green",
+      },
+      {
+        title: "Deliveries Today",
+        value: summary.deliveriesToday,
+        change: `${summary.deliveryChange >= 0 ? "+" : ""}${summary.deliveryChange} change`,
+        trend: summary.deliveryChange >= 0 ? "up" : "down",
+        color: "blue",
+      },
+      {
+        title: "On-Time Rate",
+        value: `${summary.onTimeRate}%`,
+        change: `${summary.onTimeImprovement >= 0 ? "+" : ""}${summary.onTimeImprovement}% improvement`,
+        trend: summary.onTimeImprovement >= 0 ? "up" : "down",
+        color: "green",
+      },
+      {
+        title: "Route Efficiency",
+        value: `${summary.routeEfficiency}%`,
+        change: `${summary.routeEfficiencyChange >= 0 ? "+" : ""}${summary.routeEfficiencyChange}% change`,
+        trend: summary.routeEfficiencyChange >= 0 ? "up" : "down",
+        color: "purple",
+      },
+    ]);
+  }, [summary]);
   // const handleDriverSelection = (driverId: string) => {
   //   setSelectedDriver(driverId);
   // };
@@ -509,7 +664,17 @@ export default function Dispatch() {
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {metrics.map((metric, index) => (
+          {
+             loadingSummary?   Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="bg-white p-4">
+                <Skeleton
+                  active
+                  title={{ width: "60%" }}
+                  paragraph={{ rows: 2, width: ["100%", "80%"] }}
+                />
+              </Card>
+            )):
+          metrics.map((metric, index) => (
             <Card key={index} className="bg-white">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600">
@@ -567,161 +732,171 @@ export default function Dispatch() {
 
         {/* Orders Table */}
         {activeTab === "orders" && (
-          <Card className="bg-white">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-gray-200">
-                  <TableHead className="w-12">
-                    <Checkbox />
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Order
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    <div className="flex items-center">
-                      Date
-                      <ArrowUpDown className="h-3 w-3 ml-1" />
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Customer
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Payment
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Total
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Delivery
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Items
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Destination
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Fulfillment
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Action
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedOrders.map((order, index) => (
-                  <TableRow
-                    key={index}
-                    className="border-gray-100 hover:bg-gray-50 cursor-pointer"
-                    onClick={() =>
-                      navigate(`/order/details/${order.id.replace("#", "")}`)
-                    }
-                  >
-                    <TableCell>
-                      <Checkbox />
-                    </TableCell>
-                    <TableCell className="font-medium text-gray-900">
-                      <Button
-                        variant="ghost"
-                        className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
-                      >
-                        {order.id}
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {order.date}
-                    </TableCell>
-                    <TableCell className="text-gray-900">
-                      {order.customer}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.payment === "Success" ? "default" : "secondary"
-                        }
-                        className={
-                          order.payment === "Success"
-                            ? "bg-green-100 text-green-700 hover:bg-green-100"
-                            : "bg-orange-100 text-orange-700 hover:bg-orange-100"
-                        }
-                      >
-                        ● {order.payment}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium text-gray-900">
-                      {order.total}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {order.delivery}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {order.items}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {order.destination}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.fulfillment === "Fulfilled"
-                            ? "default"
-                            : "secondary"
-                        }
-                        className={
-                          order.fulfillment === "Fulfilled"
-                            ? "bg-green-100 text-green-700 hover:bg-green-100"
-                            : "bg-red-100 text-red-700 hover:bg-red-100"
-                        }
-                      >
-                        ● {order.fulfillment}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={
-                          order.status === "Dispatched"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-orange-100 text-orange-700"
-                        }
-                      >
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-6">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-0 px-3 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDispatchOrder(order);
-                          }}
-                        >
-                          {order.destination === "Town"
-                            ? "Assign Driver"
-                            : "Assign Cargo Officer"}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <TablePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              totalItems={totalItems}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-            />
-          </Card>
+       <Card className="bg-white">
+       <Table>
+         <TableHeader>
+           <TableRow className="border-gray-200">
+             <TableHead className="w-12">
+               <Checkbox />
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               Order
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               <div className="flex items-center">
+                 Date
+                 <ArrowUpDown className="h-3 w-3 ml-1" />
+               </div>
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               Customer
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               Payment
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               Total
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               Pickup address
+             </TableHead>
+             {/* <TableHead className="text-gray-600 font-medium">
+               Items
+             </TableHead> */}
+             <TableHead className="text-gray-600 font-medium">
+               Destination
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               Fulfillment
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               Status
+             </TableHead>
+             <TableHead className="text-gray-600 font-medium">
+               Action
+             </TableHead>
+           </TableRow>
+         </TableHeader>
+         <TableBody>
+         <TableRow>
+             {orderLoading && (
+               <TableCell colSpan={11}>
+                 <div className="flex justify-center items-center py-8">
+                   <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                   <span className="text-gray-600 font-medium">
+                     Loading Beanch data...
+                   </span>
+                 </div>
+               </TableCell>
+             )}
+           </TableRow>
+           {orders.map((order, index) => (
+             <TableRow
+               key={index}
+               className="border-gray-100 hover:bg-gray-50 cursor-pointer"
+               onClick={() =>
+                 navigate(`/order/details/${order.id.replace("#", "")}?order=${encodeURIComponent(JSON.stringify(order))}`)
+               }
+             >
+               <TableCell>
+                 <Checkbox />
+               </TableCell>
+               <TableCell className="font-medium text-gray-900">
+                 <Button
+                   variant="ghost"
+                   className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
+                 >
+                   {order?.trackingCode}
+                 </Button>
+               </TableCell>
+               <TableCell className="text-gray-600">{order.pickupDate}</TableCell>
+               <TableCell className="text-gray-900">
+                 {order.customer.name}
+               </TableCell>
+               <TableCell>
+                 <Badge
+                   variant={
+                     order.payment === "Success" ? "default" : "secondary"
+                   }
+                   className={
+                     order.payment === "Success"
+                       ? "bg-green-100 text-green-700 hover:bg-green-100"
+                       : "bg-orange-100 text-orange-700 hover:bg-orange-100"
+                   }
+                 >
+                   ● {order?.payment?.status}
+                 </Badge>
+               </TableCell>
+               <TableCell className="font-medium text-gray-900">
+                 {order.finalPrice} ETB
+               </TableCell>
+               <TableCell className="text-gray-600">
+                 {order?.pickupAddress?.city}
+               </TableCell>
+               {/* <TableCell className="text-gray-600">
+               2 Items
+
+               </TableCell> */}
+               <TableCell className="text-gray-600">
+               {order?.deliveryAddress?.city}
+               </TableCell>
+               <TableCell>
+                 <Badge
+                   variant={
+                     order.fulfillmentType === "Fulfilled"
+                       ? "default"
+                       : "secondary"
+                   }
+                   className={
+                     order.fulfillmentType === "Fulfilled"
+                       ? "bg-green-100 text-green-700 hover:bg-green-100"
+                       : "bg-red-100 text-red-700 hover:bg-red-100"
+                   }
+                 >
+                   ● {order.fulfillmentType}
+                 </Badge>
+               </TableCell>
+               <TableCell>
+                 <Badge
+                   variant="secondary"
+                   className={
+                     order.status === "Approved"
+                       ? "bg-green-100 text-green-700"
+                       : "bg-orange-100 text-orange-700"
+                   }
+                 >
+                   {order.status}
+                 </Badge>
+               </TableCell>
+               <TableCell>
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     // navigate(`/staff/edit/${member.id}`);
+                     setIsDialogOpen(true); //
+                     setSelectedOrder(order)
+                   }}
+                 >
+                   Approve
+                 </Button>
+               </TableCell>
+             </TableRow>
+           ))}
+         </TableBody>
+       </Table>
+       <TablePagination
+         currentPage={currentPage}
+         totalPages={orderPagination?.totalPages||1}
+         pageSize={orderPagination?.pageSize||10}
+         totalItems={orderPagination?.total||0}
+         onPageChange={handlePageChange}
+         
+         onPageSizeChange={handlePageSizeChange}
+       />
+     </Card>
         )}
 
         {/* Drivers Tab */}

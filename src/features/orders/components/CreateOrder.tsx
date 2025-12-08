@@ -16,19 +16,19 @@ import MapAddressSelector from "@/components/common/MapAddressSelector";
 import SuccessModal from "@/components/common/SuccessModal";
 import { IoArrowBack, IoLogoDropbox } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import * as Yup from "yup";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
+import type { Customer, CustomerListResponse, Pagination } from "@/types/types";
+import { Spinner } from "@/utils/spinner";
+import { Select as Style2 } from "antd";
+
 // import { useOrders } from "@/hooks/useOrders"; // custom hook
 
 const OrderValidationSchema = Yup.object().shape({
-  name: Yup.string().required("Sender name is required"),
-  email: Yup.string()
-    .email("Invalid email")
-    .required("Sender email is required"),
-  phone: Yup.string().required("Sender phone is required"),
+  customerId: Yup.string().required("Customer is required"),
   receiverName: Yup.string().required("Receiver name is required"),
   receiverEmail: Yup.string()
     .email("Invalid email")
@@ -44,18 +44,53 @@ const OrderValidationSchema = Yup.object().shape({
   destination: Yup.string().required("Destination is required"),
 });
 
+interface ConvertedShipment {
+  customerId: any;
+  receiverName: any;
+  receiverEmail: any;
+  receiverPhone: any;
+  serviceType: any;
+  fulfillmentType: any;
+  weight: any;
+  category: any[];
+  isFragile: any;
+  shipmentType: any;
+  shippingScope: any;
+
+  pickupAddress: {
+    lat: any;
+    long: any;
+  };
+
+  deliveryAddress: {
+    lat: any;
+    long: any;
+  };
+
+  isUnusual: any;
+  unusualReason: any;
+  quantity: any;
+  cost: any;
+
+  width?: any;
+  height?: any;
+  length?: any;
+}
+
+
 export default function OrderForm() {
   //   const { createOrder, isCreatingOrder } = useOrders();
 
   const initialValues = {
     serviceType: "",
     fulfillmentType: "",
-    name: "",
-    email: "",
-    phone: "",
+    // name: "",
+    // email: "",
+    // phone: "",
+    customerId: "",
     weight: 0,
     quantity: 0,
-    category: "",
+    category: [],
     isFragile: false,
     shipmentType: "",
     shippingScope: "",
@@ -67,9 +102,9 @@ export default function OrderForm() {
     pickupLongitude: 0,
     cost: 0,
     senderEntity: "",
-    unUsualItem: false,
+    isUnusual: false,
     destination: "",
-    unUsualityReason: "",
+    unusualReason: "",
     // Receiver fields
     receiverName: "",
     receiverEmail: "",
@@ -84,70 +119,84 @@ export default function OrderForm() {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const onEstimate = () => {
-    const price = Math.ceil(Math.random() * 6000 + 1000);
-    setEstimatePrice(
-      Intl.NumberFormat("en-us", {
-        style: "currency",
-        currency: "ETB",
-        minimumIntegerDigits: 2,
-      }).format(price)
-    );
+  const [managerSearch, setManagerSearch] = useState("");
+  const [branchSearch, setBranchSearch] = useState("");
+  const [showManagerDropdown, setShowManagerDropdown] = useState(false);
+  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [custoemr, setCustomer] = useState<Customer[]>([]);
+const [priceLoading,setPriceLoading] = useState(false)
+// const [priceLoading,setPriceLoad] = useState(false)
+
+  const featchStaffs = async (page = 1, limit = 10) => {
+    try {
+      setLoadingStaff(true);
+
+      const staffs = await api.get<CustomerListResponse>(
+        `/users/customers?search=all:${managerSearch}&page=${1}&pageSize=${20}`
+      );
+      setCustomer(staffs.data.data);
+      setPagination(staffs.data.pagination);
+      // toast.success(staffs.data.message);
+      setLoadingStaff(false);
+    } catch (error: any) {
+      setLoadingStaff(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
   };
 
-  const generateTrackingNumber = () => {
-    const prefix = "ETB";
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000)
-      .toString()
-      .padStart(3, "0");
-    return `${prefix}${timestamp}${random}`;
-  };
+  useEffect(() => {
+    featchStaffs();
+  }, [managerSearch]);
+  const onEstimate =async (_values:any) => {
+    setPriceLoading(true)
+    const converted :ConvertedShipment= {
+      // name:_values.name,
+      // email:_values.email,
+      // phone:_values.phone,
 
-  const handleSubmit = async(
-    _values: any,
-    { resetForm }: { resetForm: () => void }
-  ) => {
-    console.log("-----------------------------------------: ========: ",_values)
-    const converted = {
-      name:_values.name,
-      email:_values.email,
-      phone:_values.phone,
-
+      customerId: _values.customerId,
       // receiver info
       receiverName: _values.receiverName,
       receiverEmail: _values.receiverEmail,
       receiverPhone: _values.receiverPhone,
-    
+
       // service
       serviceType: _values.serviceType,
       fulfillmentType: _values.fulfillmentType,
-    
+
       // package details
       weight: _values.weight,
-      category: [_values.category],
+      category: _values.category,
       isFragile: _values.isFragile,
       shipmentType: _values.shipmentType,
       shippingScope: _values.destination,
-      length: _values.length,
-      width: _values.width,
-      height: _values.height,
-    
+      // length: _values.length,
+      // width: _values.width,
+      // height: _values.height,
+
       // locations (converted to template structure)
       pickupAddress: {
-        lat: _values.pickupLatitude,
-        long: _values.pickupLongitude
+        lat: String(_values.pickupLatitude),
+        long: String(_values.pickupLongitude),
       },
-    
+
       deliveryAddress: {
-        lat: _values.receiverLatitude,
-        long: _values.receiverLongitude
+        lat: String(_values.receiverLatitude),
+        long: String(_values.receiverLongitude),
       },
-    
+
       // unusual item fields
-      isUnusual: _values.unUsualItem,
-      unusualReason: _values.unUsualityReason,
-    
+      isUnusual: _values.isUnusual,
+      unusualReason: _values.unusualReason,
+
       // extra from your input (since they exist)
       quantity: _values.quantity,
       // pickupAddressText: _values.pickupAddress,
@@ -156,41 +205,168 @@ export default function OrderForm() {
       // senderPhone: _values.phone,
       // senderEntity: _values.senderEntity,
       // shippingScope: _values.destination,
-      cost: _values.cost
+      cost: _values.cost,
     };
-    console.log("values: ",converted)
+    if(_values.shipmentType=="PARCEL"){
+      converted.width= _values?.width
+      converted.height= _values?.height
+      converted.length= _values?.length
 
+    }
     try {
-      setLoading(true);
-      
-      const res = await api.post("/order",converted);
-      console.log("res of create order: ",res.data)
+
+      const res = await api.post("/pricing/order/summary", converted);
+      console.log("res of create order: ", res.data);
       toast.success(res.data?.message);
-      const tracking = generateTrackingNumber();
-      setTrackingNumber(tracking);
-      setIsSuccessModalOpen(true);
+      console.log("priceeeeeee: ",res.data)
+      setEstimatePrice(
+        Intl.NumberFormat("en-us", {
+          style: "currency",
+          currency: res?.data?.data?.result?.currency,
+          minimumIntegerDigits: 2,
+        }).format(res.data.data?.result?.finalPrice)
+      );
+      // const tracking = generateTrackingNumber();
+      // setTrackingNumber(tracking);
+      // setIsSuccessModalOpen(true);
       // resetForm();
       // setEstimatePrice("");
+      setPriceLoading(false)
     } catch (error: any) {
-      console.log(error.response?.data)
+      console.log(error.response?.data);
+      toast.error(error?.response?.data?.message || "Somethign went wrong!");
+    } finally {
+      setPriceLoading(false)
+    }
+   
+  };
+
+  const generateTrackingNumber = () => {
+    
+    const prefix = "ETB";
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, "0");
+    return `${prefix}${timestamp}${random}`;
+  };
+
+  const handleSubmit = async (
+    _values: any,
+    { resetForm }: { resetForm: () => void }
+  ) => {
+    console.log(
+      "-----------------------------------------: ========: ",
+      _values
+    );
+    const converted :ConvertedShipment= {
+      // name:_values.name,
+      // email:_values.email,
+      // phone:_values.phone,
+
+      customerId: _values.customerId,
+      // receiver info
+      receiverName: _values.receiverName,
+      receiverEmail: _values.receiverEmail,
+      receiverPhone: _values.receiverPhone,
+
+      // service
+      serviceType: _values.serviceType,
+      fulfillmentType: _values.fulfillmentType,
+
+      // package details
+      weight: _values.weight,
+      category: _values.category,
+      isFragile: _values.isFragile,
+      shipmentType: _values.shipmentType,
+      shippingScope: _values.destination,
+      // length: _values.length,
+      // width: _values.width,
+      // height: _values.height,
+
+      // locations (converted to template structure)
+      pickupAddress: {
+        lat: String(_values.pickupLatitude),
+        long: String(_values.pickupLongitude),
+      },
+
+      deliveryAddress: {
+        lat: String(_values.receiverLatitude),
+        long: String(_values.receiverLongitude),
+      },
+
+      // unusual item fields
+      isUnusual: _values.isUnusual,
+      unusualReason: _values.unusualReason,
+
+      // extra from your input (since they exist)
+      quantity: _values.quantity,
+      // pickupAddressText: _values.pickupAddress,
+      // deliveryAddressText: _values.receiverAddress,
+      // senderName: _values.name,
+      // senderPhone: _values.phone,
+      // senderEntity: _values.senderEntity,
+      // shippingScope: _values.destination,
+      cost: _values.cost,
+    };
+    console.log("values: ", converted);
+    if(_values.shipmentType=="PARCEL"){
+      converted.width= _values?.width
+      converted.height= _values?.height
+      converted.length= _values?.length
+
+    }
+    try {
+      setLoading(true);
+
+      const res = await api.post("/order", converted);
+      console.log("res of create order: ", res.data);
+      toast.success(res.data?.message);
+      // const tracking = generateTrackingNumber();
+      setTrackingNumber(res.data.data?.trackingCode);
+      setIsSuccessModalOpen(true);
+      resetForm();
+      setEstimatePrice("");
+      
+      setManagerSearch("");
+      
+    } catch (error: any) {
+      console.log(error.response?.data);
       toast.error(error?.response?.data?.message || "Somethign went wrong!");
     } finally {
       setLoading(false);
     }
     // Generate tracking number
-   
 
     // Show success modal
 
     // Reset form after a short delay
     // setTimeout(() => {
-    
+
     // }, 1000);
   };
 
   const handleCloseModal = () => {
     setIsSuccessModalOpen(false);
     setTrackingNumber("");
+  };
+
+  const clearManager = (
+    setFieldValue: (field: string, value: string) => void
+  ) => {
+    setFieldValue("customerId", "");
+    setFieldValue("managerName", "");
+    setManagerSearch("");
+  };
+
+  const selectManager = (
+    manager: { id: string; name: string; email: string },
+    setFieldValue: (field: string, value: string) => void
+  ) => {
+    setFieldValue("customerId", manager.id);
+    setFieldValue("managerName", manager.name);
+    setManagerSearch(`${manager.name} (${manager.id})`);
+    setShowManagerDropdown(false);
   };
 
   return (
@@ -227,7 +403,81 @@ export default function OrderForm() {
               {/* Customer Info */}
               <div className="bg-gray-50 p-6 rounded-lg space-y-4">
                 <h2 className="text-lg font-medium mb-4">Sender Info</h2>
-                <div>
+                <div className="bg-gray-50  rounded-lg space-y-4">
+                  <div className="relative">
+                    <Label className="mb-2">Customer *</Label>
+                    <div className="relative">
+                      <Input
+                        // type="text"
+                        placeholder="Search customer "
+                        value={managerSearch}
+                        onChange={(e) => {
+                          console.log(e.target.value);
+                          setManagerSearch(e.target.value);
+                          setShowManagerDropdown(true);
+                          if (!e.target.value) {
+                            clearManager(setFieldValue);
+                          }
+                        }}
+                        onFocus={() => setShowManagerDropdown(true)}
+                        onBlur={() =>
+                          setTimeout(() => setShowManagerDropdown(false), 200)
+                        }
+                        className="py-7"
+                      />
+                      {values.customerId && (
+                        <button
+                          type="button"
+                          onClick={() => clearManager(setFieldValue)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {showManagerDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {loadingStaff && (
+                          <div className="flex justify-center items-center py-8">
+                            <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                          </div>
+                        )}
+                        {custoemr.length > 0 ? (
+                          custoemr.map((manager) => (
+                            <div
+                              key={manager.id}
+                              onClick={() =>
+                                selectManager(manager, setFieldValue)
+                              }
+                              className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">
+                                {manager.name}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                ID: {manager.id}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {manager.email}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-gray-500 text-center">
+                            No managers found
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {errors.customerId && touched.customerId && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.customerId}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* <div>
                   <Label className="mb-1">Name</Label>
                   <Field
                     as={Input}
@@ -256,8 +506,9 @@ export default function OrderForm() {
                     <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                   )}
                 </div>
-                <div>
-                  <Label className="mb-1">Phone</Label>
+                <div> */}
+
+                {/* <Label className="mb-1">Phone</Label>
                   <Field
                     as={Input}
                     type="tel"
@@ -270,7 +521,7 @@ export default function OrderForm() {
                   {errors.phone && touched.phone && (
                     <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
                   )}
-                </div>
+                </div> */}
                 <div>
                   <Label className="mb-1">Pickup Address</Label>
                   <MapAddressSelector
@@ -432,7 +683,7 @@ export default function OrderForm() {
                   </p>
                 )}
               </div>
-              <div>
+              {/* <div>
                 <Label className="mb-1">Sender Entity</Label>
                 <Select
                   value={String(values.senderEntity)}
@@ -446,7 +697,7 @@ export default function OrderForm() {
                     <SelectItem value="false">Company</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
             </div>
 
             {/* Shipment Info */}
@@ -534,19 +785,21 @@ export default function OrderForm() {
                 )}
                 <div>
                   <Label className="mb-1">Category</Label>
-                  <Select
-                    value={String(values.shipmentType)}
-                    onValueChange={(val) => setFieldValue("category", val)}
+
+                  <Style2
+                    mode="multiple"
+                    placeholder="Select category"
+                    value={values.category} // Make sure this is an array
+                    onChange={(val) => setFieldValue("category", val)}
+                    style={{
+                      width: "100%",
+                      height: 56, // similar to py-7
+                    }}
                   >
-                    <SelectTrigger className="py-7 !w-full">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="courier">Courier</SelectItem>
-                      <SelectItem value="food">Food</SelectItem>
-                      <SelectItem value="chemical">Chemical</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Style2.Option value="courier">Courier</Style2.Option>
+                    <Style2.Option value="food">Food</Style2.Option>
+                    <Style2.Option value="chemical">Chemical</Style2.Option>
+                  </Style2>
                 </div>
                 <div>
                   <Label className="mb-1">Fragile</Label>
@@ -568,10 +821,10 @@ export default function OrderForm() {
                 <div>
                   <Label className="mb-1">Unusual Item</Label>
                   <Select
-                    value={String(values.unUsualItem)}
+                    value={String(values.isUnusual)}
                     onValueChange={(val) =>
                       setFieldValue(
-                        "unUsualItem",
+                        "isUnusual",
                         val === "true" ? true : false
                       )
                     }
@@ -585,13 +838,13 @@ export default function OrderForm() {
                     </SelectContent>
                   </Select>
                 </div>
-                {values.unUsualItem ? (
+                {values.unusualReason ? (
                   <div className="col-span-2">
                     <Label className="mb-1">Unusuality Reason</Label>
                     <Field
                       as={Textarea}
                       cols={15}
-                      name="unUsualityReason"
+                      name="unusualReason"
                       placeholder="Reason for being unusual"
                       className={`py-4 min-h-[80px]`}
                     />
@@ -648,10 +901,13 @@ export default function OrderForm() {
                 <div className="col-span-2 grid grid-cols-2 gap-4">
                   <Button
                     type="button"
-                    className="mb-1  cursor-pointer hover:bg-blue-700"
-                    onClick={onEstimate}
-                  >
-                    Generate Estimate price
+                    className="mb-1 flex flex-row justify-center items-center cursor-pointer hover:bg-blue-700"
+                    onClick={() => onEstimate(values)}
+                    >
+                    {priceLoading?
+                            <Spinner className="h-6 w-6 text-center text-white mr-2" />
+                    :
+                    "Generate Estimate price"}
                   </Button>
 
                   <Input
@@ -664,11 +920,17 @@ export default function OrderForm() {
                 <div className="col-span-2 grid grid-cols-2 gap-4 ">
                   <Button
                     type="submit"
-                    className="mb-1 cursor-pointer hover:bg-blue-700"
-                  >
-                    Submit order
+                    disabled={loading}
+                    className="mb-1 lex flex-row justify-center items-center cursor-pointer hover:bg-blue-700"
+                  >  {loading?
+                    <Spinner className="h-6 w-6 text-center text-white mr-2" />
+            :
+            "Submit order"}
+                   
                   </Button>
                   <Button
+                    disabled={loading}
+
                     type="button"
                     onClick={() => navigate(-1)}
                     className="flex-1 bg-gray-100 hover:bg-gray-200 cursor-pointer !text-black border border-gray-300 !w-full"

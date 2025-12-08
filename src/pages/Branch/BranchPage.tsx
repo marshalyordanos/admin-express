@@ -40,6 +40,8 @@ import toast from "react-hot-toast";
 import type { Branch, BranchListResponse, Pagination } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 import ConfirmDialog from "@/components/common/DeleteModal";
+import { Skeleton } from "antd";
+import { exportToExcel } from "@/utils/exportToExcel";
 
 
 interface Metric {
@@ -91,6 +93,7 @@ interface BranchDashboardStats {
         `/branch?${searchText&&'search=all:'+searchText+'&'}page=${currentPage}&pageSize=${pageSize}`
       );
       setBranches(branch.data.data);
+      setPagination(branch.data?.pagination)
       // toast.success(staffs.data.message);
       setLoadingBrand(false);
     } catch (error: any) {
@@ -112,7 +115,7 @@ interface BranchDashboardStats {
     try {
       setLoading(true);
       const res = await api.get<BranchDashboardStats>("/report/dashboard/branch-summary");
-      setStats(res.data);
+      setStats(res.data?.data);
     } catch (error: any) {
       const message =
         error?.response?.data?.message || "Something went wrong. Please try again.";
@@ -190,6 +193,20 @@ interface BranchDashboardStats {
   
     }
 
+    const handleExport = () => {
+      exportToExcel("branches", branches, (branch) => ({
+        "Branch Name": branch.name ?? "",
+        Location: branch.location ?? "",
+        "Manager": branch?.manager?.name ?? "N/A",
+        "Total Orders":branch?.totalOrders,
+        "Active Orders":Number(branch?.activeOrders).toFixed(),
+        "Staff Count": Number(branch?.staffCount).toFixed(),
+        "Revenue":Number(branch?.revenue).toFixed(2),
+        "Efficiency":`${branch?.efficiency}%`
+    }));
+
+    };
+
   return (
     <div className="min-h-screen pb-20 md:pb-6">
       {/* Main Content */}
@@ -204,6 +221,8 @@ interface BranchDashboardStats {
           <div className="flex items-center space-x-2 sm:space-x-3">
             <Button
               variant="outline"
+              onClick={handleExport}
+
               className="text-gray-600 bg-transparent text-xs sm:text-sm px-2 sm:px-4"
             >
               <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -244,7 +263,17 @@ interface BranchDashboardStats {
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-          {metrics.map((metric, index) => (
+          {
+          loading?   Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="bg-white p-4">
+          <Skeleton
+            active
+            title={{ width: "60%" }}
+            paragraph={{ rows: 2, width: ["100%", "80%"] }}
+          />
+        </Card>
+      )):
+      metrics.map((metric, index) => (
             <Card key={index} className="bg-white">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600">

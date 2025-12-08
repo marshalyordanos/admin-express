@@ -14,6 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { useNavigate } from "react-router-dom";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { Spinner } from "@/utils/spinner";
+import api from "@/lib/api/api";
+import type { Pagination } from "@/types/types";
+import toast from "react-hot-toast";
+import TablePagination from "@/components/common/TablePagination";
 
 interface PricingParameters {
   title: string;
@@ -113,7 +120,55 @@ export default function PricingMain() {
     };
     navigate(routes[zoneKey]);
   };
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [fleetLogs,setFleetLogs] =useState<any>([])
 
+  const featchFleetLogs = async (page=1,limit=10) => {
+    try {
+      setLoading(true);
+
+      const staffs = await api.get<any>(`/pricing/tariff?page=${page}&pageSize=${limit}`);
+      setFleetLogs(staffs.data.data?.tariffs);
+      setPagination(staffs.data.pagination);
+      // toast.success(staffs.data.message)
+      setLoading(false);
+    } catch (error: any) {
+      setLoading(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchFleetLogs(currentPage,pageSize);
+  }, [currentPage,pageSize]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
   return (
     <div className="min-h-screen">
       {/* Main Content */}
@@ -221,6 +276,115 @@ export default function PricingMain() {
             );
           })}
         </div>
+
+        <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead
+                      className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("date")}
+                    >
+                      Name
+                    </TableHead>
+                    <TableHead
+                      className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("plateNumber")}
+                    >
+                      Shipping Scope
+                    </TableHead>
+{/*                   
+                    <TableHead className="text-gray-600 font-medium">
+                    Service Type
+                    </TableHead> */}
+                   
+                    <TableHead
+                      className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("cost")}
+                    >
+                      currency
+                    </TableHead>
+                    {/* <TableHead
+                      className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("status")}
+                    >
+                      Status
+                    </TableHead> */}
+                    {/* <TableHead className="text-gray-600 font-medium">
+                      Next Service
+                    </TableHead> */}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                <TableRow>
+                {loading && (
+                  <TableCell colSpan={11}>
+                    <div className="flex justify-center items-center py-8">
+                      <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                      <span className="text-gray-600 font-medium">
+                        Loading Pricing data...
+                      </span>
+                    </div>
+                  </TableCell>
+                )}
+              </TableRow>
+                  {fleetLogs.map((log:any) => (
+                    <TableRow
+                      key={log.id}
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() =>
+                        navigate(`/fleet/maintenance/details/${log.id}`)
+                      }
+                    >
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+{
+  log.name
+}                          </span>
+                         
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-blue-600">
+                            {log?.shippingScope}
+                          </span>
+                          
+                        </div>
+                      </TableCell>
+                      
+                      {/* <TableCell>
+                        <div className="flex flex-col max-w-[250px]">
+                          <span className="font-medium truncate">
+                            {log.serviceType}
+                          </span>
+                        
+                        </div>
+                      </TableCell> */}
+                     
+                      <TableCell>
+                        <span className="font-medium text-green-600">
+                          {log.currency} 
+                        </span>
+                      </TableCell>
+                  
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            <TablePagination
+            currentPage={currentPage}
+            totalPages={pagination?.totalPages||1}
+            pageSize={pagination?.pageSize||10}
+            totalItems={pagination?.total||0}
+            onPageChange={handlePageChange}
+            
+            onPageSizeChange={handlePageSizeChange}
+          />
 
         {/* Existing Configurations */}
         {/* <div className="space-y-6">

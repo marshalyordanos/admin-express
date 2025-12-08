@@ -14,9 +14,15 @@ import Button from "../../../components/common/Button";
 import { MaintenanceLogSchema } from "../schemas/MaintenanceLogSchema";
 import { IoArrowBack, IoConstruct } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
-import type { FleetListResponse, FleetVehicle, Pagination, StaffListResponse } from "@/types/types";
+import type {
+  FleetListResponse,
+  FleetVehicle,
+  Pagination,
+  StaffListResponse,
+} from "@/types/types";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
+import { Spinner } from "@/utils/spinner";
 
 const CreateMaintenanceLog = () => {
   const [status, setStatus] = useState<
@@ -56,12 +62,10 @@ const CreateMaintenanceLog = () => {
     try {
       setLoadingStaff(true);
 
-      const staffs = await api.get<FleetListResponse>(
-        `/fleet`
-      );
+      const staffs = await api.get<FleetListResponse>(`/fleet`);
       setSetFleet(staffs.data.data);
       setPagination(staffs.data.pagination);
-      toast.success(staffs.data.message);
+      // toast.success(staffs.data.message);
       setLoadingStaff(false);
     } catch (error: any) {
       setLoadingStaff(false);
@@ -136,21 +140,18 @@ const CreateMaintenanceLog = () => {
     fetchMaintenanceData();
   }, [id, isEditMode]);
 
-  const handleSubmit = async (value:any) => {
+  const handleSubmit = async (value: any) => {
     try {
       setStatus("submitting");
-      console.log(value,"values")
+      console.log(value, "values");
       try {
         setLoading(true);
 
-  const data = 
-  {
-        
-        
-"vehicleId":value.vehicleId,
-    "cost":value.cost,
-    "maintenance":value.notes
-  }
+        const data = {
+          vehicleId: value.vehicleId,
+          cost: value.cost,
+          maintenance: value.notes,
+        };
         const res = await api.post("/fleet/maintenance", data);
         toast.success(res.data?.message);
         navigate("/fleet/maintenance");
@@ -193,8 +194,6 @@ const CreateMaintenanceLog = () => {
     setfleetSearch(`${fleet.model} (${fleet.id})`);
     setShowFleetDropdown(false);
   };
-
-  
 
   const clearFleet = (
     setFieldValue: (field: string, value: string) => void
@@ -249,52 +248,58 @@ const CreateMaintenanceLog = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
               {/* Vehicle & Service Info */}
               <div className="bg-gray-50 p-6 rounded-lg space-y-4">
                 <h2 className="text-lg font-medium mb-4">
                   Vehicle & Service Information
                 </h2>
                 <div>
-                  <Label className="mb-1">Vehicle *</Label>
-                  <div className="relative">
-                    <Input
-                      type="text"
-                      placeholder="Search managers by name, ID, or email..."
-                      value={fleetSearch}
-                      onChange={(e) => {
-                        setfleetSearch(e.target.value);
-                        setShowFleetDropdown(true);
-                        if (!e.target.value) {
-                          clearFleet(setFieldValue);
-                        }
-                      }}
-                      onFocus={() => setShowFleetDropdown(true)}
-                      onBlur={() =>
-                        setTimeout(() => setShowFleetDropdown(false), 200)
-                      }
-                      className="py-7"
-                    />
-                    {values.vehicleId && (
-                      <button
-                        type="button"
-                        onClick={() => clearFleet(setFieldValue)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
+                <div className="relative">
+  <Label className="mb-1">Vehicle *</Label>
 
-                  {showFleetDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+  <div className="relative">
+    <Input
+      type="text"
+      placeholder="Search managers by name, ID, or email..."
+      value={fleetSearch}
+      onChange={(e) => {
+        setfleetSearch(e.target.value);
+        setShowFleetDropdown(true);
+        if (!e.target.value) {
+          clearFleet(setFieldValue);
+        }
+      }}
+      onFocus={() => setShowFleetDropdown(true)}
+      onBlur={() =>
+        setTimeout(() => setShowFleetDropdown(false), 200)
+      }
+      className="py-7"
+    />
+
+    {values.vehicleId && (
+      <button
+        type="button"
+        onClick={() => clearFleet(setFieldValue)}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      >
+        ✕
+      </button>
+    )}
+  </div>
+
+  {showFleetDropdown && (
+    <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+      {loadingStaff && (
+                        <div className="flex justify-center items-center py-8">
+                          <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                        </div>
+                      )}
                       {fleets.length > 0 ? (
                         fleets.map((fleet) => (
                           <div
                             key={fleet.id}
-                            onClick={() =>
-                              selectfleet(fleet, setFieldValue)
-                            }
+                            onClick={() => selectfleet(fleet, setFieldValue)}
                             className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                           >
                             <div className="font-medium text-gray-900">
@@ -313,8 +318,11 @@ const CreateMaintenanceLog = () => {
                           No managers found
                         </div>
                       )}
-                    </div>
-                  )}
+    </div>
+  )}
+</div>
+
+               
                   {errors.vehicleId && touched.vehicleId && (
                     <p className="text-red-500 text-sm mt-1">
                       {errors.vehicleId}
@@ -360,14 +368,14 @@ const CreateMaintenanceLog = () => {
                   )}
                 </div>
                 <div>
-                <Label className="mb-1">Notes</Label>
-                <Field
-                  as={Textarea}
-                  name="notes"
-                  placeholder="Additional notes about the maintenance..."
-                  className="py-4 min-h-[100px]"
-                />
-              </div>
+                  <Label className="mb-1">Notes</Label>
+                  <Field
+                    as={Textarea}
+                    name="notes"
+                    placeholder="Additional notes about the maintenance..."
+                    className="py-4 min-h-[100px]"
+                  />
+                </div>
                 {/* <div>
                   <Label className="mb-1">Service Description *</Label>
                   <Field

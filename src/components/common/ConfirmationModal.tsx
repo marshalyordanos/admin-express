@@ -100,11 +100,11 @@ export default function ConfirmationModal({
             {children}
           </div>
           <div className="flex flex-col items-center text-center">
-            <div
+            {/* <div
               className={`w-16 h-16 ${variantStyles.iconBg} rounded-full flex items-center justify-center mb-4`}
             >
               {variantStyles.icon}
-            </div>
+            </div> */}
             <p className="text-gray-600">{description}</p>
           </div>
 

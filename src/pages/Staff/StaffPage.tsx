@@ -22,7 +22,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/utils/spinner";
 
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +50,7 @@ import type {
 import toast from "react-hot-toast";
 import { exportToExcel } from "@/utils/exportToExcel";
 import ConfirmDialog from "@/components/common/DeleteModal";
+import { Skeleton } from "antd";
 
 const metrics2 = [
   {
@@ -153,7 +153,7 @@ function StaffPage() {
       const staffs = await api.get<StaffListResponse>(`/staff?search=all:${searchText}&page=${page}&pageSize=${limit}`);
       setStaffs(staffs.data.data);
       setPagination(staffs.data.pagination);
-      toast.success(staffs.data.message)
+      // toast.success(staffs.data.message)
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
@@ -177,7 +177,7 @@ function StaffPage() {
       const staffs = await api.get<StaffStats>(
         "/report/dashboard/staff-summary"
       );
-      setSummary(staffs.data);
+      setSummary(staffs.data?.data);
       // toast.success(staffs.data.message);
       setLoadingSummary(false);
     } catch (error: any) {
@@ -296,7 +296,15 @@ function StaffPage() {
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {metrics.map((metric, index) => (
+          {loading?   Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="bg-white p-4">
+          <Skeleton
+            active
+            title={{ width: "60%" }}
+            paragraph={{ rows: 2, width: ["100%", "80%"] }}
+          />
+        </Card>
+      )):metrics.map((metric, index) => (
             <Card key={index} className="bg-white">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600">
@@ -385,12 +393,12 @@ function StaffPage() {
                 <TableHead className="text-gray-600 font-medium">
                   Branch
                 </TableHead>
-                <TableHead className="text-gray-600 font-medium">
+                {/* <TableHead className="text-gray-600 font-medium">
                   Assigned Orders
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
                   Completed
-                </TableHead>
+                </TableHead> */}
                 <TableHead className="text-gray-600 font-medium">
                   Status
                 </TableHead>
@@ -462,29 +470,29 @@ function StaffPage() {
                   <TableCell className="text-gray-600">
                     {member.branch?.name}
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <Badge
                       variant="secondary"
                       className="bg-orange-100 text-orange-700"
                     >
-                      {/* {member.assignedOrders} */}
+                      {member.assignedOrders}
                       12
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
-                    {/* {member.completedOrders} */}
+                    {member.completedOrders}
                     145
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <Badge
                       variant="secondary"
                       className={
-                        member?.status === "Active"
+                        member?.isActive
                           ? "bg-green-100 text-green-700"
                           : "bg-yellow-100 text-yellow-700"
                       }
                     >
-                      ● {member?.status}
+                      ● {member?.isActive?"Active":"InActive"}
                     </Badge>
                   </TableCell>
                   <TableCell>

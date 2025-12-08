@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,15 @@ import {
   IoAdd,
   IoSearch,
   IoFilter,
+  IoClose
 } from "react-icons/io5";
+
 import "leaflet/dist/leaflet.css";
+import { FloatButton } from "antd";
+import api from "@/lib/api/api";
+import toast from "react-hot-toast";
+import type { Pagination } from "@/types/types";
+
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })
@@ -177,6 +184,14 @@ export default function DriversMapView({
   const [filterStatus] = useState<string>("all");
   const [dispatchProgress] = useState(75);
 
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [drivers,setDrivers] = useState<any>([])
+  const [driverLoading,setDriverLoading] = useState(false)
+  const [pagination,setPagination] = useState<Pagination | null>(null)
+  const [driverSearch,setDriverSearch] = useState("")
+
   const filteredDrivers = mockDrivers.filter((driver) => {
     const matchesSearch =
       driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -185,6 +200,43 @@ export default function DriversMapView({
       filterStatus === "all" || driver.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+ 
+  const featchOrders = async (page=1,limit=10) => {
+    try {
+      setDriverLoading(true);
+
+      const staffs = await api.get<any>(`/staff/driver?search=all:${driverSearch}&page=${page}&pageSize=${limit}`)
+      setDrivers(staffs.data.data);
+      setPagination(staffs.data.pagination);
+      // toast.success(staffs.data.message);
+      setDriverLoading(false);
+    } catch (error: any) {
+      setDriverLoading(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchOrders(currentPage,pageSize);
+  }, [driverSearch,currentPage,pageSize]);
+ 
+
 
   const handleSelectDriver = (driver: Driver) => {
     setSelectedDriver(driver);
@@ -227,7 +279,7 @@ export default function DriversMapView({
           </div>
 
           {/* Search and Filter */}
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <div className="relative">
               <IoSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -251,12 +303,12 @@ export default function DriversMapView({
               />
               <span className="text-sm text-gray-600">SELECT ALL</span>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Driver List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredDrivers.map((driver) => (
+          {drivers?.map((driver:any) => (
             <div
               key={driver.id}
               className={`p-4 border-b border-gray-100 cursor-pointer transition-colors ${
@@ -274,9 +326,9 @@ export default function DriversMapView({
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium text-gray-900">
-                        {driver.name}
+                        {driver?.user.name}
                       </h3>
-                      {driver.deliveries > 0 && (
+                      {driver?.user?.deliveries > 0 && (
                         <Badge
                           variant="secondary"
                           className="bg-blue-100 text-blue-700"
@@ -295,10 +347,7 @@ export default function DriversMapView({
                           <div
                             className="bg-blue-600 h-1 rounded-full"
                             style={{
-                              width: `${
-                                driver.deliveries > 0
-                                  ? (driver.completed / driver.deliveries) * 100
-                                  : 0
+                              width: `${30
                               }%`,
                             }}
                           ></div>
@@ -421,6 +470,11 @@ export default function DriversMapView({
         {/* Bottom Section - Driver Details and Live Feed */}
         {selectedDriver && (
           <div className="p-4 bg-white border-t border-gray-200">
+            <div className=" flex flex-row justify-end">
+            <Button variant="outline" className="my-2" onClick={()=>setSelectedDriver(null)} size="sm">
+            <IoClose className="my-2" />
+            </Button>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               {/* Driver Details */}
               <Card>

@@ -34,12 +34,17 @@ import {
   IoStar,
   IoWarning,
   IoLockOpen,
+  IoFilter,
 } from "react-icons/io5";
 import { MdEdit, MdDelete } from "react-icons/md";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
 import type { Customer, CustomerListResponse, Pagination } from "@/types/types";
 import ConfirmDialog from "@/components/common/DeleteModal";
+import { Skeleton } from "antd";
+import { Spinner } from "@/utils/spinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { exportToExcel } from "@/utils/exportToExcel";
 
 const customers2 = [
   {
@@ -195,14 +200,16 @@ export default function CustomerMain() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteLaoding, setDeleteLoading] = useState<boolean>(false);
+  const [filterStatus, setFilterStatus] = useState("all");
+
   const featchCustomers = async (page=1,limit=10) => {
     try {
       setLoading(true);
 
-      const staffs = await api.get<CustomerListResponse>(`/users/customers?search=all:${searchText}&page=${page}&pageSize=${limit}`);
+      const staffs = await api.get<CustomerListResponse>(`/users/customers?search=all:${searchText}&page=${page}&pageSize=${limit}&filter=${filterStatus=="all"?"":`customerType:${filterStatus}`}`);
       setCustomers(staffs.data.data);
       setPagination(staffs.data.pagination);
-      toast.success(staffs.data.message)
+      // toast.success(staffs.data.message)
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
@@ -217,7 +224,7 @@ export default function CustomerMain() {
 
   useEffect(() => {
     featchCustomers(currentPage,pageSize);
-  }, [searchText,currentPage,pageSize]);
+  }, [searchText,currentPage,pageSize,filterStatus]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -235,7 +242,7 @@ export default function CustomerMain() {
       const staffs = await api.get<DashboardStats>(
         "/report/dashboard/customer-summary"
       );
-      setSummary(staffs.data);
+      setSummary(staffs.data?.data);
       // toast.success(staffs.data.message);
       setLoadingSummary(false);
     } catch (error: any) {
@@ -307,6 +314,21 @@ export default function CustomerMain() {
     }
   
     }
+
+
+    const handleExport = () => {
+      exportToExcel("customers", customers, (customer) => ({
+        "Name":( customer.name || customer?.companyName) ?? "",
+        Email: customer.email ?? "",
+        Phone: customer.phone ?? "",
+        "Customer Type": customer.customerType ?? "",
+        "Total Orders": customer?.ordersCount ?? "",
+        "Total Spent": customer?.ordersTotalPrice ?? "",
+        "Status":customer?.isActive?"Active":"InActive"
+    }));
+
+    };
+
   return (
     <div className="min-h-screen">
       {/* Main Content */}
@@ -319,31 +341,34 @@ export default function CustomerMain() {
             </h1>
           </div>
           <div className="flex items-center space-x-3">
-            <Button variant="outline" className="text-gray-600 bg-transparent">
+            <Button 
+              onClick={handleExport}
+            
+            variant="outline" className="text-gray-600 bg-transparent">
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            {/* <Button
+            <Button
               className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
               onClick={() => navigate("/customer/create")}
             >
               <IoAdd className="h-4 w-4 mr-2" />
               Add New Customer
-            </Button> */}
+            </Button>
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="flex items-center space-x-3 mb-6">
-          {/* <Button
+          <Button
             variant="outline"
             className="text-gray-600 bg-white cursor-pointer"
             onClick={() => navigate("/customer/corporate")}
           >
             <IoBusiness className="h-4 w-4 mr-2" />
             Corporate Clients
-          </Button> */}
-          {/* <Button
+          </Button>
+          <Button
             variant="outline"
             className="text-gray-600 bg-white cursor-pointer"
             onClick={() => navigate("/customer/loyalty")}
@@ -358,12 +383,22 @@ export default function CustomerMain() {
           >
             <IoWarning className="h-4 w-4 mr-2" />
             Complaints
-          </Button> */}
+          </Button>
         </div>
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {metrics.map((metric, index) => (
+          {
+          loadingSummary?   Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="bg-white p-4">
+              <Skeleton
+                active
+                title={{ width: "60%" }}
+                paragraph={{ rows: 2, width: ["100%", "80%"] }}
+              />
+            </Card>
+          )):
+          metrics.map((metric, index) => (
             <Card key={index} className="bg-white">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600">
@@ -413,14 +448,29 @@ export default function CustomerMain() {
         </div>
 
         {/* Search */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+       
         <div className="relative w-80 mb-6">
           <Search className="absolute left-3 top-4 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search customers..."
+          value={searchText}
+          onChange={(e)=>setSearchText(e.target.value)}
+            placeholder="Search branches..."
             className="pl-10 pr-3 w-full py-6"
           />
         </div>
-
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full md:w-[200px] py-6">
+                  <IoFilter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="INDIVIDUAL">Individual</SelectItem>
+                  <SelectItem value="CORPORATE">Corporate</SelectItem>
+                </SelectContent>
+              </Select>
+</div>
         {/* Customers Table */}
         <Card className="bg-white">
           <Table>
@@ -450,12 +500,12 @@ export default function CustomerMain() {
                 <TableHead className="text-gray-600 font-medium">
                   Total Spent
                 </TableHead>
-                <TableHead className="text-gray-600 font-medium">
+                {/* <TableHead className="text-gray-600 font-medium">
                   Loyalty Points
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
                   Last Order
-                </TableHead>
+                </TableHead> */}
                 <TableHead className="text-gray-600 font-medium">
                   Status
                 </TableHead>
@@ -465,6 +515,18 @@ export default function CustomerMain() {
               </TableRow>
             </TableHeader>
             <TableBody>
+            <TableRow>
+                {loading && (
+                  <TableCell colSpan={11}>
+                    <div className="flex justify-center items-center py-8">
+                      <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                      <span className="text-gray-600 font-medium">
+                        Loading customer data...
+                      </span>
+                    </div>
+                  </TableCell>
+                )}
+              </TableRow>
               {customers.map((customer, index) => (
                 <TableRow
                   key={index}
@@ -517,7 +579,7 @@ export default function CustomerMain() {
                     <Badge
                       variant="secondary"
                       className={
-                        customer.type === "Corporate"
+                        customer.customerType === "Corporate"
                           ? "bg-purple-100 text-purple-700"
                           : "bg-blue-100 text-blue-700"
                       }
@@ -526,12 +588,13 @@ export default function CustomerMain() {
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
-                    {customer?.totalOrders}
+                    {customer?.ordersCount}
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
                     {/* {customer?.totalSpent.toLocaleString()} ETB */}
+                    {Number(customer?.ordersTotalPrice).toFixed(2)}
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <div className="flex items-center gap-1">
                       <IoStar className="h-4 w-4 text-yellow-500" />
                       <span className="font-medium text-gray-900">
@@ -540,22 +603,21 @@ export default function CustomerMain() {
                     </div>
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {/* {new Date(customer?.lastOrderDate).toLocaleDateString(
+                    {new Date(customer?.lastOrderDate).toLocaleDateString(
                       "en-GB"
-                    )} */}
-                  </TableCell>
+                    )}
+                  </TableCell> */}
                   <TableCell>
                     <Badge
                       variant="secondary"
                       className={
-                        customer.status === "Active"
+                        customer?.isActive 
                           ? "bg-green-100 text-green-700"
-                          : customer.status === "Inactive"
-                          ? "bg-gray-100 text-gray-700"
+                       
                           : "bg-red-100 text-red-700"
                       }
                     >
-                      ● {customer.status}
+                      ● {customer?.isActive?"Active":"InActive"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -588,7 +650,7 @@ export default function CustomerMain() {
                      
                           setSelectedCustomer(customer)
                         }}
-                        className="p-2 text-red-400 bg-red-50 cursor-not-allowed opacity-60 hover:bg-red-100 hover:text-red-700"
+                        className="p-2 text-red-400 bg-red-50 cursor-pointer opacity-60 hover:bg-red-100 hover:text-red-700"
                       >
                         <MdDelete className="h-4 w-4" />
                       </Button>
@@ -600,10 +662,11 @@ export default function CustomerMain() {
           </Table>
           <TablePagination
             currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={totalItems}
+            totalPages={pagination?.totalPages||1}
+            pageSize={pagination?.pageSize||10}
+            totalItems={pagination?.total||0}
             onPageChange={handlePageChange}
+            
             onPageSizeChange={handlePageSizeChange}
           />
         </Card>
