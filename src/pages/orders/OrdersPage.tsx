@@ -592,6 +592,10 @@ export default function OrdersPage() {
                   Destination
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
+                Shipping Scope
+                </TableHead>
+                
+                <TableHead className="text-gray-600 font-medium">
                   Fulfillment
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
@@ -609,7 +613,7 @@ export default function OrdersPage() {
                     <div className="flex justify-center items-center py-8">
                       <Spinner className="h-6 w-6 text-blue-600 mr-2" />
                       <span className="text-gray-600 font-medium">
-                        Loading Beanch data...
+                        Loading Order data...
                       </span>
                     </div>
                   </TableCell>
@@ -671,6 +675,9 @@ export default function OrdersPage() {
                   </TableCell> */}
                   <TableCell className="text-gray-600">
                     {order?.deliveryAddress?.city}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {order?.shippingScope}
                   </TableCell>
                   <TableCell>
                     <Badge
