@@ -667,7 +667,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
   const handleReject = async () => {
     try {
       setIsRejectLoading(true);
-      const res = await api.post("/order/cancel", {
+      const res = await api.patch("/order/cancel", {
         orderId: selectedOrder?.id,
         reason: reason,
       });
@@ -965,9 +965,8 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {(order.fulfillmentType == "PICKUP" &&
-                      order.status == "CREATED" &&
-                      order?.shippingScope == "TOWN") ? (
+                      {((order.fulfillmentType == "PICKUP" || order.fulfillmentType == "DROPOFF") &&
+                      order.status == "CREATED" ) ? (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -976,9 +975,8 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                         >
                           Wating for request
                         </Button>
-                      ) :( order.fulfillmentType == "PICKUP" &&
-                        order.status == "PENDING_APPROVAL" &&
-                        order?.shippingScope == "TOWN" )? (
+                      ) :( (order.fulfillmentType == "PICKUP"||order.fulfillmentType == "DROPOFF") &&
+                        order.status == "PENDING_APPROVAL")? (
                         <div className="flex flex-row gap-2">
                           <Button
                             variant="ghost"
@@ -1010,7 +1008,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                           </Button>
                         </div>
                       ) : ( order.fulfillmentType == "DROPOFF" &&
-                        order.status == "CREATED" &&
+                        order.status == "APPROVED" &&
                         order?.shippingScope != "TOWN" )?   <Button
                         variant="ghost"
                         size="sm"
@@ -1024,9 +1022,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                         }}
                       >
                         Assign Cargo Officer
-                      </Button>:( order.fulfillmentType == "PICKUP" &&
-                        order.status == "CREATED" &&
-                        order?.shippingScope != "TOWN" )||( order.fulfillmentType == "PICKUP" &&
+                      </Button>:( (order.fulfillmentType == "PICKUP" ||order.fulfillmentType == "DROPOFF") &&
                           order.status == "APPROVED" &&
                           order?.shippingScope == "TOWN" )?
                          <Button

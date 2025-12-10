@@ -18,6 +18,7 @@ import {
   // IoAdd,
   IoMail,
   IoPhonePortraitOutline,
+  IoPodium,
 } from "react-icons/io5";
 import type { Order, Pagination } from "@/types/types";
 import api from "@/lib/api/api";
@@ -167,24 +168,167 @@ function DispatchModal({
   const [showDriverDropdown, setShowDriverDropdown] = useState(false);
   const [paginationDriver, setPaginationDriver] = useState<Pagination | null>(null);
   const [loadingDriver, setLoadingDriver] = useState(false);
-  const [driver, setDriver] = useState<any[]>([]);
+  const [driver, setDriver] = useState<any[]>( [
+    {
+      "driverId": "cmhx9ab12000kjn89xyz88pq1",
+      "userId": "cmhx9ab0d0009jn89lkc672aa",
+      "user": {
+        "id": "cmhx9ab0d0009jn89lkc672aa",
+        "name": "Alice Smith",
+        "email": "alice.smith@example.com",
+        "phone": "+251911556677"
+      },
+      "distanceKm": 12.457,
+      "currentLat": 9.032145781234,
+      "currentLon": 38.754321987654,
+      "activeOrders": 0,
+      "lastUpdated": "2025-12-10T11:15:22.300Z",
+      "score": 0.812349875,
+      "suggestedForOrders": [
+        "cmizveh450002jmmjk2sd90pq",
+        "cmizveh450003jmmjk2sd90pr"
+      ],
+      "rank": 1
+    },
+    {
+      "driverId": "cmhx9ac34000lmn55tuv99rs2",
+      "userId": "cmhx9ac2a0008mn55asf887bb",
+      "user": {
+        "id": "cmhx9ac2a0008mn55asf887bb",
+        "name": "Michael Brown",
+        "email": "michael.brown@example.org",
+        "phone": "+251912334455"
+      },
+      "distanceKm": 28.992,
+      "currentLat": 9.089234556721,
+      "currentLon": 38.901234880012,
+      "activeOrders": 2,
+      "lastUpdated": "2025-12-10T11:20:05.142Z",
+      "score": 0.59322144,
+      "suggestedForOrders": [],
+      "rank": 2
+    },
+    {
+      "driverId": "cmhx9ad56000opq22uvw00cd3",
+      "userId": "cmhx9ad4b0007opq22qwe551c",
+      "user": {
+        "id": "cmhx9ad4b0007opq22qwe551c",
+        "name": "Sara Johnson",
+        "email": "sara.johnson@example.net",
+        "phone": "+251910112233"
+      },
+      "distanceKm": 5.602,
+      "currentLat": 9.065778234110,
+      "currentLon": 38.889990223344,
+      "activeOrders": 0,
+      "lastUpdated": "2025-12-10T11:31:47.890Z",
+      "score": 0.92100422,
+      "suggestedForOrders": [
+        "cmizveh460001jmmjk2sd91aa"
+      ],
+      "rank": 3
+    }
+  ]);
   // const [selectedDriver,setSelectedDriver] = useState<any>(null)
   const [loadingExternalDriver, setLoadingExternalDriver] = useState(false);
-  const [externalDriver, setExternalDriver] = useState<any[]>([]);
+  const [externalDriver, setExternalDriver] = useState<any[]>([
+    {
+      "driverId": "cmfzjxyza0009jmq7abc12345",
+      "distanceKm": 12.443,
+      "user": {
+        "id": "cmfzjxyza0009jmq7abc12345",
+        "name": "driver 47",
+        "email": "driver47@example.com",
+        "phone": "0921998877",
+        "driver": {
+          "type": "EXTERNAL",
+          "status": "ONLINE"
+        }
+      },
+      "coordinates": {
+        "lon": 38.901234567812,
+        "lat": 9.075432198765
+      }
+    },
+    {
+      "driverId": "cmfzjxbbb0010jmq7xyz56789",
+      "distanceKm": 25.991,
+      "user": {
+        "id": "cmfzjxbbb0010jmq7xyz56789",
+        "name": "driver 11",
+        "email": "driver11@example.com",
+        "phone": "0921222333",
+        "driver": {
+          "type": "EXTERNAL",
+          "status": "OFFLINE"
+        }
+      },
+      "coordinates": {
+        "lon": 38.889900112200,
+        "lat": 9.062345990011
+      }
+    },
+    {
+      "driverId": "cmfzjxccc0011jmq7qwe90876",
+      "distanceKm": 7.220,
+      "user": {
+        "id": "cmfzjxccc0011jmq7qwe90876",
+        "name": "driver 03",
+        "email": "driver03@example.com",
+        "phone": "0921333555",
+        "driver": {
+          "type": "EXTERNAL",
+          "status": "ONLINE"
+        }
+      },
+      "coordinates": {
+        "lon": 38.912345678001,
+        "lat": 9.082341567899
+      }
+    }
+  ]);
   const [paginationExternalDriver, setPaginationExternalDriver] = useState<Pagination | null>(null);
 
 
 
   console.log(customerName,orderId,)
-  const handleDispatch = () => {
+  const handleDispatch = async() => {
     if (selectedDriver || selectedExternalDriver) {
-      const driverId = selectedDriver || selectedExternalDriver;
-      onDispatch(driverId, dispatchNotes);
-      onClose();
-      // Reset form
-      setSelectedDriver("");
-      setSelectedExternalDriver("");
-      setDispatchNotes("");
+      let driverId 
+      if(activeTab=="external"){
+        driverId = selectedExternalDriver?.driverId
+      }else{
+        driverId = selectedDriver?.userId
+
+      }
+     
+ const payload = {
+  "orderId": order?.id,
+  "driverId": driverId
+}
+      try {
+        setLoadingDriver(true);
+  
+        const res = await api.post<any>(
+          `dispatch/assign-pickup`,payload
+        );
+        
+       if(res.data.data){
+        setPaginationDriver(res.data.pagination);
+       }
+       onClose();
+       // Reset form
+       setSelectedDriver("");
+       setSelectedExternalDriver("");
+       setDispatchNotes("");
+            } catch (error: any) {
+  
+        const message =
+          error?.response?.data?.message ||
+          "Something went wrong. Please try again.";
+        toast.error(message);
+        console.error(error); // optional: log the full error
+      }
     }
   };
 
@@ -205,7 +349,7 @@ function DispatchModal({
       const res = await api.post<any>(
         `/maps/nearby-drivers`,{
           "orderIds": [order?.id],
-          "radius": 20000
+          "radius": 2000000
       }
       );
       
@@ -340,11 +484,11 @@ function DispatchModal({
                     <Card
                       key={driver.id}
                       className={`cursor-pointer transition-all ${
-                        selectedDriver === driver.id
+                        selectedDriver?.driverId === driver.driverId
                           ? "ring-2 ring-blue-500 bg-blue-50"
                           : "hover:bg-gray-50"
                       }`}
-                      onClick={() => setSelectedDriver(driver.id)}
+                      onClick={() => setSelectedDriver(driver)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
@@ -353,40 +497,41 @@ function DispatchModal({
                               <IoPerson className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                              <p className="font-medium">{driver.name}</p>
+                              <p className="font-medium">{driver?.user?.name}</p>
                               <p className="text-sm text-gray-500">
-                                ★ {driver.rating} • {driver.phone}
+                                ★ {driver.rank} • {driver.user.phone}
                               </p>
                             </div>
                           </div>
                           <Badge className={getStatusColor(driver.status)}>
-                            {driver.status}
+                            {"Available"}
                           </Badge>
                         </div>
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2">
-                            <IoCar className="h-4 w-4 text-gray-400" />
-                            <span>{driver.vehicle}</span>
+                            <IoPodium className="h-4 w-4 text-gray-400" />
+                            <span>{driver.score}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <IoLocation className="h-4 w-4 text-gray-400" />
-                            <span>{driver.currentLocation}</span>
+                            <span>{driver.distanceKm} KM</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <IoTime className="h-4 w-4 text-gray-400" />
-                            <span>Last update: {driver.lastUpdate}</span>
+                            <span>Last update: {new Date(driver.lastUpdated).toLocaleString()}</span>
                           </div>
                         </div>
+                        
 
                         <div className="mt-3">
-                          <div className="flex items-center justify-between text-sm mb-1">
-                            <span>Capacity</span>
+                          <div className="flex items-center gap-4 text-sm mb-1">
+                            <span>Active Orders: </span>
                             <span>
-                              {driver.currentLoad}/{driver.capacity}
+                              {driver.activeOrders}
                             </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          {/* <div className="w-full bg-gray-200 rounded-full h-2">
                             <div
                               className="bg-blue-600 h-2 rounded-full"
                               style={{
@@ -395,10 +540,10 @@ function DispatchModal({
                                 }%`,
                               }}
                             ></div>
-                          </div>
+                          </div> */}
                         </div>
 
-                        {selectedDriver === driver.id && (
+                        {selectedDriver?.driverId === driver.driverId && (
                           <div className="mt-3 flex items-center gap-2 text-blue-600">
                             <IoCheckmarkCircle className="h-4 w-4" />
                             <span className="text-sm font-medium">
@@ -420,15 +565,15 @@ function DispatchModal({
                   External Driver Partners
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {externalDrivers.map((driver) => (
+                  {externalDriver.map((driver) => (
                     <Card
-                      key={driver.id}
+                      key={driver.driverId}
                       className={`cursor-pointer transition-all ${
-                        selectedExternalDriver === driver.id
+                        selectedExternalDriver?.driverId === driver.driverId
                           ? "ring-2 ring-blue-500 bg-blue-50"
                           : "hover:bg-gray-50"
                       }`}
-                      onClick={() => setSelectedExternalDriver(driver.id)}
+                      onClick={() => setSelectedExternalDriver(driver)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
@@ -437,33 +582,33 @@ function DispatchModal({
                               <IoPerson className="h-5 w-5 text-green-600" />
                             </div>
                             <div>
-                              <p className="font-medium">{driver.name}</p>
+                              <p className="font-medium">{driver?.user?.name}</p>
                               <p className="text-sm text-gray-500">
-                                {driver.company}
+                                {driver.distanceKm} Km
                               </p>
-                              <p className="text-sm text-gray-500">
+                              {/* <p className="text-sm text-gray-500">
                                 ★ {driver.rating}
-                              </p>
+                              </p> */}
                             </div>
                           </div>
                           <Badge className="bg-green-100 text-green-700">
-                            {driver.availability}
+                            {"Available"}
                           </Badge>
                         </div>
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2">
                             <IoPhonePortraitOutline className="h-4 w-4 text-gray-400" />
-                            <span>{driver.phone}</span>
+                            <span>{driver?.user?.phone}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <IoMail className="h-4 w-4 text-gray-400" />
-                            <span>{driver.email}</span>
+                            <span>{driver?.user?.email}</span>
                           </div>
                         </div>
 
                         <div className="mt-3 flex gap-2">
-                          <Button
+                          {/* <Button
                             size="sm"
                             variant="outline"
                             onClick={(e) => {
@@ -475,8 +620,8 @@ function DispatchModal({
                           >
                             <IoPhonePortraitOutline className="h-4 w-4 mr-2" />
                             Contact
-                          </Button>
-                          {selectedExternalDriver === driver.id && (
+                          </Button> */}
+                          {selectedExternalDriver?.driverId === driver.driverId && (
                             <div className="flex items-center gap-2 text-blue-600">
                               <IoCheckmarkCircle className="h-4 w-4" />
                               <span className="text-sm font-medium">

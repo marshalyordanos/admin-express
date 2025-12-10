@@ -24,7 +24,8 @@ interface RefreshResponse {
 
 const api: AxiosInstance = axios.create({
   // baseURL: "https://134.209.59.98:10443/",
-  baseURL: "http://localhost:10000",
+  // baseURL: "http://localhost:10000",
+  baseURL: "https://test-courier.servehalflife.com",
 
   headers: {
     "Content-Type": "application/json",

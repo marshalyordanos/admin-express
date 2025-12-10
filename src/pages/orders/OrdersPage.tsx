@@ -268,7 +268,7 @@ export default function OrdersPage() {
   const [accpetDroppoffModal, setIsAcceptDropoffModal] = useState(false);
 // ........................ reuest stets 
 
-const [weight, setWeight] = useState(30);
+const [weight, setWeight] = useState(0);
 const [isFragile, setIsFragile] = useState(true);
 const [isUnusual, setIsUnusual] = useState(true);
 const [unusualReason, setUnusualReason] = useState("i did not understand the object");
@@ -770,7 +770,11 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                   </TableCell>
                   <TableCell>
 
-                    {(order.fulfillmentType == "PICKUP"&&order.status == "CREATED" && order?.shippingScope=="TOWN" )?  <div className="flex flex-row gap-2">
+                    {(order.fulfillmentType == "PICKUP"&&order.status == "CREATED" && order?.shippingScope=="TOWN" ) ||
+                    (order.fulfillmentType == "DROPOFF"&&order.status == "CREATED"  )?
+                    
+                    <div className="flex flex-row gap-2">
+
                       <Button
                         variant="ghost"
                         size="sm"
@@ -784,7 +788,10 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                       >
                         Request Approval
                       </Button>
-                    </div>:(order.fulfillmentType == "PICKUP"&&order.status == "CREATED" && order?.shippingScope!="TOWN" )?<Button
+                    </div>
+                    :
+                    
+                    (order.fulfillmentType == "PICKUP"&&order.status == "CREATED" && order?.shippingScope!="TOWN" )?<Button
                         variant="ghost"
                         size="sm"
                         className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
@@ -796,7 +803,14 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                         }}
                       >
                         Accept Dropoff
-                      </Button>  :null}
+                      </Button>  : <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                        disabled
+                      >
+                        No Action
+                      </Button>}
                     {/* {order.fulfillmentType == "PICKUP" &&
                     order.status == "CREATED" ? (
                       <Button
@@ -865,10 +879,11 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
   onClose={() => setIsDialogOpen(false)}
   title="Approve Object"
   description="Review and update the object information before approving."
-  onConfirm={handleRequestTwon}
+  onConfirm={selectedOrder?.fulfillmentType == "DROPOFF"?handleRequest:handleRequestTwon}
   variant="info"
   confirmText="Request"
 >
+{(selectedOrder?.fulfillmentType == "DROPOFF") &&<>
   {/* Weight */}
   <div className="mb-4">
     <label className="block mb-1 font-medium">Weight (kg)</label>
@@ -911,7 +926,8 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
         className="placeholder-gray-500 py-4 h-32 resize-none border rounded-md px-4 w-full"
       />
     </div>
-  )}
+  )}</>}
+
 </ConfirmationModal>
        <ConfirmationModal
         isOpen={accpetDroppoffModal}
