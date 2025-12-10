@@ -7,9 +7,45 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { useState } from "react";
-import type { CustomTooltipProps, SalesData } from "../types";
+import { useEffect, useState } from "react";
+import { Skeleton } from "antd";
+import api from "@/lib/api/api";
 
+// =============================
+// TYPES
+// =============================
+interface RevenuePeriod {
+  totalRevenue: number;
+  totalProfit: number;
+  profitMargin: number;
+  totalSurcharge: number;
+  totalDiscount: number;
+  totalMiscFees: number;
+  totalAirportFee: number;
+}
+
+interface RevenueSummary {
+  day: { current: RevenuePeriod; previous: RevenuePeriod };
+  week: { current: RevenuePeriod; previous: RevenuePeriod };
+  month: { current: RevenuePeriod; previous: RevenuePeriod };
+  meta: { generatedAt: string };
+}
+
+interface SalesData {
+  name: string;
+  revenue: number;
+  profit: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any;
+  label?: string;
+}
+
+// =============================
+// CUSTOM TOOLTIP (UI unchanged)
+// =============================
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
@@ -27,46 +63,79 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   return null;
 };
 
-const dailyData: SalesData[] = Array.from({ length: 7 }, (_, i) => ({
-  name: `Day ${i + 1}`,
-  revenue: Math.floor(Math.random() * 120 + 50),
-  profit: Math.floor(Math.random() * 80 + 20),
-}));
-
-const weeklyData: SalesData[] = [
-  { name: "Week 1", revenue: 400, profit: 200 },
-  { name: "Week 2", revenue: 600, profit: 300 },
-  { name: "Week 3", revenue: 550, profit: 280 },
-  { name: "Week 4", revenue: 700, profit: 350 },
-];
-
-const monthlyData: SalesData[] = [
-  { name: "Jan", revenue: 110, profit: 90 },
-  { name: "Feb", revenue: 70, profit: 60 },
-  { name: "Mar", revenue: 150, profit: 105 },
-  { name: "Apr", revenue: 95, profit: 35 },
-  { name: "May", revenue: 105, profit: 60 },
-  { name: "Jun", revenue: 95, profit: 40 },
-  { name: "Jul", revenue: 100, profit: 25 },
-  { name: "Aug", revenue: 115, profit: 50 },
-  { name: "Sep", revenue: 100, profit: 65 },
-  { name: "Oct", revenue: 90, profit: 55 },
-  { name: "Nov", revenue: 115, profit: 55 },
-  { name: "Dec", revenue: 60, profit: 40 },
-];
-
+// =============================
+// MAIN COMPONENT
+// =============================
 const Revenue = () => {
   const [view, setView] = useState<"daily" | "weekly" | "monthly">("monthly");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [summary, setSummary] = useState<RevenueSummary | null>(null);
 
-  // Choose dataset based on selected view
-  const data =
-    view === "daily" ? dailyData : view === "weekly" ? weeklyData : monthlyData;
+  // Fetch revenue summary
+  const fetchRevenueSummary = async () => {
+    try {
+      setLoading(true);
 
+      const res = await api.get<{ data: RevenueSummary }>(
+        "/report/dashboard/revenue-summary"
+      );
+
+      setSummary(res.data.data);
+    } catch (error) {
+      console.error("Revenue fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRevenueSummary();
+  }, []);
+
+  // =============================
+  // Convert API → Chart Data
+  // =============================
+  const getChartData = (): SalesData[] => {
+    if (!summary) return [];
+
+    const convert = (label: string, data: RevenuePeriod): SalesData => ({
+      name: label,
+      revenue: data.totalRevenue ?? 0,
+      profit: data.totalProfit ?? 0,
+    });
+
+    if (view === "daily") {
+      return [
+        convert("Previous Day", summary.day.previous),
+        convert("Today", summary.day.current),
+      ];
+    }
+
+    if (view === "weekly") {
+      return [
+        convert("Previous Week", summary.week.previous),
+        convert("This Week", summary.week.current),
+      ];
+    }
+
+    return [
+      convert("Previous Month", summary.month.previous),
+      convert("This Month", summary.month.current),
+    ];
+  };
+
+  const data = getChartData();
+
+  // =============================
+  // RENDER UI
+  // =============================
   return (
     <div className="w-full h-96 pt-6 font-text">
+      {/* Header */}
       <div className="flex items-center justify-between pb-6">
         <p className="font-semibold text-base">Revenue Trends</p>
-        {/* Switcher */}
+
+        {/* View Switcher */}
         <div className="flex gap-2">
           {["daily", "weekly", "monthly"].map((option) => (
             <button
@@ -84,51 +153,54 @@ const Revenue = () => {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ right: 20, left: 0, bottom: 0 }}>
-          {/* Gradient fills */}
-          <defs>
-            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-            </linearGradient>
-          </defs>
+      {/* Loader */}
+      {loading ? (
+        <Skeleton active paragraph={{ rows: 10 }} />
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ right: 20, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              </linearGradient>
 
-          <XAxis
-            dataKey="name"
-            stroke="#9ca3af"
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
+              <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
 
-          {/* Revenue Area */}
-          <Area
-            type="monotone"
-            dataKey="revenue"
-            stroke="#3b82f6"
-            fillOpacity={1}
-            fill="url(#colorRevenue)"
-            strokeWidth={2}
-          />
+            <XAxis
+              dataKey="name"
+              stroke="#9ca3af"
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
 
-          {/* Profit Area */}
-          <Area
-            type="monotone"
-            dataKey="profit"
-            stroke="#8b5cf6"
-            fillOpacity={1}
-            fill="url(#colorProfit)"
-            strokeWidth={2}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+            <Area
+              type="monotone"
+              dataKey="revenue"
+              stroke="#3b82f6"
+              fillOpacity={1}
+              fill="url(#colorRevenue)"
+              strokeWidth={2}
+            />
+
+            <Area
+              type="monotone"
+              dataKey="profit"
+              stroke="#8b5cf6"
+              fillOpacity={1}
+              fill="url(#colorProfit)"
+              strokeWidth={2}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 };

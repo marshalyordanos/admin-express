@@ -1,44 +1,159 @@
-import { FaTruck, FaCheckCircle, FaClock, FaTimesCircle } from "react-icons/fa";
+import api from "@/lib/api/api";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { FaTruck, FaCheckCircle, FaClock, FaTimesCircle, FaUserTie, FaTruckMonster, FaBuilding, FaClipboardList } from "react-icons/fa";
 
 const Shipment = () => {
-  const stats = [
-    {
-      title: "Active",
-      value: "3,120",
-      change: "+5.6%",
-      changeColor: "text-blue-500",
-      changeBg: "bg-blue-100",
-      extra: "Currently in transit",
-      icon: <FaTruck className="text-blue-500" />,
-    },
-    {
-      title: "Delivered",
-      value: "8,900",
-      change: "+9.8%",
-      changeColor: "text-green-600",
-      changeBg: "bg-green-100",
-      extra: "Delivered successfully this year",
-      icon: <FaCheckCircle className="text-green-600" />,
-    },
-    {
-      title: "Delayed",
-      value: "320",
-      change: "-2.4%",
-      changeColor: "text-yellow-600",
-      changeBg: "bg-yellow-100",
-      extra: "Shipments delayed this year",
-      icon: <FaClock className="text-yellow-600" />,
-    },
-    {
-      title: "Canceled",
-      value: "110",
-      change: "-1.2%",
-      changeColor: "text-red-600",
-      changeBg: "bg-red-100",
-      extra: "Shipments canceled this year",
-      icon: <FaTimesCircle className="text-red-600" />,
-    },
-  ];
+  interface DashboardSummary {
+    totalOrders: number;
+    completed: number;
+    pending: number;
+    failed: number;
+  }
+  
+  interface DashboardResponse {
+    summary: DashboardSummary;
+    logistics: {
+      totalDrivers: number;
+      totalVehicles: number;
+      totalBranches: number;
+    };
+    revenue: {
+      total: number;
+    };
+    meta: { generatedAt: string };
+  }
+  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [stats, setStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get<{ data: DashboardResponse }>("/report/dashboard/overview");
+      setDashboard(res.data.data);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message || "Something went wrong. Please try again.";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(()=>{
+    fetchDashboard()
+  },[])
+  useEffect(() => {
+    if (dashboard) {
+      const { summary, logistics } = dashboard;
+  
+      setStats([
+        {
+          title: "Total Orders",
+          value: summary.totalOrders.toLocaleString(),
+          change: "+0%", // you can adjust once backend gives change %
+          changeColor: "text-blue-600",
+          changeBg: "bg-blue-100",
+          extra: "All orders recorded",
+          icon: <FaClipboardList className="text-blue-600" />,
+        },
+        {
+          title: "Completed",
+          value: summary.completed.toLocaleString(),
+          change: "+0%",
+          changeColor: "text-green-600",
+          changeBg: "bg-green-100",
+          extra: "Successfully delivered",
+          icon: <FaCheckCircle className="text-green-600" />,
+        },
+        {
+          title: "Pending",
+          value: summary.pending.toLocaleString(),
+          change: "-0%",
+          changeColor: "text-yellow-600",
+          changeBg: "bg-yellow-100",
+          extra: "Orders waiting processing",
+          icon: <FaClock className="text-yellow-600" />,
+        },
+        {
+          title: "Failed",
+          value: summary.failed.toLocaleString(),
+          change: "-0%",
+          changeColor: "text-red-600",
+          changeBg: "bg-red-100",
+          extra: "Orders not delivered",
+          icon: <FaTimesCircle className="text-red-600" />,
+        },
+        {
+          title: "Total Drivers",
+          value: logistics.totalDrivers.toLocaleString(),
+          change: "+0%",
+          changeColor: "text-purple-600",
+          changeBg: "bg-purple-100",
+          extra: "Available drivers",
+          icon: <FaUserTie className="text-purple-600" />,
+        },
+        {
+          title: "Total Vehicles",
+          value: logistics.totalVehicles.toLocaleString(),
+          change: "+0%",
+          changeColor: "text-indigo-600",
+          changeBg: "bg-indigo-100",
+          extra: "Vehicles in operation",
+          icon: <FaTruckMonster className="text-indigo-600" />,
+        },
+        {
+          title: "Branches",
+          value: logistics.totalBranches.toLocaleString(),
+          change: "+0%",
+          changeColor: "text-orange-600",
+          changeBg: "bg-orange-100",
+          extra: "Active branches",
+          icon: <FaBuilding className="text-orange-600" />,
+        }
+      ]);
+    }
+  }, [dashboard]);
+  
+  // const stats = [
+  //   {
+  //     title: "Active",
+  //     value: "3,120",
+  //     change: "+5.6%",
+  //     changeColor: "text-blue-500",
+  //     changeBg: "bg-blue-100",
+  //     extra: "Currently in transit",
+  //     icon: <FaTruck className="text-blue-500" />,
+  //   },
+  //   {
+  //     title: "Delivered",
+  //     value: "8,900",
+  //     change: "+9.8%",
+  //     changeColor: "text-green-600",
+  //     changeBg: "bg-green-100",
+  //     extra: "Delivered successfully this year",
+  //     icon: <FaCheckCircle className="text-green-600" />,
+  //   },
+  //   {
+  //     title: "Delayed",
+  //     value: "320",
+  //     change: "-2.4%",
+  //     changeColor: "text-yellow-600",
+  //     changeBg: "bg-yellow-100",
+  //     extra: "Shipments delayed this year",
+  //     icon: <FaClock className="text-yellow-600" />,
+  //   },
+  //   {
+  //     title: "Canceled",
+  //     value: "110",
+  //     change: "-1.2%",
+  //     changeColor: "text-red-600",
+  //     changeBg: "bg-red-100",
+  //     extra: "Shipments canceled this year",
+  //     icon: <FaTimesCircle className="text-red-600" />,
+  //   },
+  // ];
 
   return (
     <div className="font-text">

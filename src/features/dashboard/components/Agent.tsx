@@ -1,42 +1,31 @@
-import type { AgentPerformance } from "../types";
+import { useState, useEffect } from "react";
+import { Skeleton } from "antd";
+import api from "@/lib/api/api";
 
-const agents: AgentPerformance[] = [
-  {
-    id: "AGT-1001",
-    region: "Addis Ababa",
-    avgTime: "32 min",
-    status: "Completed",
-    onTimePercent: 95,
-  },
-  {
-    id: "AGT-1002",
-    region: "Addis Ababa",
-    avgTime: "45 min",
-    status: "Failed",
-    onTimePercent: 60,
-  },
-  {
-    id: "AGT-1003",
-    region: "Addis Ababa",
-    avgTime: "28 min",
-    status: "Completed",
-    onTimePercent: 98,
-  },
-  {
-    id: "AGT-1004",
-    region: "Addis Ababa",
-    avgTime: "50 min",
-    status: "Failed",
-    onTimePercent: 55,
-  },
-  {
-    id: "AGT-1005",
-    region: "Addis Ababa",
-    avgTime: "35 min",
-    status: "Completed",
-    onTimePercent: 92,
-  },
-];
+// TYPES
+interface AgentPerformance {
+  id: string;
+  region: string;
+  avgTime: string;
+  status: "Completed" | "Failed";
+  onTimePercent: number;
+}
+
+interface DriverApi {
+  driverId: string;
+  driverName: string;
+  branch: string;
+  handledOrders: number;
+  pickupHandled: number;
+  deliveryHandled: number;
+  completedOrders: number;
+  failedOrders: number;
+  avgTimePerKm: number;
+  onTimePercent: number;
+  performanceStatus: "Good" | "Underperforming";
+}
+
+// STATUS BADGE
 type StatusBadgeProps = {
   status: "Completed" | "Failed";
 };
@@ -46,6 +35,7 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
     status === "Completed"
       ? "bg-green-100 text-green-700"
       : "bg-red-100 text-red-700";
+
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-medium ${color}`}>
       {status}
@@ -53,39 +43,78 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
   );
 };
 
+// MAIN COMPONENT
 const Agent = () => {
+  const [agents, setAgents] = useState<AgentPerformance[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // FETCH DATA
+  const fetchAgents = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/report/dashboard/driver-performance");
+
+      const apiData: DriverApi[] = res.data.data;
+
+      // Map API → UI format
+      const mapped: AgentPerformance[] = apiData.map((driver) => ({
+        id: driver.driverId,
+        region: driver.branch,
+        avgTime: driver.avgTimePerKm
+          ? `${driver.avgTimePerKm} min/km`
+          : "N/A",
+        status: driver.performanceStatus === "Good" ? "Completed" : "Failed",
+        onTimePercent: driver.onTimePercent,
+      }));
+
+      setAgents(mapped);
+    } catch (error) {
+      console.error("Error fetching driver performance", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgents();
+  }, []);
+
   return (
     <div className="w-full bg-white p-6 font-text">
       <p className="text-base font-semibold text-black mb-4">
         Driver / Agent Performance
       </p>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse rounded-lg">
-          <thead>
-            <tr className="bg-gray-100 text-black text-sm">
-              <th className="py-3 px-4">Agent ID</th>
-              <th className="py-3 px-4">Region</th>
-              <th className="py-3 px-4">Avg. Delivery Time</th>
-              <th className="py-3 px-4">Status</th>
-              <th className="py-3 px-4">On-Time Delivery %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {agents.map((agent) => (
-              <tr key={agent.id} className="border-b border-gray transition">
-                <td className="py-3 px-4 font-medium text-sm">{agent.id}</td>
-                <td className="py-3 px-4 text-sm">{agent.region}</td>
-                <td className="py-3 px-4 text-sm">{agent.avgTime}</td>
-                <td className="py-3 px-4">
-                  <StatusBadge status={agent.status} />
-                </td>
-                <td className="py-3 px-4 text-sm">{agent.onTimePercent}%</td>
+      {loading ? (
+        <Skeleton active paragraph={{ rows: 8 }} />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse rounded-lg">
+            <thead>
+              <tr className="bg-gray-100 text-black text-sm">
+                <th className="py-3 px-4">Agent ID</th>
+                <th className="py-3 px-4">Region</th>
+                <th className="py-3 px-4">Avg. Delivery Time</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">On-Time Delivery %</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {agents.map((agent) => (
+                <tr key={agent.id} className="border-b border-gray transition">
+                  <td className="py-3 px-4 font-medium text-sm">{agent.id}</td>
+                  <td className="py-3 px-4 text-sm">{agent.region}</td>
+                  <td className="py-3 px-4 text-sm">{agent.avgTime}</td>
+                  <td className="py-3 px-4">
+                    <StatusBadge status={agent.status} />
+                  </td>
+                  <td className="py-3 px-4 text-sm">{agent.onTimePercent}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
