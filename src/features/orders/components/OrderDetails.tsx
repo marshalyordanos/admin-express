@@ -302,6 +302,7 @@ console.log("orderdetail: ",orderDetail)
                         <Label className="mb-2">Fulfillment Destination</Label>
                         <Select
                           value={values.fulfillmentDestination}
+                          disabled
                           onValueChange={(val) =>
                             setFieldValue("fulfillmentDestination", val)
                           }
@@ -323,6 +324,8 @@ console.log("orderdetail: ",orderDetail)
                         <Label className="mb-2">Service Type</Label>
                         <Select
                           value={values.serviceType}
+                          disabled
+
                           onValueChange={(val) =>
                             setFieldValue("serviceType", val)
                           }
@@ -370,6 +373,7 @@ console.log("orderdetail: ",orderDetail)
                       <div>
                         <Label className="mb-2">Select Driver</Label>
                         <Select
+                        disabled
                           value={selectedDriver}
                           onValueChange={handleDriverAssignment}
                         >

@@ -366,7 +366,7 @@ console.log(branchDetail)
           </Card>
 
           {/* Management Configuration */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <Settings className="h-5 w-5 mr-2 text-blue-600" />
@@ -419,7 +419,7 @@ console.log(branchDetail)
                 </Badge>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Manager Assignment */}
           <Card>
@@ -578,7 +578,7 @@ console.log(branchDetail)
           </Card>
 
           {/* Branch Coordination */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <Users className="h-5 w-5 mr-2 text-blue-600" />
@@ -614,7 +614,7 @@ console.log(branchDetail)
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Branch Summary */}
           <Card>
@@ -684,7 +684,7 @@ console.log(branchDetail)
           </Card>
 
           {/* Operations History */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
@@ -726,7 +726,7 @@ console.log(branchDetail)
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

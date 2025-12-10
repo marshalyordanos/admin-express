@@ -361,7 +361,14 @@ const App = () => {
                     <TownPricingPage />
                   </ProtectedRoute>
                 }
-              />
+              />  <Route
+              path="/pricing/town/:id"
+              element={
+                <ProtectedRoute requiredPermission={Permission.PRICING}>
+                  <TownPricingPage />
+                </ProtectedRoute>
+              }
+            />
               <Route
                 path="/pricing/regional"
                 element={
@@ -369,9 +376,24 @@ const App = () => {
                     <RegionalPricingPage />
                   </ProtectedRoute>
                 }
-              />
+              /> <Route
+              path="/pricing/regional/:id"
+              element={
+                <ProtectedRoute requiredPermission={Permission.PRICING}>
+                  <RegionalPricingPage />
+                </ProtectedRoute>
+              }
+            />
               <Route
                 path="/pricing/international"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.PRICING}>
+                    <InternationalPricingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pricing/international/:id"
                 element={
                   <ProtectedRoute requiredPermission={Permission.PRICING}>
                     <InternationalPricingPage />

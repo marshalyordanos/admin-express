@@ -36,6 +36,9 @@ import api from "@/lib/api/api";
 import { Skeleton } from "antd";
 import type { Order, OrderListResponse, Pagination } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
+import { Label } from "@radix-ui/react-select";
+import { Input } from "@/components/ui/input";
 
 // Mock data for demonstration
 // const drivers = [
@@ -427,17 +430,7 @@ export default function Dispatch() {
   const [pageSize, setPageSize] = useState(10);
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
   const [isCreateDriverModalOpen, setIsCreateDriverModalOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<{
-    id: string;
-    customer: string;
-    date: string;
-    payment: string;
-    total: string;
-    delivery: string;
-    items: string;
-    fulfillment: string;
-    destination: string;
-  } | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Calculate pagination
   // const totalItems = orders.length;
@@ -451,9 +444,26 @@ export default function Dispatch() {
 
   const [orderSearchText, setOrderSearchText] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
-  const [orderPagination, setOrderPagination] = useState<Pagination | null>(null);
+  const [orderPagination, setOrderPagination] = useState<Pagination | null>(
+    null
+  );
   const [orderLoading, setOrderLoading] = useState<boolean>(true);
-  
+  const [approveModal, setApproveModal] = useState(false);
+  const [rejectModal, setRejectModal] = useState(false);
+  const [reason, setReason] = useState("");
+  const [isApproveLoading, setIsApproveLoading] = useState(false);
+  const [isRejectLoading, setIsRejectLoading] = useState(false);
+  const [showCargoOfficerDropdown, setShowCargoOfficerDropdown] = useState(false);
+  const [selectedCargoOfficer,setSelectedCargoOfficer] = useState<any>(null)
+  const [loadingCargoOfficer, setLoadingCargoOfficer] = useState(false);
+  const  [cargoOfficers,setCargoOfficers] = useState([])
+  const  [cargoOfficersPagination,setCargoOfficersPagination] = useState([])
+
+
+  const [isAssignCargoOfficerModal,setisAssignCargoOfficerModal] = useState(false)
+
+const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -463,13 +473,13 @@ export default function Dispatch() {
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
-
-
-  const featchOrders = async (page=1,limit=10) => {
+  const featchOrders = async (page = 1, limit = 10) => {
     try {
       setOrderLoading(true);
 
-      const staffs = await api.get<OrderListResponse>(`/order?search=all:${orderSearchText}&page=${page}&pageSize=${limit}`)
+      const staffs = await api.get<OrderListResponse>(
+        `/order?search=all:${orderSearchText}&page=${page}&pageSize=${limit}`
+      );
       setOrders(staffs.data.data);
       setOrderPagination(staffs.data.pagination);
       // toast.success(staffs.data.message);
@@ -486,16 +496,14 @@ export default function Dispatch() {
   };
 
   useEffect(() => {
-    featchOrders(currentPage,pageSize);
-  }, [orderSearchText,currentPage,pageSize,activeTab]);
+    featchOrders(currentPage, pageSize);
+  }, [orderSearchText, currentPage, pageSize, activeTab]);
 
   const featchSummary = async () => {
     try {
       setLoadingSummary(true);
 
-      const staffs = await api.get<any>(
-        "/report/dashboard/dispatch-summary"
-      );
+      const staffs = await api.get<any>("/report/dashboard/dispatch-summary");
       setSummary(staffs.data?.data);
       // toast.success(staffs.data.message);
       setLoadingSummary(false);
@@ -514,33 +522,41 @@ export default function Dispatch() {
   }, []);
   useEffect(() => {
     if (!summary) return;
-  
+
     setMetrics([
       {
         title: "Active Drivers",
         value: summary.activeDrivers,
-        change: `${summary.activeDriverChange >= 0 ? "+" : ""}${summary.activeDriverChange} from yesterday`,
+        change: `${summary.activeDriverChange >= 0 ? "+" : ""}${
+          summary.activeDriverChange
+        } from yesterday`,
         trend: summary.activeDriverChange >= 0 ? "up" : "down",
         color: "green",
       },
       {
         title: "Deliveries Today",
         value: summary.deliveriesToday,
-        change: `${summary.deliveryChange >= 0 ? "+" : ""}${summary.deliveryChange} change`,
+        change: `${summary.deliveryChange >= 0 ? "+" : ""}${
+          summary.deliveryChange
+        } change`,
         trend: summary.deliveryChange >= 0 ? "up" : "down",
         color: "blue",
       },
       {
         title: "On-Time Rate",
         value: `${summary.onTimeRate}%`,
-        change: `${summary.onTimeImprovement >= 0 ? "+" : ""}${summary.onTimeImprovement}% improvement`,
+        change: `${summary.onTimeImprovement >= 0 ? "+" : ""}${
+          summary.onTimeImprovement
+        }% improvement`,
         trend: summary.onTimeImprovement >= 0 ? "up" : "down",
         color: "green",
       },
       {
         title: "Route Efficiency",
         value: `${summary.routeEfficiency}%`,
-        change: `${summary.routeEfficiencyChange >= 0 ? "+" : ""}${summary.routeEfficiencyChange}% change`,
+        change: `${summary.routeEfficiencyChange >= 0 ? "+" : ""}${
+          summary.routeEfficiencyChange
+        }% change`,
         trend: summary.routeEfficiencyChange >= 0 ? "up" : "down",
         color: "purple",
       },
@@ -583,17 +599,7 @@ export default function Dispatch() {
   //   // Handle route completion logic here
   // };
 
-  const handleDispatchOrder = (order: {
-    id: string;
-    customer: string;
-    date: string;
-    payment: string;
-    total: string;
-    delivery: string;
-    items: string;
-    fulfillment: string;
-    destination: string;
-  }) => {
+  const handleDispatchOrder = (order: any) => {
     console.log("Dispatching order:", order);
     setSelectedOrder(order);
     setIsDispatchModalOpen(true);
@@ -640,6 +646,83 @@ export default function Dispatch() {
   const handleCloseCreateDriverModal = () => {
     setIsCreateDriverModalOpen(false);
   };
+  const handleApprove = async () => {
+    try {
+      setIsApproveLoading(true);
+      const res = await api.post("/order/approve", {
+        orderId: selectedOrder?.id,
+        reason: reason,
+      });
+      toast.success(res.data.message);
+      featchOrders(currentPage, pageSize);
+      setApproveModal(false);
+      setReason("");
+      setIsApproveLoading(false);
+    } catch (error: any) {
+      toast.error(error?.response.data.message || "Something went wrong!");
+      setIsApproveLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      setIsRejectLoading(true);
+      const res = await api.post("/order/cancel", {
+        orderId: selectedOrder?.id,
+        reason: reason,
+      });
+      toast.success(res.data.message);
+      featchOrders(currentPage, pageSize);
+      setApproveModal(false);
+      setReason("");
+      setIsRejectLoading(false);
+    } catch (error: any) {
+      toast.error(error?.response.data.message || "Something went wrong!");
+      setIsRejectLoading(false);
+    }
+  };
+
+  const featchCargoOfficer= async (page = 1, limit = 10) => {
+    try {
+      // setLoadingDriver(true);
+
+      const staffs = await api.get<any>(
+        `/users/cargo-officer?search=all:${cargoOfficerSearch}&page=${1}&pageSize=${20}`
+      );
+      setCargoOfficers(staffs.data.data?.cargoOfficers);
+      setCargoOfficersPagination(staffs.data.pagination);
+      // toast.success(staffs.data.message);
+      // setLoadingDriver(false);
+    } catch (error: any) {
+      // setLoadingDriver(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+  useEffect(() => {
+    featchCargoOfficer();
+  }, [cargoOfficerSearch]);
+  const handleAssignCargoOfficer = async () => {
+    try {
+      setIsApproveLoading(true);
+      const res = await api.post("/dispatch/assign-pickup", {
+        orderId: selectedOrder?.id,
+        driverId: selectedCargoOfficer?.id,
+      });
+      toast.success(res.data.message);
+      featchOrders(currentPage, pageSize);
+      setIsCreateDriverModalOpen(false);
+      setIsApproveLoading(false);
+    } catch (error: any) {
+      toast.error(error?.response.data.message || "Something went wrong!");
+      setIsApproveLoading(false);
+    }
+  };
+ 
 
   return (
     <div className="min-h-screen">
@@ -664,51 +747,51 @@ export default function Dispatch() {
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {
-             loadingSummary?   Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="bg-white p-4">
-                <Skeleton
-                  active
-                  title={{ width: "60%" }}
-                  paragraph={{ rows: 2, width: ["100%", "80%"] }}
-                />
-              </Card>
-            )):
-          metrics.map((metric, index) => (
-            <Card key={index} className="bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  {metric.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">
-                      {metric.value}
+          {loadingSummary
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="bg-white p-4">
+                  <Skeleton
+                    active
+                    title={{ width: "60%" }}
+                    paragraph={{ rows: 2, width: ["100%", "80%"] }}
+                  />
+                </Card>
+              ))
+            : metrics.map((metric, index) => (
+                <Card key={index} className="bg-white">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      {metric.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900 mb-1">
+                          {metric.value}
+                        </div>
+                        <div className="flex items-center text-sm">
+                          {metric.trend === "up" ? (
+                            <IoTrendingUp className="h-3 w-3 text-green-500 mr-1" />
+                          ) : (
+                            <IoTrendingDown className="h-3 w-3 text-red-500 mr-1" />
+                          )}
+                          <span
+                            className={
+                              metric.trend === "up"
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }
+                          >
+                            {metric.change}
+                          </span>
+                        </div>
+                      </div>
+                      <IoStatsChart className="h-8 w-8 text-gray-400" />
                     </div>
-                    <div className="flex items-center text-sm">
-                      {metric.trend === "up" ? (
-                        <IoTrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                      ) : (
-                        <IoTrendingDown className="h-3 w-3 text-red-500 mr-1" />
-                      )}
-                      <span
-                        className={
-                          metric.trend === "up"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }
-                      >
-                        {metric.change}
-                      </span>
-                    </div>
-                  </div>
-                  <IoStatsChart className="h-8 w-8 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardContent>
+                </Card>
+              ))}
         </div>
 
         {/* Tabs */}
@@ -732,171 +815,259 @@ export default function Dispatch() {
 
         {/* Orders Table */}
         {activeTab === "orders" && (
-       <Card className="bg-white">
-       <Table>
-         <TableHeader>
-           <TableRow className="border-gray-200">
-             <TableHead className="w-12">
-               <Checkbox />
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               Order
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               <div className="flex items-center">
-                 Date
-                 <ArrowUpDown className="h-3 w-3 ml-1" />
-               </div>
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               Customer
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               Payment
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               Total
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               Pickup address
-             </TableHead>
-             {/* <TableHead className="text-gray-600 font-medium">
+          <Card className="bg-white">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-200">
+                  <TableHead className="w-12">
+                    <Checkbox />
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Order
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    <div className="flex items-center">
+                      Date
+                      <ArrowUpDown className="h-3 w-3 ml-1" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Customer
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Payment
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Total
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Pickup address
+                  </TableHead>
+                  {/* <TableHead className="text-gray-600 font-medium">
                Items
              </TableHead> */}
-             <TableHead className="text-gray-600 font-medium">
-               Destination
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               Fulfillment
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               Status
-             </TableHead>
-             <TableHead className="text-gray-600 font-medium">
-               Action
-             </TableHead>
-           </TableRow>
-         </TableHeader>
-         <TableBody>
-         <TableRow>
-             {orderLoading && (
-               <TableCell colSpan={11}>
-                 <div className="flex justify-center items-center py-8">
-                   <Spinner className="h-6 w-6 text-blue-600 mr-2" />
-                   <span className="text-gray-600 font-medium">
-                     Loading Beanch data...
-                   </span>
-                 </div>
-               </TableCell>
-             )}
-           </TableRow>
-           {orders.map((order, index) => (
-             <TableRow
-               key={index}
-               className="border-gray-100 hover:bg-gray-50 cursor-pointer"
-               onClick={() =>
-                 navigate(`/order/details/${order.id.replace("#", "")}?order=${encodeURIComponent(JSON.stringify(order))}`)
-               }
-             >
-               <TableCell>
-                 <Checkbox />
-               </TableCell>
-               <TableCell className="font-medium text-gray-900">
-                 <Button
-                   variant="ghost"
-                   className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
-                 >
-                   {order?.trackingCode}
-                 </Button>
-               </TableCell>
-               <TableCell className="text-gray-600">{order.pickupDate}</TableCell>
-               <TableCell className="text-gray-900">
-                 {order.customer.name}
-               </TableCell>
-               <TableCell>
-                 <Badge
-                   variant={
-                     order.payment === "Success" ? "default" : "secondary"
-                   }
-                   className={
-                     order.payment === "Success"
-                       ? "bg-green-100 text-green-700 hover:bg-green-100"
-                       : "bg-orange-100 text-orange-700 hover:bg-orange-100"
-                   }
-                 >
-                   ● {order?.payment?.status}
-                 </Badge>
-               </TableCell>
-               <TableCell className="font-medium text-gray-900">
-                 {order.finalPrice} ETB
-               </TableCell>
-               <TableCell className="text-gray-600">
-                 {order?.pickupAddress?.city}
-               </TableCell>
-               {/* <TableCell className="text-gray-600">
+                  <TableHead className="text-gray-600 font-medium">
+                    Destination
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Shipping Scope
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Fulfillment
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-gray-600 font-medium">
+                    Action
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  {orderLoading && (
+                    <TableCell colSpan={11}>
+                      <div className="flex justify-center items-center py-8">
+                        <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                        <span className="text-gray-600 font-medium">
+                          Loading Beanch data...
+                        </span>
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+                {orders.map((order, index) => (
+                  <TableRow
+                    key={index}
+                    className="border-gray-100 hover:bg-gray-50 cursor-pointer"
+                    onClick={() =>
+                      navigate(
+                        `/order/details/${order.id.replace(
+                          "#",
+                          ""
+                        )}?order=${encodeURIComponent(JSON.stringify(order))}`
+                      )
+                    }
+                  >
+                    <TableCell>
+                      <Checkbox />
+                    </TableCell>
+                    <TableCell className="font-medium text-gray-900">
+                      <Button
+                        variant="ghost"
+                        className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
+                      >
+                        {order?.trackingCode}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-gray-600">
+                      {order.pickupDate}
+                    </TableCell>
+                    <TableCell className="text-gray-900">
+                      {order.customer.name}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          order.payment === "Success" ? "default" : "secondary"
+                        }
+                        className={
+                          order.payment === "Success"
+                            ? "bg-green-100 text-green-700 hover:bg-green-100"
+                            : "bg-orange-100 text-orange-700 hover:bg-orange-100"
+                        }
+                      >
+                        ● {order?.payment?.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium text-gray-900">
+                      {order.finalPrice} ETB
+                    </TableCell>
+                    <TableCell className="text-gray-600">
+                      {order?.pickupAddress?.city}
+                    </TableCell>
+                    {/* <TableCell className="text-gray-600">
                2 Items
 
                </TableCell> */}
-               <TableCell className="text-gray-600">
-               {order?.deliveryAddress?.city}
-               </TableCell>
-               <TableCell>
-                 <Badge
-                   variant={
-                     order.fulfillmentType === "Fulfilled"
-                       ? "default"
-                       : "secondary"
-                   }
-                   className={
-                     order.fulfillmentType === "Fulfilled"
-                       ? "bg-green-100 text-green-700 hover:bg-green-100"
-                       : "bg-red-100 text-red-700 hover:bg-red-100"
-                   }
-                 >
-                   ● {order.fulfillmentType}
-                 </Badge>
-               </TableCell>
-               <TableCell>
-                 <Badge
-                   variant="secondary"
-                   className={
-                     order.status === "Approved"
-                       ? "bg-green-100 text-green-700"
-                       : "bg-orange-100 text-orange-700"
-                   }
-                 >
-                   {order.status}
-                 </Badge>
-               </TableCell>
-               <TableCell>
-                 <Button
+                    <TableCell className="text-gray-600">
+                      {order?.deliveryAddress?.city}
+                    </TableCell>
+                    <TableCell className="text-gray-600">
+                      {order?.shippingScope}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          order.fulfillmentType === "Fulfilled"
+                            ? "default"
+                            : "secondary"
+                        }
+                        className={
+                          order.fulfillmentType === "Fulfilled"
+                            ? "bg-green-100 text-green-700 hover:bg-green-100"
+                            : "bg-red-100 text-red-700 hover:bg-red-100"
+                        }
+                      >
+                        ● {order.fulfillmentType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={
+                          order.status === "Approved"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-orange-100 text-orange-700"
+                        }
+                      >
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {(order.fulfillmentType == "PICKUP" &&
+                      order.status == "CREATED" &&
+                      order?.shippingScope == "TOWN") ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                          disabled
+                        >
+                          Wating for request
+                        </Button>
+                      ) :( order.fulfillmentType == "PICKUP" &&
+                        order.status == "PENDING_APPROVAL" &&
+                        order?.shippingScope == "TOWN" )? (
+                        <div className="flex flex-row gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // navigate(`/staff/edit/${member.id}`);
+                              setApproveModal(true); //
+                              setSelectedOrder(order);
+                              handleDispatchOrder(order);
+                            }}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // navigate(`/staff/edit/${member.id}`);
+                              setRejectModal(true); //
+                              setSelectedOrder(order);
+                              handleDispatchOrder(order);
+                            }}
+                          >
+                            Regect
+                          </Button>
+                        </div>
+                      ) : ( order.fulfillmentType == "DROPOFF" &&
+                        order.status == "CREATED" &&
+                        order?.shippingScope != "TOWN" )?   <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // navigate(`/staff/edit/${member.id}`);
+                          setisAssignCargoOfficerModal(true); //
+                          setSelectedOrder(order);
+                          // handleDispatchOrder(order);
+                        }}
+                      >
+                        Assign Cargo Officer
+                      </Button>:( order.fulfillmentType == "PICKUP" &&
+                        order.status == "CREATED" &&
+                        order?.shippingScope != "TOWN" )||( order.fulfillmentType == "PICKUP" &&
+                          order.status == "APPROVED" &&
+                          order?.shippingScope == "TOWN" )?
+                         <Button
                    variant="ghost"
                    size="sm"
                    className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
                    onClick={(e) => {
                      e.stopPropagation();
                      // navigate(`/staff/edit/${member.id}`);
-                     setIsDialogOpen(true); //
-                     setSelectedOrder(order)
+                    //  setIsDialogOpen(true); //
+                    //  setSelectedOrder(order)
+                    handleDispatchOrder(order);
+
                    }}
                  >
-                   Approve
-                 </Button>
-               </TableCell>
-             </TableRow>
-           ))}
-         </TableBody>
-       </Table>
-       <TablePagination
-         currentPage={currentPage}
-         totalPages={orderPagination?.totalPages||1}
-         pageSize={orderPagination?.pageSize||10}
-         totalItems={orderPagination?.total||0}
-         onPageChange={handlePageChange}
-         
-         onPageSizeChange={handlePageSizeChange}
-       />
-     </Card>
+                   Assign Driver
+                 </Button> 
+                        :  <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                        disabled
+                      >
+                        No Action
+                      </Button> }
+
+                      
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={orderPagination?.totalPages || 1}
+              pageSize={orderPagination?.pageSize || 10}
+              totalItems={orderPagination?.total || 0}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          </Card>
         )}
 
         {/* Drivers Tab */}
@@ -1147,7 +1318,8 @@ export default function Dispatch() {
           isOpen={isDispatchModalOpen}
           onClose={handleCloseDispatchModal}
           orderId={selectedOrder?.id || ""}
-          customerName={selectedOrder?.customer || ""}
+          order={selectedOrder!}
+          customerName={selectedOrder?.customer?.id || ""}
           deliveryAddress="123 Main St, New York, NY" // This would come from order data
           priority="High" // This would come from order data
           serviceType="Same-day" // This would come from order data
@@ -1160,6 +1332,130 @@ export default function Dispatch() {
           onClose={handleCloseCreateDriverModal}
           onSave={handleSaveDriver}
         />
+
+        <ConfirmationModal
+          isOpen={approveModal}
+          onClose={() => setApproveModal(false)}
+          title="Approve Staff Member"
+          description="Are you sure you want to Aprove this Order?"
+          onConfirm={handleApprove}
+          variant="info"
+          confirmText="Approve"
+          isLoading={isApproveLoading}
+        >
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="reason "
+            className=" placeholder-gray-500 py-4 h-32 resize-none border rounded-md px-4 w-full"
+          />
+        </ConfirmationModal>
+
+        <ConfirmationModal
+          isOpen={rejectModal}
+          onClose={() => setRejectModal(false)}
+          title="Reject Staff Member"
+          description="Are you sure you want to cancel this Order?."
+          onConfirm={handleReject}
+          variant="info"
+          confirmText="Regect"
+          isLoading={isRejectLoading}
+        >
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="reason "
+            className=" placeholder-gray-500 py-4 h-32 resize-none border rounded-md px-4 w-full"
+          />
+        </ConfirmationModal>
+
+         
+      <ConfirmationModal
+        isOpen={isAssignCargoOfficerModal}
+        onClose={() => setisAssignCargoOfficerModal(false)}
+        title="Assign Cargo Officer"
+        description=""
+        onConfirm={handleAssignCargoOfficer}
+        variant="info"
+        confirmText="Assign"
+        isLoading={isApproveLoading}
+      >
+     <div>
+     <div className="relative">
+      <p className=" px-2 py-2">Cargo Oficer</p>
+                    {/* <Label className="mb-2">Driver *</Label> */}
+                   <div className="relative">
+                      <Input
+                        // type="text"
+                        placeholder="Search driver "
+                        value={cargoOfficerSearch}
+                        onChange={(e) => {
+                          console.log(e.target.value);
+                          setCargoOfficerSearch(e.target.value);
+                          setShowCargoOfficerDropdown(true);
+                          if (!e.target.value) {
+                            // clearManager(setFieldValue);
+                            setSelectedCargoOfficer(null)
+                          }
+                        }}
+                        onFocus={() => setShowCargoOfficerDropdown(true)}
+                        onBlur={() =>
+                          setTimeout(() => setShowCargoOfficerDropdown(false), 200)
+                        }
+                        className="py-7"
+                      />
+                      {selectedCargoOfficer && (
+                        <button
+                          type="button"
+                          onClick={() =>{
+                            setSelectedCargoOfficer(null)
+                          }}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+  
+                    {showCargoOfficerDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {loadingCargoOfficer && (
+                          <div className="flex justify-center items-center py-8">
+                            <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                          </div>
+                        )}
+                        {cargoOfficers.length > 0 ? (
+                          cargoOfficers.map((manager) => (
+                            <div
+                              key={manager?.id}
+                              onClick={() =>
+                               {setSelectedCargoOfficer(manager)
+                               setCargoOfficerSearch(manager?.name)}
+                              }
+                              className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">
+                                {manager?.name}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                ID: {manager?.id}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {manager?.email}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-gray-500 text-center">
+                            No managers found
+                          </div>
+                        )}
+                      </div>
+                    )} 
+                   
+                  </div>
+     </div>
+      </ConfirmationModal>
       </div>
     </div>
   );

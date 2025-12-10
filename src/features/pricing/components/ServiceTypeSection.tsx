@@ -25,6 +25,7 @@ interface ServiceTypeSectionProps {
   incrementValue?: number;
   isExpanded: boolean;
   onToggle: () => void;
+  hasWeight?:boolean
 }
 
 export default function ServiceTypeSection({
@@ -42,6 +43,7 @@ export default function ServiceTypeSection({
   incrementValue = 5,
   isExpanded,
   onToggle,
+  hasWeight=true,
 }: ServiceTypeSectionProps) {
 
   return (
@@ -77,7 +79,7 @@ export default function ServiceTypeSection({
               <p className="text-red-500 text-sm mt-1">{error}</p>
             )}
           </div>
-
+{hasWeight&&
           <WeightRangesTable
             weightRanges={weightRanges}
             selectedRows={selectedRows}
@@ -86,7 +88,7 @@ export default function ServiceTypeSection({
             onDeleteSelected={onDeleteSelected}
             fieldPrefix={fieldPrefix}
             incrementValue={incrementValue}
-          />
+          />}
         </>
       )}
     </div>

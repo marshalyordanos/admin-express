@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,11 @@ import {
   TrendingUp,
   Clock,
 } from "lucide-react";
+import api from "@/lib/api/api";
+import type { Branch, BranchListResponse } from "@/types/types";
+import toast from "react-hot-toast";
+import { Spinner } from "@/utils/spinner";
+import { Input } from "@/components/ui/input";
 
 // Mock staff data - in real app, this would come from API
 const staffData = {
@@ -114,6 +119,8 @@ const workHistory = [
 
 export default function StaffDetailsPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
+
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
 
   const getStatusColor = (status: string) => {
@@ -148,6 +155,60 @@ export default function StaffDetailsPage() {
         ? prev.filter((id) => id !== staffId)
         : [...prev, staffId]
     );
+  };
+  const [branchSearch, setBranchSearch] = useState("");
+  const [loadingBrand, setLoadingBrand] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+  const [brnachId, setBranchId] = useState("");
+
+  const featchBranch = async () => {
+    try {
+      setLoadingBrand(true);
+
+      const branch = await api.get<BranchListResponse>(`/branch?search=all:${branchSearch}`);
+      setBranches(branch.data.data);
+      setLoadingBrand(false);
+    } catch (error: any) {
+      setLoadingBrand(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchBranch();
+  }, [branchSearch]);
+
+  const selectBranch =async (
+    branch: { id: string; name: string },
+  ) => {
+    setBranchId(branch?.id)
+    setBranchSearch(`${branch.name} (${branch.id})`);
+    setShowBranchDropdown(false);
+    try {
+      // setLoading(true);
+      const data = { managerId: id, branchId: branch?.id };
+
+      const res = await api.post("/branch/assign-manager", data);
+      toast.success(res.data?.message);
+      // navigate("/branch");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Somethign went wrong!");
+    } finally {
+      // setLoading(false);
+    }
+    
+  };
+
+  const clearBranch = (
+  ) => {
+   setBranchId("")
+    setBranchSearch("");
   };
 
   return (
@@ -256,7 +317,7 @@ export default function StaffDetailsPage() {
           </Card>
 
           {/* Work Configuration */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <Settings className="h-5 w-5 mr-2 text-blue-600" />
@@ -308,7 +369,7 @@ export default function StaffDetailsPage() {
                 </Badge>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Branch Assignment */}
           <Card>
@@ -319,28 +380,76 @@ export default function StaffDetailsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div>
-                <Label className="text-sm font-medium text-gray-600">
-                  Select Branch
-                </Label>
-                <Select defaultValue={staffData.branchId}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Choose a branch" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Addis Ababa Central</SelectItem>
-                    <SelectItem value="2">Dire Dawa Branch</SelectItem>
-                    <SelectItem value="3">Mekelle Branch</SelectItem>
-                    <SelectItem value="4">Bahir Dar Branch</SelectItem>
-                    <SelectItem value="5">Hawassa Branch</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="bg-gray-50  rounded-lg space-y-4">
+                <div className="relative">
+                  <Label className="mb-2">Branch *</Label>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Search branches by name, ID, or location..."
+                      value={branchSearch}
+                      onChange={(e) => {
+                        setBranchSearch(e.target.value);
+                        setShowBranchDropdown(true);
+                        if (!e.target.value) {
+                          clearBranch();
+                        }
+                      }}
+                      onFocus={() => setShowBranchDropdown(true)}
+                      onBlur={() =>
+                        setTimeout(() => setShowBranchDropdown(false), 200)
+                      }
+                      className="py-7"
+                    />
+                    {brnachId && (
+                      <button
+                        type="button"
+                        onClick={() => clearBranch()}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {showBranchDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                       {loadingBrand&&   <div className="flex justify-center items-center py-8">
+                        <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                      </div>}
+                      {branches.length > 0 ? (
+                        branches.map((branch) => (
+                          <div
+                            key={branch.id}
+                            onClick={() => selectBranch(branch)}
+                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-gray-900">
+                              {branch.name}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              ID: {branch.id}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {branch.location}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-gray-500 text-center">
+                          No branches found
+                        </div>
+                      )}
+                    </div>
+                  )}
+                 
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Performance & Status */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <Shield className="h-5 w-5 mr-2 text-blue-600" />
@@ -385,7 +494,7 @@ export default function StaffDetailsPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Right Column */}
@@ -443,7 +552,7 @@ export default function StaffDetailsPage() {
           </Card>
 
           {/* Team Management */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <Users className="h-5 w-5 mr-2 text-blue-600" />
@@ -479,7 +588,7 @@ export default function StaffDetailsPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Staff Summary */}
           <Card>
@@ -536,7 +645,7 @@ export default function StaffDetailsPage() {
           </Card>
 
           {/* Work History */}
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-lg font-semibold">
                 <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
@@ -579,7 +688,7 @@ export default function StaffDetailsPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

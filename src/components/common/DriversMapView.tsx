@@ -216,8 +216,10 @@ export default function DriversMapView({
     try {
       setDriverLoading(true);
 
-      const staffs = await api.get<any>(`/staff/driver?search=all:${driverSearch}&page=${page}&pageSize=${limit}`)
-      setDrivers(staffs.data.data);
+      // const staffs = await api.get<any>(`/staff/driver?search=all:${driverSearch}&page=${page}&pageSize=${limit}`)
+      const staffs = await api.get<any>(`/staff/driver`)
+
+      setDrivers(staffs.data.data?.drivers);
       setPagination(staffs.data.pagination);
       // toast.success(staffs.data.message);
       setDriverLoading(false);

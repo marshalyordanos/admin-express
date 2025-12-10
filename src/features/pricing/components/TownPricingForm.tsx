@@ -6,39 +6,28 @@ import { useEffect, useState } from "react";
 import * as Yup from "yup";
 import SuccessModal from "@/components/common/SuccessModal";
 import PricingFormHeader from "./PricingFormHeader";
-import ServiceTypeSection from "./ServiceTypeSection";
-import AdditionalChargesSection from "./AdditionalChargesSection";
 import ActionButtons from "./ActionButtons";
+import AdditionalChargesSection from "./AdditionalChargesSection";
+import ServiceTypeSection from "./ServiceTypeSection";
 import toast from "react-hot-toast";
 import api from "@/lib/api/api";
 
-const RegionalPricingSchema = Yup.object().shape({
-  standard: Yup.number()
-    .min(0, "Price must be positive")
-    .required("Standard service price is required"),
-  sameDay: Yup.number()
-    .min(0, "Price must be positive")
-    .required("Same Day service price is required"),
-  overnight: Yup.number()
-    .min(0, "Price must be positive")
-    .required("Overnight service price is required"),
-  costPerKm: Yup.number()
-    .min(0, "Cost must be positive")
-    .required("Cost per km is required"),
-  airportFee: Yup.number()
-    .min(0, "Airport fee must be positive")
-    .required("Airport fee is required"),
+const TownPricingSchema = Yup.object().shape({
+  standard: Yup.number().min(0).required("Standard price is required"),
+  sameDay: Yup.number().min(0).required("Same Day price is required"),
+  overnight: Yup.number().min(0).required("Overnight price is required"),
+  costPerKm: Yup.number().min(0).required("Cost per km is required"),
   profitMargin: Yup.number()
-    .min(0, "Profit margin must be positive")
-    .max(100, "Profit margin cannot exceed 100%")
+    .min(0)
+    .max(100)
     .required("Profit margin is required"),
 });
 
 type DriverCommission = {
-  category: string; // vehicleTypeId
-  name: string;     // vehicle name for display
+  category: string;
+  name: string;
   fixedCost: number;
-  driverCost: number; // perKm
+  driverCost: number;
   percentage?: number;
 };
 
@@ -48,64 +37,43 @@ type InitialValues = {
   sameDay: number;
   overnight: number;
   costPerKm: number;
-  airportFee: number;
   profitMargin: number;
-  standardWeightRanges: { from: string; to: string; price: number }[];
-  sameDayWeightRanges: { from: string; to: string; price: number }[];
-  overnightWeightRanges: { from: string; to: string; price: number }[];
   driverCommission: DriverCommission[];
 };
 
-export default function RegionalPricingForm() {
+export default function TownPricingForm() {
   const navigate = useNavigate();
+  const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [expandedSection, setExpandedSection] = useState<"standard" | "sameDay" | "overnight" | null>("standard");
-  const [selectedRows, setSelectedRows] = useState<{
-    standard: Set<number>;
-    sameDay: Set<number>;
-    overnight: Set<number>;
-  }>({
-    standard: new Set(),
-    sameDay: new Set(),
-    overnight: new Set(),
-  });
-  const [loading, setLoading] = useState(false);
-  const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
 
   const initialValues: InitialValues = {
-    zone: "regional",
+    zone: "town",
     standard: 0,
     sameDay: 0,
     overnight: 0,
     costPerKm: 0,
-    airportFee: 0,
     profitMargin: 0,
-    standardWeightRanges: [{ from: "1", to: "3", price: 0 }],
-    sameDayWeightRanges: [{ from: "1", to: "3", price: 0 }],
-    overnightWeightRanges: [{ from: "1", to: "3", price: 0 }],
     driverCommission: [],
   };
 
-  // Fetch vehicle types dynamically
-  const fetchVehicleTypes = async () => {
-    try {
-      const res = await api.get(`/fleet/type?search=&page=1&limit=1000`);
-      const vehicles = res.data.data?.vehicleTypes || [];
-      setVehicleTypes(vehicles);
-    } catch (error) {
-      console.error("Error fetching vehicle types", error);
-    }
-  };
-
   useEffect(() => {
+    const fetchVehicleTypes = async () => {
+      try {
+        const res = await api.get(`/fleet/type?search=&page=1&limit=1000`);
+        const vehicles = res.data.data?.vehicleTypes || [];
+        setVehicleTypes(vehicles);
+      } catch (error) {
+        console.error("Error fetching vehicle types", error);
+      }
+    };
     fetchVehicleTypes();
   }, []);
 
   const handleSubmit = async (values: InitialValues) => {
     try {
       setLoading(true);
-
       const payload = {
         name: "Town Delivery Tariff",
         shippingScope: "TOWN",
@@ -115,43 +83,25 @@ export default function RegionalPricingForm() {
           { serviceType: "EXPRESS", baseFee: values.sameDay },
           { serviceType: "OVERNIGHT", baseFee: values.overnight },
         ],
-        driverCommissions: values.driverCommission.map((c) => ({
+        driverCommissions: values.driverCommission.map(c => ({
           vehicleTypeId: c.category,
           ...(c.fixedCost ? { fixed: c.fixedCost } : {}),
           ...(c.driverCost ? { perKm: c.driverCost } : {}),
           ...(c.percentage ? { percentage: c.percentage } : {}),
         })),
-        profit:  values.profitMargin,
-        
-        airportFees: [
-          {
-            serviceType: "EXPRESS",
-            brackets: values.sameDayWeightRanges.map((range) => ({
-              minKg: Number(range.from),
-              maxKg: Number(range.to),
-              rate: range.price,
-            })),
-          },
-        ],
+        profit: values.profitMargin,
       };
-
-      console.log("SENDING PAYLOAD:", payload);
 
       await api.post("/pricing/tariff", payload);
 
-      toast.success("Regional pricing configuration saved successfully!");
+      toast.success("Town pricing saved successfully!");
       navigate("/pricing");
-      setLoading(false);
     } catch (error) {
       console.error(error);
-      setLoading(false);
       toast.error("Failed to save tariff");
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleCloseModal = () => {
-    setIsSuccessModalOpen(false);
-    navigate("/pricing");
   };
 
   return (
@@ -160,7 +110,7 @@ export default function RegionalPricingForm() {
         enableReinitialize
         initialValues={{
           ...initialValues,
-          driverCommission: vehicleTypes.map((v) => ({
+          driverCommission: vehicleTypes.map(v => ({
             category: v.id,
             name: v.name,
             fixedCost: 0,
@@ -168,164 +118,79 @@ export default function RegionalPricingForm() {
             percentage: 0,
           })),
         }}
-        validationSchema={RegionalPricingSchema}
+        validationSchema={TownPricingSchema}
         onSubmit={handleSubmit}
       >
         {({ values, setFieldValue, errors, touched }) => (
           <Form>
-            <PricingFormHeader title="Regional Pricing Configuration" />
+            <PricingFormHeader title="Town Pricing Configuration" />
 
-            {/* Service Type Sections */}
+            {/* Services without weight ranges */}
             <ServiceTypeSection
               serviceName="Standard Service"
-              serviceLabel="Standard Service Price"
+              serviceLabel="Standard Price"
               fieldName="standard"
-              weightRanges={values.standardWeightRanges}
-              selectedRows={selectedRows.standard}
-              onSelectionChange={(newSelection) => {
-                setSelectedRows({ ...selectedRows, standard: newSelection });
-              }}
-              onAddRange={() => {
-                const lastRange =
-                  values.standardWeightRanges[values.standardWeightRanges.length - 1];
-                setFieldValue("standardWeightRanges", [
-                  ...values.standardWeightRanges,
-                  { from: lastRange.to, to: String(Number(lastRange.to) + 5), price: 0 },
-                ]);
-              }}
-              onDeleteSelected={() => {
-                const newRanges = values.standardWeightRanges.filter(
-                  (_, i) => !selectedRows.standard.has(i)
-                );
-                setFieldValue("standardWeightRanges", newRanges);
-                setSelectedRows({ ...selectedRows, standard: new Set() });
-              }}
-              fieldPrefix="standardWeightRanges"
+              weightRanges={[]} // Not needed
+              selectedRows={new Set()}
+              onSelectionChange={() => {}}
+              onAddRange={() => {}}
+              onDeleteSelected={() => {}}
+              fieldPrefix=""
               error={errors.standard}
               touched={touched.standard}
-              incrementValue={5}
-              isExpanded={expandedSection === "standard"}
-              onToggle={() => setExpandedSection(expandedSection === "standard" ? null : "standard")}
+              incrementValue={0}
+              isExpanded={true}
+              onToggle={() => {}}
+              hasWeight={false}
             />
 
             <ServiceTypeSection
               serviceName="Same Day Service"
-              serviceLabel="Same Day Service Price"
+              serviceLabel="Same Day Price"
               fieldName="sameDay"
-              weightRanges={values.sameDayWeightRanges}
-              selectedRows={selectedRows.sameDay}
-              onSelectionChange={(newSelection) => {
-                setSelectedRows({ ...selectedRows, sameDay: newSelection });
-              }}
-              onAddRange={() => {
-                const lastRange =
-                  values.sameDayWeightRanges[values.sameDayWeightRanges.length - 1];
-                setFieldValue("sameDayWeightRanges", [
-                  ...values.sameDayWeightRanges,
-                  { from: lastRange.to, to: String(Number(lastRange.to) + 5), price: 0 },
-                ]);
-              }}
-              onDeleteSelected={() => {
-                const newRanges = values.sameDayWeightRanges.filter(
-                  (_, i) => !selectedRows.sameDay.has(i)
-                );
-                setFieldValue("sameDayWeightRanges", newRanges);
-                setSelectedRows({ ...selectedRows, sameDay: new Set() });
-              }}
-              fieldPrefix="sameDayWeightRanges"
+              weightRanges={[]}
+              selectedRows={new Set()}
+              onSelectionChange={() => {}}
+              onAddRange={() => {}}
+              onDeleteSelected={() => {}}
+              fieldPrefix=""
               error={errors.sameDay}
               touched={touched.sameDay}
-              incrementValue={5}
-              isExpanded={expandedSection === "sameDay"}
-              onToggle={() => setExpandedSection(expandedSection === "sameDay" ? null : "sameDay")}
+              incrementValue={0}
+              isExpanded={true}
+              onToggle={() => {}}
+              hasWeight={false}
             />
 
             <ServiceTypeSection
               serviceName="Overnight Service"
-              serviceLabel="Overnight Service Price"
+              serviceLabel="Overnight Price"
               fieldName="overnight"
-              weightRanges={values.overnightWeightRanges}
-              selectedRows={selectedRows.overnight}
-              onSelectionChange={(newSelection) => {
-                setSelectedRows({ ...selectedRows, overnight: newSelection });
-              }}
-              onAddRange={() => {
-                const lastRange =
-                  values.overnightWeightRanges[values.overnightWeightRanges.length - 1];
-                setFieldValue("overnightWeightRanges", [
-                  ...values.overnightWeightRanges,
-                  { from: lastRange.to, to: String(Number(lastRange.to) + 5), price: 0 },
-                ]);
-              }}
-              onDeleteSelected={() => {
-                const newRanges = values.overnightWeightRanges.filter(
-                  (_, i) => !selectedRows.overnight.has(i)
-                );
-                setFieldValue("overnightWeightRanges", newRanges);
-                setSelectedRows({ ...selectedRows, overnight: new Set() });
-              }}
-              fieldPrefix="overnightWeightRanges"
+              weightRanges={[]}
+              selectedRows={new Set()}
+              onSelectionChange={() => {}}
+              onAddRange={() => {}}
+              onDeleteSelected={() => {}}
+              fieldPrefix=""
               error={errors.overnight}
               touched={touched.overnight}
-              incrementValue={5}
-              isExpanded={expandedSection === "overnight"}
-              onToggle={() => setExpandedSection(expandedSection === "overnight" ? null : "overnight")}
+              incrementValue={0}
+              isExpanded={true}
+              onToggle={() => {}}
+              hasWeight={false}
             />
 
             {/* Additional Charges */}
             <AdditionalChargesSection
               costPerKmError={errors.costPerKm}
               costPerKmTouched={touched.costPerKm}
-              airportFeeError={errors.airportFee}
-              airportFeeTouched={touched.airportFee}
+              airportFeeError={undefined}
+              airportFeeTouched={undefined}
               profitMarginError={errors.profitMargin}
               profitMarginTouched={touched.profitMargin}
               driverCommission={values.driverCommission}
-              showAirportFee={true}
+              showAirportFee={false}
             />
-
-            {/* Dynamic Driver Commission Inputs */}
-            {/* <div className="mt-6">
-              <h3 className="font-semibold mb-2">Driver Commissions</h3>
-              {values.driverCommission.map((dc, index) => (
-                <div key={dc.category} className="flex gap-4 mb-2 items-center">
-                  <span className="w-32">{dc.name}</span>
-                  <input
-                    type="number"
-                    placeholder="Fixed Cost"
-                    className="border px-2 py-1 w-24"
-                    value={dc.fixedCost}
-                    onChange={(e) => {
-                      const updated = [...values.driverCommission];
-                      updated[index].fixedCost = Number(e.target.value);
-                      setFieldValue("driverCommission", updated);
-                    }}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Per Km"
-                    className="border px-2 py-1 w-24"
-                    value={dc.driverCost}
-                    onChange={(e) => {
-                      const updated = [...values.driverCommission];
-                      updated[index].driverCost = Number(e.target.value);
-                      setFieldValue("driverCommission", updated);
-                    }}
-                  />
-                  <input
-                    type="number"
-                    placeholder="%"
-                    className="border px-2 py-1 w-24"
-                    value={dc.percentage || 0}
-                    onChange={(e) => {
-                      const updated = [...values.driverCommission];
-                      updated[index].percentage = Number(e.target.value);
-                      setFieldValue("driverCommission", updated);
-                    }}
-                  />
-                </div>
-              ))}
-            </div> */}
 
             <ActionButtons />
           </Form>
@@ -334,7 +199,10 @@ export default function RegionalPricingForm() {
 
       <SuccessModal
         isOpen={isSuccessModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => {
+          setIsSuccessModalOpen(false);
+          navigate("/pricing");
+        }}
         trackingNumber={successMessage}
       />
     </div>

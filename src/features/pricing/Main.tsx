@@ -333,8 +333,29 @@ export default function PricingMain() {
                       key={log.id}
                       className="cursor-pointer hover:bg-gray-50"
                       onClick={() =>
-                        navigate(`/fleet/maintenance/details/${log.id}`)
-                      }
+                    {   if(log?.shippingScope=="TOWN") navigate(
+                          `/pricing/town/${log.id.replace(
+                            "#",
+                            ""
+                          )}?price=${encodeURIComponent(JSON.stringify(log))}`
+                        ) 
+                        if(log?.shippingScope=="REGIONAL") navigate(
+                          `/pricing/regional/${log.id.replace(
+                            "#",
+                            ""
+                          )}?price=${encodeURIComponent(JSON.stringify(log))}`
+                        ) 
+                      
+                        if(log?.shippingScope=="INTERNATIONAL") navigate(
+                          `/pricing/international/${log.id.replace(
+                            "#",
+                            ""
+                          )}?price=${encodeURIComponent(JSON.stringify(log))}`
+                        ) 
+                      
+                        
+                        
+                      }                   }
                     >
                       <TableCell>
                         <div className="flex flex-col">

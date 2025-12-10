@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,9 @@ import {
   IoMail,
   IoPhonePortraitOutline,
 } from "react-icons/io5";
+import type { Order, Pagination } from "@/types/types";
+import api from "@/lib/api/api";
+import toast from "react-hot-toast";
 
 interface Driver {
   id: string;
@@ -46,6 +49,7 @@ interface DispatchModalProps {
   priority: string;
   serviceType: string;
   onDispatch: (driverId: string, notes?: string) => void;
+  order:Order
 }
 
 const availableDrivers: Driver[] = [
@@ -151,6 +155,7 @@ function DispatchModal({
   priority,
   serviceType,
   onDispatch,
+  order,
 }: DispatchModalProps) {
   const [selectedDriver, setSelectedDriver] = useState("");
   const [selectedExternalDriver, setSelectedExternalDriver] = useState("");
@@ -158,6 +163,19 @@ function DispatchModal({
   const [activeTab, setActiveTab] = useState("internal");
   const [isContactingExternal, setIsContactingExternal] = useState(false);
 
+  const [driverSearch, setDriverSearch] = useState("");
+  const [showDriverDropdown, setShowDriverDropdown] = useState(false);
+  const [paginationDriver, setPaginationDriver] = useState<Pagination | null>(null);
+  const [loadingDriver, setLoadingDriver] = useState(false);
+  const [driver, setDriver] = useState<any[]>([]);
+  // const [selectedDriver,setSelectedDriver] = useState<any>(null)
+  const [loadingExternalDriver, setLoadingExternalDriver] = useState(false);
+  const [externalDriver, setExternalDriver] = useState<any[]>([]);
+  const [paginationExternalDriver, setPaginationExternalDriver] = useState<Pagination | null>(null);
+
+
+
+  console.log(customerName,orderId,)
   const handleDispatch = () => {
     if (selectedDriver || selectedExternalDriver) {
       const driverId = selectedDriver || selectedExternalDriver;
@@ -179,6 +197,67 @@ function DispatchModal({
     }, 2000);
   };
 
+   
+  const featchIntenalDriver= async (page = 1, limit = 10) => {
+    try {
+      setLoadingDriver(true);
+
+      const res = await api.post<any>(
+        `/maps/nearby-drivers`,{
+          "orderIds": [order?.id],
+          "radius": 20000
+      }
+      );
+      
+     if(res.data.data){
+      setDriver(res.data.data);
+      setPaginationDriver(res.data.pagination);
+     }
+      // toast.success(staffs.data.message);
+      setLoadingDriver(false);
+    } catch (error: any) {
+      setLoadingDriver(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+   if(order){
+    featchIntenalDriver();
+   }
+  }, [driverSearch,order]);
+  const featchExternalDriver= async (page = 1, limit = 10) => {
+    try {
+      setLoadingExternalDriver(true);
+
+      const res = await api.get<any>(
+        `maps/external/nearby-drivers?lat=9.0079232&lon=38.7678208&radius=232`
+      );
+      setExternalDriver(res.data.data);
+      setPaginationExternalDriver(res.data.pagination);
+      // toast.success(staffs.data.message);
+      setLoadingExternalDriver(false);
+    } catch (error: any) {
+      setLoadingExternalDriver(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
+    }
+  };
+
+  useEffect(() => {
+    featchExternalDriver();
+  }, [driverSearch]);
+  
+
   if (!isOpen) return null;
 
   return (
@@ -190,7 +269,7 @@ function DispatchModal({
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-bold text-gray-900">
-              Dispatch Order {orderId}
+              Dispatch Order {order?.trackingCode}
             </CardTitle>
             <Button
               variant="ghost"
@@ -202,8 +281,8 @@ function DispatchModal({
             </Button>
           </div>
           <div className="text-sm text-gray-600">
-            Customer: {customerName} • Priority: {priority} • Service:{" "}
-            {serviceType}
+            Customer: {order?.customer?.name} • Scop: {order?.shippingScope} • Service:{" "}
+            {order?.serviceType}
           </div>
         </CardHeader>
 
@@ -213,16 +292,16 @@ function DispatchModal({
             <h3 className="font-medium text-gray-900 mb-2">Order Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <Label className="text-gray-600">Order ID</Label>
-                <p className="font-medium">{orderId}</p>
+                <Label className="text-gray-600">Order Tracking Code</Label>
+                <p className="font-medium">{order?.trackingCode}</p>
               </div>
               <div>
                 <Label className="text-gray-600">Customer</Label>
-                <p className="font-medium">{customerName}</p>
+                <p className="font-medium">{order?.customer?.name}</p>
               </div>
               <div className="md:col-span-2">
                 <Label className="text-gray-600">Delivery Address</Label>
-                <p className="font-medium">{deliveryAddress}</p>
+                <p className="font-medium">{order?.deliveryAddress?.label}</p>
               </div>
             </div>
           </div>
@@ -257,7 +336,7 @@ function DispatchModal({
                   Available Internal Drivers
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {availableDrivers.map((driver) => (
+                  {driver.map((driver) => (
                     <Card
                       key={driver.id}
                       className={`cursor-pointer transition-all ${

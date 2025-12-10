@@ -1,7 +1,7 @@
 "use client";
 
 import { Formik, Form } from "formik";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
 import SuccessModal from "@/components/common/SuccessModal";
@@ -36,11 +36,13 @@ const RegionalPricingSchema = Yup.object().shape({
 
 type DriverCommission = {
   category: string; // vehicleTypeId
-  name: string;     // vehicle name for display
+  name: string; // vehicle name for display
   fixedCost: number;
   driverCost: number; // perKm
   percentage?: number;
 };
+
+type WeightRange = { from: string; to: string; price: number };
 
 type InitialValues = {
   zone: string;
@@ -50,17 +52,21 @@ type InitialValues = {
   costPerKm: number;
   airportFee: number;
   profitMargin: number;
-  standardWeightRanges: { from: string; to: string; price: number }[];
-  sameDayWeightRanges: { from: string; to: string; price: number }[];
-  overnightWeightRanges: { from: string; to: string; price: number }[];
+  standardWeightRanges: WeightRange[];
+  sameDayWeightRanges: WeightRange[];
+  overnightWeightRanges: WeightRange[];
   driverCommission: DriverCommission[];
 };
 
 export default function RegionalPricingForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [parsedPrice, setParsedPrice] = useState<any | null>(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [expandedSection, setExpandedSection] = useState<"standard" | "sameDay" | "overnight" | null>("standard");
+  const [expandedSection, setExpandedSection] = useState<
+    "standard" | "sameDay" | "overnight" | null
+  >("standard");
   const [selectedRows, setSelectedRows] = useState<{
     standard: Set<number>;
     sameDay: Set<number>;
@@ -73,7 +79,8 @@ export default function RegionalPricingForm() {
   const [loading, setLoading] = useState(false);
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
 
-  const initialValues: InitialValues = {
+  // Default create-mode initial values
+  const createInitialValues: InitialValues = {
     zone: "regional",
     standard: 0,
     sameDay: 0,
@@ -87,7 +94,6 @@ export default function RegionalPricingForm() {
     driverCommission: [],
   };
 
-  // Fetch vehicle types dynamically
   const fetchVehicleTypes = async () => {
     try {
       const res = await api.get(`/fleet/type?search=&page=1&limit=1000`);
@@ -102,10 +108,77 @@ export default function RegionalPricingForm() {
     fetchVehicleTypes();
   }, []);
 
+  useEffect(() => {
+    const raw = searchParams.get("price");
+    if (!raw) return;
+    try {
+      const decoded = decodeURIComponent(raw);
+      const obj = JSON.parse(decoded);
+      setParsedPrice(obj);
+    } catch {
+      setParsedPrice(null);
+    }
+  }, [searchParams]);
+
+  const isEditing = Boolean(parsedPrice && parsedPrice.id);
+
+  const buildInitialValues = (): InitialValues => {
+    const base = { ...createInitialValues };
+    // build driverCommission skeleton
+    const driverSkeleton = vehicleTypes.map((v) => ({
+      category: v.id,
+      name: v.name,
+      fixedCost: 0,
+      driverCost: 0,
+      percentage: 0,
+    }));
+    base.driverCommission = driverSkeleton;
+
+    if (!isEditing) return base;
+
+    const serviceTypes: any[] = parsedPrice.serviceTypes || [];
+    const standardST = serviceTypes.find((s) => s.serviceType === "STANDARD");
+    const expressST = serviceTypes.find((s) => s.serviceType === "EXPRESS");
+    const overnightST = serviceTypes.find((s) => s.serviceType === "OVERNIGHT");
+
+    base.standard = standardST?.baseFee ?? 0;
+    base.sameDay = expressST?.baseFee ?? 0;
+    base.overnight = overnightST?.baseFee ?? 0;
+    base.profitMargin = parsedPrice.profitMargin?.percentage ?? parsedPrice.profit ?? 0;
+
+    // Apply airport fees to all services if present
+    [standardST, expressST, overnightST].forEach((st, index) => {
+      if (st?.airportFee?.brackets?.length) {
+        const mapped = st.airportFee.brackets.map((b: any) => ({
+          from: String(b.minKg ?? 1),
+          to: String(b.maxKg ?? (b.minKg ?? 1) + 1),
+          price: b.rate ?? 0,
+        }));
+        if (index === 0) base.standardWeightRanges = mapped;
+        if (index === 1) base.sameDayWeightRanges = mapped;
+        if (index === 2) base.overnightWeightRanges = mapped;
+      }
+    });
+
+    // map driverCommissions
+    const backendDCs: any[] = parsedPrice.driverCommissions || [];
+    base.driverCommission = vehicleTypes.map((v) => {
+      const matched = backendDCs.find((d) => d.vehicleTypeId === v.id);
+      return {
+        category: v.id,
+        name: v.name,
+        fixedCost: matched?.fixed ?? 0,
+        driverCost: matched?.perKm ?? 0,
+        percentage: matched?.percentage ?? 0,
+      };
+    });
+
+    return base;
+  };
+
   const handleSubmit = async (values: InitialValues) => {
     try {
       setLoading(true);
-
       const payload = {
         name: "Regional Delivery Tariff",
         shippingScope: "REGIONAL",
@@ -121,9 +194,16 @@ export default function RegionalPricingForm() {
           ...(c.driverCost ? { perKm: c.driverCost } : {}),
           ...(c.percentage ? { percentage: c.percentage } : {}),
         })),
-        profit:  values.profitMargin,
-        
+        profit: values.profitMargin,
         airportFees: [
+          {
+            serviceType: "STANDARD",
+            brackets: values.standardWeightRanges.map((range) => ({
+              minKg: Number(range.from),
+              maxKg: Number(range.to),
+              rate: range.price,
+            })),
+          },
           {
             serviceType: "EXPRESS",
             brackets: values.sameDayWeightRanges.map((range) => ({
@@ -132,14 +212,25 @@ export default function RegionalPricingForm() {
               rate: range.price,
             })),
           },
+          {
+            serviceType: "OVERNIGHT",
+            brackets: values.overnightWeightRanges.map((range) => ({
+              minKg: Number(range.from),
+              maxKg: Number(range.to),
+              rate: range.price,
+            })),
+          },
         ],
       };
 
-      console.log("SENDING PAYLOAD:", payload);
+      if (isEditing) {
+        await api.patch(`/pricing/tariff/${parsedPrice.id}`, payload);
+        toast.success("Regional pricing updated successfully!");
+      } else {
+        await api.post("/pricing/tariff", payload);
+        toast.success("Regional pricing saved successfully!");
+      }
 
-      await api.post("/pricing/tariff", payload);
-
-      toast.success("Regional pricing configuration saved successfully!");
       navigate("/pricing");
       setLoading(false);
     } catch (error) {
@@ -158,22 +249,19 @@ export default function RegionalPricingForm() {
     <div className="max-w-4xl p-6 bg-white">
       <Formik
         enableReinitialize
-        initialValues={{
-          ...initialValues,
-          driverCommission: vehicleTypes.map((v) => ({
-            category: v.id,
-            name: v.name,
-            fixedCost: 0,
-            driverCost: 0,
-            percentage: 0,
-          })),
-        }}
+        initialValues={buildInitialValues()}
         validationSchema={RegionalPricingSchema}
         onSubmit={handleSubmit}
       >
         {({ values, setFieldValue, errors, touched }) => (
           <Form>
-            <PricingFormHeader title="Regional Pricing Configuration" />
+            <PricingFormHeader
+              title={
+                isEditing
+                  ? "Edit Regional Pricing Configuration"
+                  : "Regional Pricing Configuration"
+              }
+            />
 
             {/* Service Type Sections */}
             <ServiceTypeSection
@@ -182,15 +270,21 @@ export default function RegionalPricingForm() {
               fieldName="standard"
               weightRanges={values.standardWeightRanges}
               selectedRows={selectedRows.standard}
-              onSelectionChange={(newSelection) => {
-                setSelectedRows({ ...selectedRows, standard: newSelection });
-              }}
+              onSelectionChange={(newSelection) =>
+                setSelectedRows({ ...selectedRows, standard: newSelection })
+              }
               onAddRange={() => {
                 const lastRange =
-                  values.standardWeightRanges[values.standardWeightRanges.length - 1];
+                  values.standardWeightRanges[
+                    values.standardWeightRanges.length - 1
+                  ];
                 setFieldValue("standardWeightRanges", [
                   ...values.standardWeightRanges,
-                  { from: lastRange.to, to: String(Number(lastRange.to) + 5), price: 0 },
+                  {
+                    from: lastRange.to,
+                    to: String(Number(lastRange.to) + 5),
+                    price: 0,
+                  },
                 ]);
               }}
               onDeleteSelected={() => {
@@ -205,7 +299,11 @@ export default function RegionalPricingForm() {
               touched={touched.standard}
               incrementValue={5}
               isExpanded={expandedSection === "standard"}
-              onToggle={() => setExpandedSection(expandedSection === "standard" ? null : "standard")}
+              onToggle={() =>
+                setExpandedSection(
+                  expandedSection === "standard" ? null : "standard"
+                )
+              }
             />
 
             <ServiceTypeSection
@@ -214,15 +312,21 @@ export default function RegionalPricingForm() {
               fieldName="sameDay"
               weightRanges={values.sameDayWeightRanges}
               selectedRows={selectedRows.sameDay}
-              onSelectionChange={(newSelection) => {
-                setSelectedRows({ ...selectedRows, sameDay: newSelection });
-              }}
+              onSelectionChange={(newSelection) =>
+                setSelectedRows({ ...selectedRows, sameDay: newSelection })
+              }
               onAddRange={() => {
                 const lastRange =
-                  values.sameDayWeightRanges[values.sameDayWeightRanges.length - 1];
+                  values.sameDayWeightRanges[
+                    values.sameDayWeightRanges.length - 1
+                  ];
                 setFieldValue("sameDayWeightRanges", [
                   ...values.sameDayWeightRanges,
-                  { from: lastRange.to, to: String(Number(lastRange.to) + 5), price: 0 },
+                  {
+                    from: lastRange.to,
+                    to: String(Number(lastRange.to) + 5),
+                    price: 0,
+                  },
                 ]);
               }}
               onDeleteSelected={() => {
@@ -237,7 +341,11 @@ export default function RegionalPricingForm() {
               touched={touched.sameDay}
               incrementValue={5}
               isExpanded={expandedSection === "sameDay"}
-              onToggle={() => setExpandedSection(expandedSection === "sameDay" ? null : "sameDay")}
+              onToggle={() =>
+                setExpandedSection(
+                  expandedSection === "sameDay" ? null : "sameDay"
+                )
+              }
             />
 
             <ServiceTypeSection
@@ -246,15 +354,21 @@ export default function RegionalPricingForm() {
               fieldName="overnight"
               weightRanges={values.overnightWeightRanges}
               selectedRows={selectedRows.overnight}
-              onSelectionChange={(newSelection) => {
-                setSelectedRows({ ...selectedRows, overnight: newSelection });
-              }}
+              onSelectionChange={(newSelection) =>
+                setSelectedRows({ ...selectedRows, overnight: newSelection })
+              }
               onAddRange={() => {
                 const lastRange =
-                  values.overnightWeightRanges[values.overnightWeightRanges.length - 1];
+                  values.overnightWeightRanges[
+                    values.overnightWeightRanges.length - 1
+                  ];
                 setFieldValue("overnightWeightRanges", [
                   ...values.overnightWeightRanges,
-                  { from: lastRange.to, to: String(Number(lastRange.to) + 5), price: 0 },
+                  {
+                    from: lastRange.to,
+                    to: String(Number(lastRange.to) + 5),
+                    price: 0,
+                  },
                 ]);
               }}
               onDeleteSelected={() => {
@@ -269,10 +383,13 @@ export default function RegionalPricingForm() {
               touched={touched.overnight}
               incrementValue={5}
               isExpanded={expandedSection === "overnight"}
-              onToggle={() => setExpandedSection(expandedSection === "overnight" ? null : "overnight")}
+              onToggle={() =>
+                setExpandedSection(
+                  expandedSection === "overnight" ? null : "overnight"
+                )
+              }
             />
 
-            {/* Additional Charges */}
             <AdditionalChargesSection
               costPerKmError={errors.costPerKm}
               costPerKmTouched={touched.costPerKm}
@@ -284,50 +401,7 @@ export default function RegionalPricingForm() {
               showAirportFee={true}
             />
 
-            {/* Dynamic Driver Commission Inputs */}
-            {/* <div className="mt-6">
-              <h3 className="font-semibold mb-2">Driver Commissions</h3>
-              {values.driverCommission.map((dc, index) => (
-                <div key={dc.category} className="flex gap-4 mb-2 items-center">
-                  <span className="w-32">{dc.name}</span>
-                  <input
-                    type="number"
-                    placeholder="Fixed Cost"
-                    className="border px-2 py-1 w-24"
-                    value={dc.fixedCost}
-                    onChange={(e) => {
-                      const updated = [...values.driverCommission];
-                      updated[index].fixedCost = Number(e.target.value);
-                      setFieldValue("driverCommission", updated);
-                    }}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Per Km"
-                    className="border px-2 py-1 w-24"
-                    value={dc.driverCost}
-                    onChange={(e) => {
-                      const updated = [...values.driverCommission];
-                      updated[index].driverCost = Number(e.target.value);
-                      setFieldValue("driverCommission", updated);
-                    }}
-                  />
-                  <input
-                    type="number"
-                    placeholder="%"
-                    className="border px-2 py-1 w-24"
-                    value={dc.percentage || 0}
-                    onChange={(e) => {
-                      const updated = [...values.driverCommission];
-                      updated[index].percentage = Number(e.target.value);
-                      setFieldValue("driverCommission", updated);
-                    }}
-                  />
-                </div>
-              ))}
-            </div> */}
-
-            <ActionButtons />
+            <ActionButtons isEditing={isEditing} />
           </Form>
         )}
       </Formik>

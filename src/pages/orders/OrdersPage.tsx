@@ -265,6 +265,15 @@ export default function OrdersPage() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [accpetDroppoffModal, setIsAcceptDropoffModal] = useState(false);
+// ........................ reuest stets 
+
+const [weight, setWeight] = useState(30);
+const [isFragile, setIsFragile] = useState(true);
+const [isUnusual, setIsUnusual] = useState(true);
+const [unusualReason, setUnusualReason] = useState("i did not understand the object");
+
+// /................................................
   const [isAssignDriverDialogOpen, setIsAssignDriverDialogOpen] = useState(false);
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -389,6 +398,58 @@ export default function OrdersPage() {
     }
   };
 
+  const handleRequest = async () => {
+    try {
+      setIsApproveLoading(true);
+      const payload = {
+        weight,
+        isFragile,
+        isUnusual,
+        unusualReason,
+      };
+      const res = await api.patch("/order/validate/"+selectedOrder?.id, payload);
+      toast.success(res.data.message);
+      featchOrders(currentPage, pageSize);
+      setIsDialogOpen(false);
+      setIsApproveLoading(false);
+    } catch (error: any) {
+      toast.error(error?.response.data.message || "Something went wrong!");
+      setIsApproveLoading(false);
+    }
+  };
+  const handleRequestTwon = async () => {
+    try {
+      setIsApproveLoading(true);
+      const payload = {
+        orderIds:[selectedOrder?.id]
+      };
+      const res = await api.post("/order/request/approval", payload);
+      toast.success(res.data.message);
+      featchOrders(currentPage, pageSize);
+      setIsDialogOpen(false);
+      setIsApproveLoading(false);
+    } catch (error: any) {
+      toast.error(error?.response.data.message || "Something went wrong!");
+      setIsApproveLoading(false);
+    }
+  };
+  const handleAcceptDropoff = async () => {
+    try {
+      setIsApproveLoading(true);
+      const payload = {
+        trackingCode:selectedOrder?.trackingCode,
+  
+      };
+      const res = await api.post("/order/accept", payload);
+      toast.success(res.data.message);
+      featchOrders(currentPage, pageSize);
+      setIsDialogOpen(false);
+      setIsApproveLoading(false);
+    } catch (error: any) {
+      toast.error(error?.response.data.message || "Something went wrong!");
+      setIsApproveLoading(false);
+    }
+  };
   const handleAssignDriver = async () => {
     try {
       setIsApproveLoading(true);
@@ -708,7 +769,35 @@ export default function OrdersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {order.fulfillmentType == "PICKUP" &&
+
+                    {(order.fulfillmentType == "PICKUP"&&order.status == "CREATED" && order?.shippingScope=="TOWN" )?  <div className="flex flex-row gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // navigate(`/staff/edit/${member.id}`);
+                          setIsDialogOpen(true); //
+                          setSelectedOrder(order);
+                        }}
+                      >
+                        Request Approval
+                      </Button>
+                    </div>:(order.fulfillmentType == "PICKUP"&&order.status == "CREATED" && order?.shippingScope!="TOWN" )?<Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // navigate(`/staff/edit/${member.id}`);
+                          setIsAcceptDropoffModal(true); //
+                          setSelectedOrder(order);
+                        }}
+                      >
+                        Accept Dropoff
+                      </Button>  :null}
+                    {/* {order.fulfillmentType == "PICKUP" &&
                     order.status == "CREATED" ? (
                       <Button
                         variant="ghost"
@@ -737,7 +826,7 @@ export default function OrdersPage() {
                       >
                         Approve
                       </Button>
-                    )}
+                    )} */}
                   </TableCell>
                 </TableRow>
               ))}
@@ -754,7 +843,7 @@ export default function OrdersPage() {
         </Card>
       </main>
 
-      <ConfirmationModal
+      {/* <ConfirmationModal
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         title="Approve Staff Member"
@@ -770,9 +859,80 @@ export default function OrdersPage() {
           placeholder="reason "
           className=" placeholder-gray-500 py-4 h-32 resize-none border rounded-md px-4 w-full"
         />
+      </ConfirmationModal> */}
+<ConfirmationModal
+  isOpen={isDialogOpen}
+  onClose={() => setIsDialogOpen(false)}
+  title="Approve Object"
+  description="Review and update the object information before approving."
+  onConfirm={handleRequestTwon}
+  variant="info"
+  confirmText="Request"
+>
+  {/* Weight */}
+  <div className="mb-4">
+    <label className="block mb-1 font-medium">Weight (kg)</label>
+    <input
+      type="number"
+      value={weight}
+      onChange={(e) => setWeight(Number(e.target.value))}
+      className="border rounded-md px-4 py-2 w-full"
+      placeholder="Enter weight"
+    />
+  </div>
+
+  {/* Fragile */}
+  <div className="mb-4 flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={isFragile}
+      onChange={(e) => setIsFragile(e.target.checked)}
+    />
+    <span className="font-medium">Is Fragile?</span>
+  </div>
+
+  {/* Unusual */}
+  <div className="mb-4 flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={isUnusual}
+      onChange={(e) => setIsUnusual(e.target.checked)}
+    />
+    <span className="font-medium">Is Unusual?</span>
+  </div>
+
+  {/* Unusual Reason */}
+  {isUnusual && (
+    <div>
+      <textarea
+        value={unusualReason}
+        onChange={(e) => setUnusualReason(e.target.value)}
+        placeholder="Explain why this object is unusual"
+        className="placeholder-gray-500 py-4 h-32 resize-none border rounded-md px-4 w-full"
+      />
+    </div>
+  )}
+</ConfirmationModal>
+       <ConfirmationModal
+        isOpen={accpetDroppoffModal}
+        onClose={() => setIsAcceptDropoffModal(false)}
+        title="Accpet Dropoff "
+        description={`You are about to accept the drop-off for package with tracking code: ${selectedOrder?.trackingCode}. Please confirm this action.`}
+        onConfirm={handleAcceptDropoff}
+        variant="info"
+        confirmText="Accept"
+
+        // loading={deleteLaoding}
+      >
+        {/* <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="reason "
+          className=" placeholder-gray-500 py-4 h-32 resize-none border rounded-md px-4 w-full"
+        /> */}
+        <></>
       </ConfirmationModal>
-
-
+     
       <ConfirmationModal
         isOpen={isAssignDriverDialogOpen}
         onClose={() => setIsAssignDriverDialogOpen(false)}
