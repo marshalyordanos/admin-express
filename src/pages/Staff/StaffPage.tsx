@@ -12,15 +12,7 @@ import {
   UserX,
   Building2,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/utils/spinner";
 
@@ -42,7 +34,6 @@ import { IoAdd, IoPerson, IoLockOpen } from "react-icons/io5";
 import { MdEdit, MdDelete } from "react-icons/md";
 import api from "@/lib/api/api";
 import type {
-  PaginatedResponse,
   Pagination,
   Staff,
   StaffListResponse,
@@ -52,40 +43,7 @@ import { exportToExcel } from "@/utils/exportToExcel";
 import ConfirmDialog from "@/components/common/DeleteModal";
 import { Skeleton } from "antd";
 
-const metrics2 = [
-  {
-    title: "Total Staff",
-    value: "86",
-    change: "8 new this month",
-    trend: "up",
-    icon: <Users className="h-5 w-5" />,
-    color: "blue",
-  },
-  {
-    title: "Active Staff",
-    value: "82",
-    change: "95% active rate",
-    trend: "up",
-    icon: <UserCheck className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    title: "On Leave",
-    value: "4",
-    change: "2 less than last week",
-    trend: "down",
-    icon: <UserX className="h-5 w-5" />,
-    color: "orange",
-  },
-  {
-    title: "Branches Covered",
-    value: "5",
-    change: "All branches staffed",
-    trend: "up",
-    icon: <Building2 className="h-5 w-5" />,
-    color: "purple",
-  },
-];
+
 
 export interface StaffStats {
   totalStaff: {
@@ -129,7 +87,7 @@ function StaffPage() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [searchText, setSearchText] = useState("");
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  // const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [deleteLaoding, setDeleteLoading] = useState<boolean>(false);
 
@@ -295,7 +253,7 @@ function StaffPage() {
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {loading?   Array.from({ length: 4 }).map((_, i) => (
+          {loadingSummary?   Array.from({ length: 4 }).map((_, i) => (
         <Card key={i} className="bg-white p-4">
           <Skeleton
             active
@@ -520,7 +478,7 @@ function StaffPage() {
                         onClick={(e) => {
                           e.stopPropagation();
                           // navigate(`/staff/edit/${member.id}`);
-                          setDeleteId(member.id); // set which staff to delete
+                          // setDeleteId(member.id); // set which staff to delete
                           setIsDialogOpen(true); //
                           setSelectedStaff(member)
                         }}

@@ -37,7 +37,6 @@ import { Skeleton } from "antd";
 import type { Order, OrderListResponse, Pagination } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
-import { Label } from "@radix-ui/react-select";
 import { Input } from "@/components/ui/input";
 
 // Mock data for demonstration
@@ -186,36 +185,7 @@ import { Input } from "@/components/ui/input";
 //   },
 // ];
 
-const metrics = [
-  {
-    title: "Active Drivers",
-    value: "3",
-    change: "+1 from yesterday",
-    trend: "up",
-    color: "green",
-  },
-  {
-    title: "Deliveries Today",
-    value: "24",
-    change: "12% increase",
-    trend: "up",
-    color: "blue",
-  },
-  {
-    title: "On-Time Rate",
-    value: "94%",
-    change: "2% improvement",
-    trend: "up",
-    color: "green",
-  },
-  {
-    title: "Route Efficiency",
-    value: "87%",
-    change: "5% increase",
-    trend: "up",
-    color: "purple",
-  },
-];
+
 
 // const getStatusColor = (status: string) => {
 //   switch (status) {
@@ -251,116 +221,7 @@ const metrics = [
 //   }
 // };
 
-const orders = [
-  {
-    id: "#1002",
-    date: "11 Feb, 2024",
-    customer: "Wade Warren",
-    payment: "Pending",
-    total: "$20.00",
-    delivery: "N/A",
-    items: "2 Items",
-    fulfillment: "Unfulfilled",
-    destination: "Town",
-    status: "Pending Dispatch",
-  },
-  {
-    id: "#1004",
-    date: "13 Feb, 2024",
-    customer: "Esther Howard",
-    payment: "Success",
-    total: "$22.00",
-    delivery: "N/A",
-    items: "3 Items",
-    fulfillment: "Fulfilled",
-    destination: "Regional",
-    status: "Dispatched",
-  },
-  {
-    id: "#1007",
-    date: "15 Feb, 2024",
-    customer: "Jenny Wilson",
-    payment: "Pending",
-    total: "$25.00",
-    delivery: "N/A",
-    items: "1 Items",
-    fulfillment: "Unfulfilled",
-    destination: "International",
-    status: "Pending Dispatch",
-  },
-  {
-    id: "#1009",
-    date: "17 Feb, 2024",
-    customer: "Guy Hawkins",
-    payment: "Success",
-    total: "$27.00",
-    delivery: "N/A",
-    items: "5 Items",
-    fulfillment: "Fulfilled",
-    destination: "Town",
-    status: "Dispatched",
-  },
-  {
-    id: "#1011",
-    date: "19 Feb, 2024",
-    customer: "Jacob Jones",
-    payment: "Pending",
-    total: "$32.00",
-    delivery: "N/A",
-    items: "4 Items",
-    fulfillment: "Unfulfilled",
-    destination: "Regional",
-    status: "Pending Dispatch",
-  },
-  {
-    id: "#1013",
-    date: "21 Feb, 2024",
-    customer: "Kristin Watson",
-    payment: "Success",
-    total: "$25.00",
-    delivery: "N/A",
-    items: "3 Items",
-    fulfillment: "Fulfilled",
-    destination: "International",
-    status: "Dispatched",
-  },
-  {
-    id: "#1015",
-    date: "23 Feb, 2024",
-    customer: "Albert Flores",
-    payment: "Pending",
-    total: "$28.00",
-    delivery: "N/A",
-    items: "2 Items",
-    fulfillment: "Unfulfilled",
-    destination: "Town",
-    status: "Pending Dispatch",
-  },
-  {
-    id: "#1018",
-    date: "25 Feb, 2024",
-    customer: "Eleanor Pena",
-    payment: "Success",
-    total: "$35.00",
-    delivery: "N/A",
-    items: "1 Items",
-    fulfillment: "Fulfilled",
-    destination: "Regional",
-    status: "Dispatched",
-  },
-  {
-    id: "#1019",
-    date: "27 Feb, 2024",
-    customer: "Theresa Webb",
-    payment: "Pending",
-    total: "$20.00",
-    delivery: "N/A",
-    items: "2 Items",
-    fulfillment: "Unfulfilled",
-    destination: "International",
-    status: "Pending Dispatch",
-  },
-];
+
 export interface Metric {
   title: string;
   value: string | number;
@@ -435,8 +296,6 @@ export default function Dispatch() {
   // Calculate pagination
   // const totalItems = orders.length;
   // const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
   // const paginatedOrders = orders.slice(startIndex, endIndex);
   const [loadingSummary, setLoadingSummary] = useState<boolean>(true);
   const [summary, setSummary] = useState<DashboardStats | null>(null);
@@ -456,9 +315,9 @@ export default function Dispatch() {
   const [showCargoOfficerDropdown, setShowCargoOfficerDropdown] = useState(false);
   const [selectedCargoOfficer,setSelectedCargoOfficer] = useState<any>(null)
   const [loadingCargoOfficer, setLoadingCargoOfficer] = useState(false);
-  const  [cargoOfficers,setCargoOfficers] = useState([])
+  const  [cargoOfficers,setCargoOfficers] = useState<any>([])
   const  [cargoOfficersPagination,setCargoOfficersPagination] = useState([])
-
+console.log(cargoOfficersPagination)
 
   const [isAssignCargoOfficerModal,setisAssignCargoOfficerModal] = useState(false)
 
@@ -466,6 +325,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    setOrderSearchText("")
   };
 
   const handlePageSizeChange = (size: number) => {
@@ -684,17 +544,17 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
 
   const featchCargoOfficer= async (page = 1, limit = 10) => {
     try {
-      // setLoadingDriver(true);
+      setLoadingCargoOfficer(true);
 
       const staffs = await api.get<any>(
-        `/users/cargo-officer?search=all:${cargoOfficerSearch}&page=${1}&pageSize=${20}`
+        `/users/cargo-officer?search=all:${cargoOfficerSearch}&page=${page}&pageSize=${limit}`
       );
       setCargoOfficers(staffs.data.data?.cargoOfficers);
       setCargoOfficersPagination(staffs.data.pagination);
       // toast.success(staffs.data.message);
-      // setLoadingDriver(false);
+      setLoadingCargoOfficer(false);
     } catch (error: any) {
-      // setLoadingDriver(false);
+      setLoadingCargoOfficer(false);
 
       const message =
         error?.response?.data?.message ||
@@ -1421,7 +1281,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                           </div>
                         )}
                         {cargoOfficers.length > 0 ? (
-                          cargoOfficers.map((manager) => (
+                          cargoOfficers.map((manager:any) => (
                             <div
                               key={manager?.id}
                               onClick={() =>
