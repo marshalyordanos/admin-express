@@ -125,11 +125,11 @@ function StaffPage() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [summary, setSummary] = useState<StaffStats | null>(null);
-  const [_, setLoadingSummary] = useState<boolean>(true);
+  const [loadingSummary, setLoadingSummary] = useState<boolean>(true);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [searchText, setSearchText] = useState("");
 
-  const [_, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [deleteLaoding, setDeleteLoading] = useState<boolean>(false);
 
