@@ -471,6 +471,8 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
       driverId,
       notes,
     });
+    featchOrders(currentPage, pageSize);
+
     // Handle dispatch logic here
     setIsDispatchModalOpen(false);
     setSelectedOrder(null);
@@ -847,7 +849,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                               // navigate(`/staff/edit/${member.id}`);
                               setApproveModal(true); //
                               setSelectedOrder(order);
-                              handleDispatchOrder(order);
+                              // handleDispatchOrder(order);
                             }}
                           >
                             Approve
@@ -861,7 +863,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                               // navigate(`/staff/edit/${member.id}`);
                               setRejectModal(true); //
                               setSelectedOrder(order);
-                              handleDispatchOrder(order);
+                              // handleDispatchOrder(order);
                             }}
                           >
                             Regect

@@ -62,7 +62,7 @@ function DispatchModal({
   const [dispatchNotes, setDispatchNotes] = useState("");
   const [activeTab, setActiveTab] = useState("internal");
   // const [isContactingExternal, setIsContactingExternal] = useState(false);
-
+const [ loading,setLaoding]= useState(false)
   const [driverSearch, setDriverSearch] = useState("");
   // const [showDriverDropdown, setShowDriverDropdown] = useState(false);
   const [paginationDriver, setPaginationDriver] = useState<Pagination | null>(null);
@@ -192,6 +192,7 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
 
   console.log(customerName,orderId,)
   const handleDispatch = async() => {
+    setLaoding(true)
     if (selectedDriver || selectedExternalDriver) {
       let driverId 
       if(activeTab=="external"){
@@ -211,6 +212,7 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
         const res = await api.post<any>(
           `dispatch/assign-pickup`,payload
         );
+    setLaoding(false)
         
        if(res.data.data){
         setPaginationDriver(res.data.pagination);
@@ -222,6 +224,7 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
        setDispatchNotes("");
        setDriverSearch("")
             } catch (error: any) {
+              setLaoding(false)
   
         const message =
           error?.response?.data?.message ||
@@ -557,7 +560,10 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
             >
               <IoCheckmarkCircle className="h-4 w-4 mr-2" />
-              Dispatch Order
+              {loading?<span className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Processing...</span>
+                </span>:"Dispatch Order"}
             </Button>
             <Button
               variant="outline"
