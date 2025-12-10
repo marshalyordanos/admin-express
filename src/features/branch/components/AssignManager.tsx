@@ -27,13 +27,6 @@ const demoManagers = [
   { id: "M005", name: "Robert Brown", email: "robert.b@company.com" },
 ];
 
-const demoBranches = [
-  { id: "B001", name: "Downtown Branch", location: "123 Main St" },
-  { id: "B002", name: "Uptown Branch", location: "456 Oak Ave" },
-  { id: "B003", name: "Westside Branch", location: "789 Pine Rd" },
-  { id: "B004", name: "Eastside Branch", location: "321 Elm St" },
-  { id: "B005", name: "Central Branch", location: "654 Maple Dr" },
-];
 
 const AssignManager = () => {
   const [status] = useState<"idle" | "submitting" | "success" | "error">(
@@ -53,7 +46,7 @@ const AssignManager = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [staffs, setStaffs] = useState<Staff[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [searchText, setSearchText] = useState("");
+  // const [searchText, setSearchText] = useState("");
 
   const [loadingBrand, setLoadingBrand] = useState(false);
   const [loadingStaff, setLoadingStaff] = useState(false);
@@ -69,7 +62,8 @@ const AssignManager = () => {
 
   // Filter branches based on search
 
-  const featchStaffs = async (page = 1, limit = 10) => {
+  console.log(pagination,managers)
+  const featchStaffs = async () => {
     try {
       setLoadingStaff(true);
 

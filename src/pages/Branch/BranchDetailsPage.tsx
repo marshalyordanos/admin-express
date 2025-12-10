@@ -4,26 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import {
   ArrowLeft,
   Building2,
-  Settings,
   User,
   Shield,
   MapPin,
-  Users,
+  
   FileText,
   Calendar,
   Package,
-  TrendingUp,
   DollarSign,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -59,68 +50,11 @@ const branchData = {
   capacity: "500 orders/day",
 };
 
-// Mock related branches for coordination
-const relatedBranches = [
-  {
-    id: "B0002",
-    name: "Dire Dawa Branch",
-    location: "City Center, Dire Dawa",
-    manager: "Not Assigned",
-    status: "Active",
-    distance: "515 km",
-  },
-  {
-    id: "B0003",
-    name: "Mekelle Branch",
-    location: "Downtown, Mekelle",
-    manager: "Jane Smith",
-    status: "Active",
-    distance: "783 km",
-  },
-  {
-    id: "B0004",
-    name: "Bahir Dar Branch",
-    location: "Lake Side, Bahir Dar",
-    manager: "Not Assigned",
-    status: "Active",
-    distance: "578 km",
-  },
-];
 
-// Mock operations history
-const operationsHistory = [
-  {
-    id: "OP-001",
-    date: "2024-12-15",
-    type: "High Volume Day",
-    description: "Processed 150 orders successfully with 98% efficiency",
-    ordersProcessed: 150,
-    revenue: "$12,500",
-    status: "Completed",
-  },
-  {
-    id: "OP-002",
-    date: "2024-12-14",
-    type: "Staff Training",
-    description: "Conducted customer service training for 8 staff members",
-    ordersProcessed: 0,
-    revenue: "$0",
-    status: "Completed",
-  },
-  {
-    id: "OP-003",
-    date: "2024-12-12",
-    type: "Equipment Maintenance",
-    description: "Scheduled maintenance for sorting equipment",
-    ordersProcessed: 0,
-    revenue: "$0",
-    status: "Completed",
-  },
-];
 
 export default function BranchDetailsPage() {
   const navigate = useNavigate();
-  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  // const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [loadingBrand, setLoadingBrand] = useState(false);
   const [branch, setBranch] = useState<Branch | null>(null);
   const { id } = useParams();
@@ -137,7 +71,7 @@ export default function BranchDetailsPage() {
   const branchDetail = query.get("branch")
     ? JSON.parse(query.get("branch")!)
     : null;
-console.log(branchDetail)
+console.log(branchDetail,loadingBrand,loadingStaff,pagination)
   const getPerformanceLevel = (eff: number) => {
     if (eff > 85) return "Excellent";
     if (eff > 70) return "Good";
@@ -155,6 +89,7 @@ console.log(branchDetail)
 
       setBranch(branch.data.data);
       setLoadingBrand(false);
+      setSearchText("")
     } catch (error: any) {
       setLoadingBrand(false);
 
@@ -170,7 +105,7 @@ console.log(branchDetail)
     featchBranchDetail();
   }, []);
 
-  const featchStaffs = async (page = 1, limit = 10) => {
+  const featchStaffs = async () => {
     try {
       setLoadingStaff(true);
 
@@ -240,24 +175,24 @@ console.log(branchDetail)
     }
   };
 
-  const getManagerStatusColor = (status: string) => {
-    switch (status) {
-      case "Assigned":
-        return "bg-green-100 text-green-700";
-      case "Vacant":
-        return "bg-orange-100 text-orange-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
+  // const getManagerStatusColor = (status: string) => {
+  //   switch (status) {
+  //     case "Assigned":
+  //       return "bg-green-100 text-green-700";
+  //     case "Vacant":
+  //       return "bg-orange-100 text-orange-700";
+  //     default:
+  //       return "bg-gray-100 text-gray-700";
+  //   }
+  // };
 
-  const handleBranchSelect = (branchId: string) => {
-    setSelectedBranches((prev) =>
-      prev.includes(branchId)
-        ? prev.filter((id) => id !== branchId)
-        : [...prev, branchId]
-    );
-  };
+  // const handleBranchSelect = (branchId: string) => {
+  //   setSelectedBranches((prev) =>
+  //     prev.includes(branchId)
+  //       ? prev.filter((id) => id !== branchId)
+  //       : [...prev, branchId]
+  //   );
+  // };
 
   return (
     <div className="min-h-screen p-6 max-w-7xl">

@@ -93,13 +93,14 @@ export default function RegionalPricingForm() {
     overnightWeightRanges: [{ from: "1", to: "3", price: 0 }],
     driverCommission: [],
   };
-
+console.log(loading)
   const fetchVehicleTypes = async () => {
     try {
       const res = await api.get(`/fleet/type?search=&page=1&limit=1000`);
       const vehicles = res.data.data?.vehicleTypes || [];
       setVehicleTypes(vehicles);
     } catch (error) {
+      setSuccessMessage("")
       console.error("Error fetching vehicle types", error);
     }
   };

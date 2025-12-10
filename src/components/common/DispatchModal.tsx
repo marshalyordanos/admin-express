@@ -11,7 +11,6 @@ import {
   IoClose,
   IoPerson,
   // IoPhone,
-  IoCar,
   IoLocation,
   IoTime,
   IoCheckmarkCircle,
@@ -24,22 +23,6 @@ import type { Order, Pagination } from "@/types/types";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
 
-interface Driver {
-  id: string;
-  name: string;
-  status: string;
-  currentLocation: string;
-  vehicle: string;
-  capacity: number;
-  currentLoad: number;
-  rating: number;
-  phone: string;
-  lastUpdate: string;
-  route: string;
-  deliveries: number;
-  completed: number;
-  remaining: number;
-}
 
 interface DispatchModalProps {
   isOpen: boolean;
@@ -52,87 +35,6 @@ interface DispatchModalProps {
   onDispatch: (driverId: string, notes?: string) => void;
   order:Order
 }
-
-const availableDrivers: Driver[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    status: "Available",
-    currentLocation: "Warehouse",
-    vehicle: "Van #001",
-    capacity: 15,
-    currentLoad: 0,
-    rating: 4.8,
-    phone: "+1 (555) 123-4567",
-    lastUpdate: "2 min ago",
-    route: "None",
-    deliveries: 0,
-    completed: 0,
-    remaining: 0,
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    status: "Available",
-    currentLocation: "Depot",
-    vehicle: "Truck #002",
-    capacity: 25,
-    currentLoad: 5,
-    rating: 4.9,
-    phone: "+1 (555) 234-5678",
-    lastUpdate: "5 min ago",
-    route: "None",
-    deliveries: 0,
-    completed: 0,
-    remaining: 0,
-  },
-  {
-    id: "3",
-    name: "Mike Wilson",
-    status: "Available",
-    currentLocation: "Service Center",
-    vehicle: "Van #003",
-    capacity: 12,
-    currentLoad: 3,
-    rating: 4.7,
-    phone: "+1 (555) 345-6789",
-    lastUpdate: "10 min ago",
-    route: "None",
-    deliveries: 0,
-    completed: 0,
-    remaining: 0,
-  },
-];
-
-const externalDrivers = [
-  {
-    id: "ext-1",
-    name: "David Brown",
-    company: "Express Logistics",
-    phone: "+1 (555) 456-7890",
-    email: "david@expresslogistics.com",
-    rating: 4.6,
-    availability: "Available",
-  },
-  {
-    id: "ext-2",
-    name: "Lisa Garcia",
-    company: "Quick Delivery Co.",
-    phone: "+1 (555) 567-8901",
-    email: "lisa@quickdelivery.com",
-    rating: 4.8,
-    availability: "Available",
-  },
-  {
-    id: "ext-3",
-    name: "Robert Taylor",
-    company: "Fast Track Services",
-    phone: "+1 (555) 678-9012",
-    email: "robert@fasttrack.com",
-    rating: 4.5,
-    availability: "Available",
-  },
-];
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -152,144 +54,141 @@ function DispatchModal({
   onClose,
   orderId,
   customerName,
-  deliveryAddress,
-  priority,
-  serviceType,
-  onDispatch,
+ 
   order,
 }: DispatchModalProps) {
-  const [selectedDriver, setSelectedDriver] = useState("");
-  const [selectedExternalDriver, setSelectedExternalDriver] = useState("");
+  const [selectedDriver, setSelectedDriver] = useState<any>(null);
+  const [selectedExternalDriver, setSelectedExternalDriver] = useState<any>(null);
   const [dispatchNotes, setDispatchNotes] = useState("");
   const [activeTab, setActiveTab] = useState("internal");
-  const [isContactingExternal, setIsContactingExternal] = useState(false);
+  // const [isContactingExternal, setIsContactingExternal] = useState(false);
 
   const [driverSearch, setDriverSearch] = useState("");
-  const [showDriverDropdown, setShowDriverDropdown] = useState(false);
+  // const [showDriverDropdown, setShowDriverDropdown] = useState(false);
   const [paginationDriver, setPaginationDriver] = useState<Pagination | null>(null);
   const [loadingDriver, setLoadingDriver] = useState(false);
   const [driver, setDriver] = useState<any[]>( [
-    {
-      "driverId": "cmhx9ab12000kjn89xyz88pq1",
-      "userId": "cmhx9ab0d0009jn89lkc672aa",
-      "user": {
-        "id": "cmhx9ab0d0009jn89lkc672aa",
-        "name": "Alice Smith",
-        "email": "alice.smith@example.com",
-        "phone": "+251911556677"
-      },
-      "distanceKm": 12.457,
-      "currentLat": 9.032145781234,
-      "currentLon": 38.754321987654,
-      "activeOrders": 0,
-      "lastUpdated": "2025-12-10T11:15:22.300Z",
-      "score": 0.812349875,
-      "suggestedForOrders": [
-        "cmizveh450002jmmjk2sd90pq",
-        "cmizveh450003jmmjk2sd90pr"
-      ],
-      "rank": 1
-    },
-    {
-      "driverId": "cmhx9ac34000lmn55tuv99rs2",
-      "userId": "cmhx9ac2a0008mn55asf887bb",
-      "user": {
-        "id": "cmhx9ac2a0008mn55asf887bb",
-        "name": "Michael Brown",
-        "email": "michael.brown@example.org",
-        "phone": "+251912334455"
-      },
-      "distanceKm": 28.992,
-      "currentLat": 9.089234556721,
-      "currentLon": 38.901234880012,
-      "activeOrders": 2,
-      "lastUpdated": "2025-12-10T11:20:05.142Z",
-      "score": 0.59322144,
-      "suggestedForOrders": [],
-      "rank": 2
-    },
-    {
-      "driverId": "cmhx9ad56000opq22uvw00cd3",
-      "userId": "cmhx9ad4b0007opq22qwe551c",
-      "user": {
-        "id": "cmhx9ad4b0007opq22qwe551c",
-        "name": "Sara Johnson",
-        "email": "sara.johnson@example.net",
-        "phone": "+251910112233"
-      },
-      "distanceKm": 5.602,
-      "currentLat": 9.065778234110,
-      "currentLon": 38.889990223344,
-      "activeOrders": 0,
-      "lastUpdated": "2025-12-10T11:31:47.890Z",
-      "score": 0.92100422,
-      "suggestedForOrders": [
-        "cmizveh460001jmmjk2sd91aa"
-      ],
-      "rank": 3
-    }
+    // {
+    //   "driverId": "cmhx9ab12000kjn89xyz88pq1",
+    //   "userId": "cmhx9ab0d0009jn89lkc672aa",
+    //   "user": {
+    //     "id": "cmhx9ab0d0009jn89lkc672aa",
+    //     "name": "Alice Smith",
+    //     "email": "alice.smith@example.com",
+    //     "phone": "+251911556677"
+    //   },
+    //   "distanceKm": 12.457,
+    //   "currentLat": 9.032145781234,
+    //   "currentLon": 38.754321987654,
+    //   "activeOrders": 0,
+    //   "lastUpdated": "2025-12-10T11:15:22.300Z",
+    //   "score": 0.812349875,
+    //   "suggestedForOrders": [
+    //     "cmizveh450002jmmjk2sd90pq",
+    //     "cmizveh450003jmmjk2sd90pr"
+    //   ],
+    //   "rank": 1
+    // },
+    // {
+    //   "driverId": "cmhx9ac34000lmn55tuv99rs2",
+    //   "userId": "cmhx9ac2a0008mn55asf887bb",
+    //   "user": {
+    //     "id": "cmhx9ac2a0008mn55asf887bb",
+    //     "name": "Michael Brown",
+    //     "email": "michael.brown@example.org",
+    //     "phone": "+251912334455"
+    //   },
+    //   "distanceKm": 28.992,
+    //   "currentLat": 9.089234556721,
+    //   "currentLon": 38.901234880012,
+    //   "activeOrders": 2,
+    //   "lastUpdated": "2025-12-10T11:20:05.142Z",
+    //   "score": 0.59322144,
+    //   "suggestedForOrders": [],
+    //   "rank": 2
+    // },
+    // {
+    //   "driverId": "cmhx9ad56000opq22uvw00cd3",
+    //   "userId": "cmhx9ad4b0007opq22qwe551c",
+    //   "user": {
+    //     "id": "cmhx9ad4b0007opq22qwe551c",
+    //     "name": "Sara Johnson",
+    //     "email": "sara.johnson@example.net",
+    //     "phone": "+251910112233"
+    //   },
+    //   "distanceKm": 5.602,
+    //   "currentLat": 9.065778234110,
+    //   "currentLon": 38.889990223344,
+    //   "activeOrders": 0,
+    //   "lastUpdated": "2025-12-10T11:31:47.890Z",
+    //   "score": 0.92100422,
+    //   "suggestedForOrders": [
+    //     "cmizveh460001jmmjk2sd91aa"
+    //   ],
+    //   "rank": 3
+    // }
   ]);
   // const [selectedDriver,setSelectedDriver] = useState<any>(null)
   const [loadingExternalDriver, setLoadingExternalDriver] = useState(false);
   const [externalDriver, setExternalDriver] = useState<any[]>([
-    {
-      "driverId": "cmfzjxyza0009jmq7abc12345",
-      "distanceKm": 12.443,
-      "user": {
-        "id": "cmfzjxyza0009jmq7abc12345",
-        "name": "driver 47",
-        "email": "driver47@example.com",
-        "phone": "0921998877",
-        "driver": {
-          "type": "EXTERNAL",
-          "status": "ONLINE"
-        }
-      },
-      "coordinates": {
-        "lon": 38.901234567812,
-        "lat": 9.075432198765
-      }
-    },
-    {
-      "driverId": "cmfzjxbbb0010jmq7xyz56789",
-      "distanceKm": 25.991,
-      "user": {
-        "id": "cmfzjxbbb0010jmq7xyz56789",
-        "name": "driver 11",
-        "email": "driver11@example.com",
-        "phone": "0921222333",
-        "driver": {
-          "type": "EXTERNAL",
-          "status": "OFFLINE"
-        }
-      },
-      "coordinates": {
-        "lon": 38.889900112200,
-        "lat": 9.062345990011
-      }
-    },
-    {
-      "driverId": "cmfzjxccc0011jmq7qwe90876",
-      "distanceKm": 7.220,
-      "user": {
-        "id": "cmfzjxccc0011jmq7qwe90876",
-        "name": "driver 03",
-        "email": "driver03@example.com",
-        "phone": "0921333555",
-        "driver": {
-          "type": "EXTERNAL",
-          "status": "ONLINE"
-        }
-      },
-      "coordinates": {
-        "lon": 38.912345678001,
-        "lat": 9.082341567899
-      }
-    }
+    // {
+    //   "driverId": "cmfzjxyza0009jmq7abc12345",
+    //   "distanceKm": 12.443,
+    //   "user": {
+    //     "id": "cmfzjxyza0009jmq7abc12345",
+    //     "name": "driver 47",
+    //     "email": "driver47@example.com",
+    //     "phone": "0921998877",
+    //     "driver": {
+    //       "type": "EXTERNAL",
+    //       "status": "ONLINE"
+    //     }
+    //   },
+    //   "coordinates": {
+    //     "lon": 38.901234567812,
+    //     "lat": 9.075432198765
+    //   }
+    // },
+    // {
+    //   "driverId": "cmfzjxbbb0010jmq7xyz56789",
+    //   "distanceKm": 25.991,
+    //   "user": {
+    //     "id": "cmfzjxbbb0010jmq7xyz56789",
+    //     "name": "driver 11",
+    //     "email": "driver11@example.com",
+    //     "phone": "0921222333",
+    //     "driver": {
+    //       "type": "EXTERNAL",
+    //       "status": "OFFLINE"
+    //     }
+    //   },
+    //   "coordinates": {
+    //     "lon": 38.889900112200,
+    //     "lat": 9.062345990011
+    //   }
+    // },
+    // {
+    //   "driverId": "cmfzjxccc0011jmq7qwe90876",
+    //   "distanceKm": 7.220,
+    //   "user": {
+    //     "id": "cmfzjxccc0011jmq7qwe90876",
+    //     "name": "driver 03",
+    //     "email": "driver03@example.com",
+    //     "phone": "0921333555",
+    //     "driver": {
+    //       "type": "EXTERNAL",
+    //       "status": "ONLINE"
+    //     }
+    //   },
+    //   "coordinates": {
+    //     "lon": 38.912345678001,
+    //     "lat": 9.082341567899
+    //   }
+    // }
   ]);
   const [paginationExternalDriver, setPaginationExternalDriver] = useState<Pagination | null>(null);
 
-
+console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,loadingDriver)
 
   console.log(customerName,orderId,)
   const handleDispatch = async() => {
@@ -321,6 +220,7 @@ function DispatchModal({
        setSelectedDriver("");
        setSelectedExternalDriver("");
        setDispatchNotes("");
+       setDriverSearch("")
             } catch (error: any) {
   
         const message =
@@ -332,17 +232,17 @@ function DispatchModal({
     }
   };
 
-  const handleContactExternal = (driver: { name: string; company: string }) => {
-    setIsContactingExternal(true);
-    // Simulate contacting external driver
-    setTimeout(() => {
-      setIsContactingExternal(false);
-      alert(`Contacting ${driver.name} at ${driver.company}...`);
-    }, 2000);
-  };
+  // const handleContactExternal = (driver: { name: string; company: string }) => {
+  //   setIsContactingExternal(true);
+  //   // Simulate contacting external driver
+  //   setTimeout(() => {
+  //     setIsContactingExternal(false);
+  //     alert(`Contacting ${driver.name} at ${driver.company}...`);
+  //   }, 2000);
+  // };
 
    
-  const featchIntenalDriver= async (page = 1, limit = 10) => {
+  const featchIntenalDriver= async () => {
     try {
       setLoadingDriver(true);
 
@@ -375,7 +275,7 @@ function DispatchModal({
     featchIntenalDriver();
    }
   }, [driverSearch,order]);
-  const featchExternalDriver= async (page = 1, limit = 10) => {
+  const featchExternalDriver= async () => {
     try {
       setLoadingExternalDriver(true);
 

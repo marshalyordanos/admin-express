@@ -4,23 +4,19 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   IoPerson,
   IoLocation,
   IoCall,
   IoCar,
   IoAdd,
-  IoSearch,
-  IoFilter,
+
   IoClose
 } from "react-icons/io5";
 
 import "leaflet/dist/leaflet.css";
-import { FloatButton } from "antd";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
 import type { Pagination } from "@/types/types";
@@ -180,7 +176,7 @@ export default function DriversMapView({
 }: DriversMapViewProps) {
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
+  // const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
   const [filterStatus] = useState<string>("all");
   const [dispatchProgress] = useState(75);
 
@@ -202,17 +198,18 @@ export default function DriversMapView({
   });
 
   
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+  // const handlePageChange = (page: number) => {
+  //   setCurrentPage(page);
+  // };
 
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
-    setCurrentPage(1); // Reset to first page when changing page size
-  };
+  // const handlePageSizeChange = (size: number) => {
+  //   setPageSize(size);
+  //   setCurrentPage(1); // Reset to first page when changing page size
+  // };
 
  
-  const featchOrders = async (page=1,limit=10) => {
+  console.log(setCurrentPage,setPageSize,driverLoading,pagination,setDriverSearch,setSearchQuery,filteredDrivers)
+  const featchOrders = async () => {
     try {
       setDriverLoading(true);
 
@@ -235,7 +232,7 @@ export default function DriversMapView({
   };
 
   useEffect(() => {
-    featchOrders(currentPage,pageSize);
+    featchOrders();
   }, [driverSearch,currentPage,pageSize]);
  
 
@@ -244,13 +241,13 @@ export default function DriversMapView({
     setSelectedDriver(driver);
   };
 
-  const handleSelectAll = () => {
-    if (selectedDrivers.length === filteredDrivers.length) {
-      setSelectedDrivers([]);
-    } else {
-      setSelectedDrivers(filteredDrivers.map((d) => d.id));
-    }
-  };
+  // const handleSelectAll = () => {
+  //   if (selectedDrivers.length === filteredDrivers.length) {
+  //     setSelectedDrivers([]);
+  //   } else {
+  //     setSelectedDrivers(filteredDrivers.map((d) => d.id));
+  //   }
+  // };
 
   // const handleDriverSelection = (driverId: string) => {
   //   setSelectedDrivers((prev) =>

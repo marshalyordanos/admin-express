@@ -12,22 +12,6 @@ import api from "@/lib/api/api";
 import type { Branch, BranchListResponse, Pagination, Staff, StaffListResponse } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 
-// Demo data - replace with actual API calls
-const demoManagers = [
-  { id: "M001", name: "John Smith", email: "john.smith@company.com" },
-  { id: "M002", name: "Sarah Johnson", email: "sarah.j@company.com" },
-  { id: "M003", name: "Mike Williams", email: "mike.w@company.com" },
-  { id: "M004", name: "Emily Davis", email: "emily.d@company.com" },
-  { id: "M005", name: "Robert Brown", email: "robert.b@company.com" },
-];
-
-const demoBranches = [
-  { id: "B001", name: "Downtown Branch", location: "123 Main St" },
-  { id: "B002", name: "Uptown Branch", location: "456 Oak Ave" },
-  { id: "B003", name: "Westside Branch", location: "789 Pine Rd" },
-  { id: "B004", name: "Eastside Branch", location: "321 Elm St" },
-  { id: "B005", name: "Central Branch", location: "654 Maple Dr" },
-];
 
 const RevokeManager = () => {
   const [status] = useState<
@@ -46,7 +30,7 @@ const RevokeManager = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [staffs, setStaffs] = useState<Staff[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [searchText, setSearchText] = useState("");
+  // const [searchText, setSearchText] = useState("");
 
   const [loadingBrand, setLoadingBrand] = useState(false);
   const [loadingStaff, setLoadingStaff] = useState(false);
@@ -59,9 +43,9 @@ const RevokeManager = () => {
     branchName: "",
   };
 
+console.log(pagination,loading)
 
-
-  const featchStaffs = async (page = 1, limit = 10) => {
+  const featchStaffs = async () => {
     try {
       setLoadingStaff(true);
 

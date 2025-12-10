@@ -120,17 +120,18 @@ export default function OrderForm() {
   const [loading, setLoading] = useState(false);
 
   const [managerSearch, setManagerSearch] = useState("");
-  const [branchSearch, setBranchSearch] = useState("");
+  // const [branchSearch, setBranchSearch] = useState("");
   const [showManagerDropdown, setShowManagerDropdown] = useState(false);
-  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+  // const [showBranchDropdown, setShowBranchDropdown] = useState(false);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [searchText, setSearchText] = useState("");
+  // const [searchText, setSearchText] = useState("");
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [custoemr, setCustomer] = useState<Customer[]>([]);
 const [priceLoading,setPriceLoading] = useState(false)
 // const [priceLoading,setPriceLoad] = useState(false)
+console.log(pagination)
 
-  const featchStaffs = async (page = 1, limit = 10) => {
+  const featchStaffs = async () => {
     try {
       setLoadingStaff(true);
 
@@ -241,15 +242,15 @@ const [priceLoading,setPriceLoading] = useState(false)
    
   };
 
-  const generateTrackingNumber = () => {
+  // const generateTrackingNumber = () => {
     
-    const prefix = "ETB";
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000)
-      .toString()
-      .padStart(3, "0");
-    return `${prefix}${timestamp}${random}`;
-  };
+  //   const prefix = "ETB";
+  //   const timestamp = Date.now().toString().slice(-6);
+  //   const random = Math.floor(Math.random() * 1000)
+  //     .toString()
+  //     .padStart(3, "0");
+  //   return `${prefix}${timestamp}${random}`;
+  // };
 
   const handleSubmit = async (
     _values: any,

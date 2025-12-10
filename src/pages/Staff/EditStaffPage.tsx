@@ -2,17 +2,11 @@ import { useEffect, useState } from "react";
 import { Formik, Form, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import Button from "@/components/common/Button";
 // import api from "../../../lib/api/api";
-import { CreateStaffSchema, UpdateStaffSchema } from "@/features/staff/schemas/CreateStaffSchema";
-import { IoArrowBack, IoPersonAdd, IoEye, IoEyeOff } from "react-icons/io5";
+import {  UpdateStaffSchema } from "@/features/staff/schemas/CreateStaffSchema";
+import { IoArrowBack, IoPersonAdd,} from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "@/lib/api/api";
@@ -26,13 +20,7 @@ import type {
 } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 
-const demoBranches = [
-  { id: "B001", name: "Downtown Branch", location: "123 Main St" },
-  { id: "B002", name: "Uptown Branch", location: "456 Oak Ave" },
-  { id: "B003", name: "Westside Branch", location: "789 Pine Rd" },
-  { id: "B004", name: "Eastside Branch", location: "321 Elm St" },
-  { id: "B005", name: "Central Branch", location: "654 Maple Dr" },
-];
+
 
 const EditStaffPage = () => {
 
@@ -41,7 +29,6 @@ const EditStaffPage = () => {
     "idle"
   );
   const [message] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
   // const [loading] = useState(false);
   const [initialValues,setInitialValues] = useState({
     name: "",
@@ -68,7 +55,7 @@ const EditStaffPage = () => {
 
   const [staff,setStaff] =useState<Staff|null>(null);
 
-  console.log("stff detail: ",staff)
+  console.log("stff detail: ",staff,loadingRole,roles)
 
   const featchStaff = async()=>{
     try {

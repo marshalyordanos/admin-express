@@ -24,14 +24,6 @@ import type {
 } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 
-const demoBranches = [
-  { id: "B001", name: "Downtown Branch", location: "123 Main St" },
-  { id: "B002", name: "Uptown Branch", location: "456 Oak Ave" },
-  { id: "B003", name: "Westside Branch", location: "789 Pine Rd" },
-  { id: "B004", name: "Eastside Branch", location: "321 Elm St" },
-  { id: "B005", name: "Central Branch", location: "654 Maple Dr" },
-];
-
 const CreateStaffPage = () => {
   const [status] = useState<"idle" | "submitting" | "success" | "error">(
     "idle"

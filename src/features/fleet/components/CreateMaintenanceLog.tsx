@@ -3,13 +3,7 @@ import { Formik, Form, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import Button from "../../../components/common/Button";
 import { MaintenanceLogSchema } from "../schemas/MaintenanceLogSchema";
 import { IoArrowBack, IoConstruct } from "react-icons/io5";
@@ -18,7 +12,7 @@ import type {
   FleetListResponse,
   FleetVehicle,
   Pagination,
-  StaffListResponse,
+  
 } from "@/types/types";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
@@ -46,6 +40,7 @@ const CreateMaintenanceLog = () => {
     notes: "",
   });
 
+
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
@@ -53,12 +48,12 @@ const CreateMaintenanceLog = () => {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [searchText, setSearchText] = useState("");
 
-  const [loadingBrand, setLoadingBrand] = useState(false);
+  // const [loadingBrand, setLoadingBrand] = useState(false);
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [showFleetDropdown, setShowFleetDropdown] = useState(false);
   const [fleetSearch, setfleetSearch] = useState("");
 
-  const featchFleets = async (page = 1, limit = 10) => {
+  const featchFleets = async () => {
     try {
       setLoadingStaff(true);
 
@@ -77,7 +72,7 @@ const CreateMaintenanceLog = () => {
       console.error(error); // optional: log the full error
     }
   };
-
+  console.log(vehicles,pagination)
   useEffect(() => {
     featchFleets();
   }, [searchText]);
@@ -201,6 +196,7 @@ const CreateMaintenanceLog = () => {
     setFieldValue("vehicleId", "");
     setFieldValue("fleetName", "");
     setfleetSearch("");
+    setSearchText("")
   };
   return (
     <div className="max-w-4xl p-6 bg-white">

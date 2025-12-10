@@ -15,18 +15,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft,
   Car,
-  Settings,
   User,
   Shield,
-  MapPin,
   Users,
   FileText,
-  Calendar,
   Fuel,
   Gauge,
   Wrench,
   CheckCircle,
-  Clock,
 } from "lucide-react";
 
 // Mock vehicle data - in real app, this would come from API

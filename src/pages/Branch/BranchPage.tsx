@@ -69,8 +69,7 @@ interface BranchDashboardStats {
   // Calculate pagination
   // const totalItems = branches.length;
   // const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
+
   // const paginatedBranches = branches.slice(startIndex, endIndex);
   const [stats, setStats] = useState<BranchDashboardStats | null>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);

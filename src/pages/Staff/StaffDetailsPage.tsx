@@ -4,28 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import {
   ArrowLeft,
   User,
-  Settings,
   Building2,
-  Shield,
+  
   MapPin,
-  Users,
   FileText,
   Calendar,
   Phone,
   Mail,
   Star,
-  TrendingUp,
   Clock,
 } from "lucide-react";
 import api from "@/lib/api/api";
@@ -59,69 +49,13 @@ const staffData = {
 };
 
 // Mock related staff for team management
-const relatedStaff = [
-  {
-    id: "STF-002",
-    name: "Tigist Hailu",
-    role: "Manager",
-    branch: "Addis Ababa Central",
-    department: "Operations",
-    distance: "Same Branch",
-  },
-  {
-    id: "STF-004",
-    name: "Marta Tadesse",
-    role: "Dispatcher",
-    branch: "Addis Ababa Central",
-    department: "Operations",
-    distance: "Same Branch",
-  },
-  {
-    id: "STF-006",
-    name: "Solomon Bekele",
-    role: "Driver",
-    branch: "Addis Ababa Central",
-    department: "Operations",
-    distance: "Same Branch",
-  },
-];
 
-// Mock work history
-const workHistory = [
-  {
-    id: "WH-001",
-    date: "2024-12-15",
-    type: "Order Completion",
-    description: "Successfully delivered 15 packages across 3 routes",
-    location: "Addis Ababa - Bole Area",
-    rating: 5.0,
-    status: "Completed",
-  },
-  {
-    id: "WH-002",
-    date: "2024-12-14",
-    type: "Training",
-    description: "Completed defensive driving course",
-    location: "Training Center",
-    rating: null,
-    status: "Completed",
-  },
-  {
-    id: "WH-003",
-    date: "2024-12-12",
-    type: "Performance Review",
-    description: "Monthly performance evaluation - Excellent rating",
-    location: "Office",
-    rating: 4.8,
-    status: "Completed",
-  },
-];
 
 export default function StaffDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
+  // const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -149,13 +83,13 @@ export default function StaffDetailsPage() {
     }
   };
 
-  const handleStaffSelect = (staffId: string) => {
-    setSelectedStaff((prev) =>
-      prev.includes(staffId)
-        ? prev.filter((id) => id !== staffId)
-        : [...prev, staffId]
-    );
-  };
+  // const handleStaffSelect = (staffId: string) => {
+  //   setSelectedStaff((prev) =>
+  //     prev.includes(staffId)
+  //       ? prev.filter((id) => id !== staffId)
+  //       : [...prev, staffId]
+  //   );
+  // };
   const [branchSearch, setBranchSearch] = useState("");
   const [loadingBrand, setLoadingBrand] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);

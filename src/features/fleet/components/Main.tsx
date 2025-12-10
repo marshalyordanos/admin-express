@@ -25,7 +25,6 @@ import {
   IoSearch,
   IoFilter,
   IoDownload,
-  IoLockOpen,
 } from "react-icons/io5";
 import { MdEdit, MdDelete } from "react-icons/md";
 import {
@@ -43,176 +42,6 @@ import { Skeleton } from "antd";
 import { Spinner } from "@/utils/spinner";
 import { exportToExcel } from "@/utils/exportToExcel";
 
-const vehicles = [
-  {
-    id: "VH-001",
-    plateNumber: "AA-12345",
-    type: "Van",
-    brand: "Toyota",
-    model: "Hiace",
-    year: 2022,
-    ownership: "In-house",
-    driver: "Abebe Kebede",
-    driverId: "STF-001",
-    status: "Active",
-    fuelType: "Diesel",
-    capacity: "1500 kg",
-    currentMileage: 45000,
-    lastMaintenance: "2025-09-15",
-    nextMaintenance: "2025-10-15",
-    utilizationRate: 85,
-    totalTrips: 234,
-    insurance: "Valid",
-    insuranceExpiry: "2026-01-15",
-  },
-  {
-    id: "VH-002",
-    plateNumber: "AA-67890",
-    type: "Truck",
-    brand: "Isuzu",
-    model: "NMR",
-    year: 2021,
-    ownership: "In-house",
-    driver: "Tigist Alemu",
-    driverId: "STF-007",
-    status: "Active",
-    fuelType: "Diesel",
-    capacity: "3000 kg",
-    currentMileage: 78000,
-    lastMaintenance: "2025-09-20",
-    nextMaintenance: "2025-10-20",
-    utilizationRate: 92,
-    totalTrips: 456,
-    insurance: "Valid",
-    insuranceExpiry: "2025-11-30",
-  },
-  {
-    id: "VH-003",
-    plateNumber: "AA-24680",
-    type: "Pickup",
-    brand: "Ford",
-    model: "Ranger",
-    year: 2023,
-    ownership: "In-house",
-    driver: "Unassigned",
-    driverId: null,
-    status: "Maintenance",
-    fuelType: "Diesel",
-    capacity: "1000 kg",
-    currentMileage: 15000,
-    lastMaintenance: "2025-09-28",
-    nextMaintenance: "2025-10-28",
-    utilizationRate: 0,
-    totalTrips: 87,
-    insurance: "Valid",
-    insuranceExpiry: "2026-03-20",
-  },
-  {
-    id: "VH-004",
-    plateNumber: "AA-13579",
-    type: "Van",
-    brand: "Nissan",
-    model: "Urvan",
-    year: 2020,
-    ownership: "External",
-    driver: "Dawit Tadesse",
-    driverId: "EXT-012",
-    status: "Active",
-    fuelType: "Petrol",
-    capacity: "1200 kg",
-    currentMileage: 95000,
-    lastMaintenance: "2025-09-10",
-    nextMaintenance: "2025-10-10",
-    utilizationRate: 78,
-    totalTrips: 312,
-    insurance: "Expiring Soon",
-    insuranceExpiry: "2025-10-10",
-  },
-  {
-    id: "VH-005",
-    plateNumber: "AA-11223",
-    type: "Truck",
-    brand: "Mitsubishi",
-    model: "Canter",
-    year: 2019,
-    ownership: "In-house",
-    driver: "Solomon Bekele",
-    driverId: "STF-015",
-    status: "Active",
-    fuelType: "Diesel",
-    capacity: "2500 kg",
-    currentMileage: 120000,
-    lastMaintenance: "2025-09-05",
-    nextMaintenance: "2025-10-05",
-    utilizationRate: 88,
-    totalTrips: 678,
-    insurance: "Valid",
-    insuranceExpiry: "2026-02-28",
-  },
-  {
-    id: "VH-006",
-    plateNumber: "AA-99887",
-    type: "Motorcycle",
-    brand: "Bajaj",
-    model: "Boxer",
-    year: 2023,
-    ownership: "In-house",
-    driver: "Yonas Girma",
-    driverId: "STF-022",
-    status: "Active",
-    fuelType: "Petrol",
-    capacity: "50 kg",
-    currentMileage: 8000,
-    lastMaintenance: "2025-09-25",
-    nextMaintenance: "2025-10-25",
-    utilizationRate: 95,
-    totalTrips: 543,
-    insurance: "Valid",
-    insuranceExpiry: "2025-12-31",
-  },
-  {
-    id: "VH-007",
-    plateNumber: "AA-55443",
-    type: "Van",
-    brand: "Hyundai",
-    model: "H100",
-    year: 2021,
-    ownership: "External",
-    driver: "Meseret Haile",
-    driverId: "EXT-008",
-    status: "Inactive",
-    fuelType: "Diesel",
-    capacity: "1300 kg",
-    currentMileage: 67000,
-    lastMaintenance: "2025-08-15",
-    nextMaintenance: "2025-09-15",
-    utilizationRate: 0,
-    totalTrips: 198,
-    insurance: "Expired",
-    insuranceExpiry: "2025-09-01",
-  },
-  {
-    id: "VH-008",
-    plateNumber: "AA-77665",
-    type: "Pickup",
-    brand: "Toyota",
-    model: "Hilux",
-    year: 2022,
-    ownership: "In-house",
-    driver: "Mulugeta Assefa",
-    driverId: "STF-019",
-    status: "Active",
-    fuelType: "Diesel",
-    capacity: "1100 kg",
-    currentMileage: 34000,
-    lastMaintenance: "2025-09-18",
-    nextMaintenance: "2025-10-18",
-    utilizationRate: 81,
-    totalTrips: 267,
-    insurance: "Valid",
-    insuranceExpiry: "2026-04-15",
-  },
-];
 
 
 export interface FleetDashboardStats {
@@ -248,12 +77,12 @@ export default function FleetMain() {
   const [loadingSummary, setLoadingSummary] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [fleets,setFleets] = useState<FleetVehicle[]>([])
-  const [searchText, setSearchText] = useState("");
+  // const [searchText, setSearchText] = useState("");
 
   const [summary, setSummary] = useState<FleetDashboardStats | null>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   
-
+console.log(setFilterOwnership,filterOwnership)
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [selectedFleet, setSelectedFeet] = useState<FleetVehicle | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -291,7 +120,7 @@ console.log(staffs.data)
     try {
       setLoadingSummary(true);
 
-      const staffs = await api.get<FleetDashboardStats>(
+      const staffs = await api.get<any>(
         "/report/dashboard/fleet-summary"
       );
       setSummary(staffs.data?.data);
@@ -351,40 +180,35 @@ console.log(staffs.data)
   }, [summary]);
   
   // Filter vehicles
-  const filteredVehicles = vehicles.filter((vehicle) => {
-    const matchesSearch =
-      vehicle.plateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.driver.toLowerCase().includes(searchTerm.toLowerCase());
+  // const filteredVehicles = vehicles.filter((vehicle) => {
+  //   const matchesSearch =
+  //     vehicle.plateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     vehicle.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     vehicle.driver.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus =
-      filterStatus === "all" || vehicle.status === filterStatus;
-    const matchesOwnership =
-      filterOwnership === "all" || vehicle.ownership === filterOwnership;
+  //   const matchesStatus =
+  //     filterStatus === "all" || vehicle.status === filterStatus;
+  //   const matchesOwnership =
+  //     filterOwnership === "all" || vehicle.ownership === filterOwnership;
 
-    return matchesSearch && matchesStatus && matchesOwnership;
-  });
+  //   return matchesSearch && matchesStatus && matchesOwnership;
+  // });
 
   // Sort vehicles
-  const sortedVehicles = [...filteredVehicles].sort((a, b) => {
-    if (!sortColumn) return 0;
+  // const sortedVehicles = [...filteredVehicles].sort((a, b) => {
+  //   if (!sortColumn) return 0;
 
-    const aValue = a[sortColumn as keyof typeof a];
-    const bValue = b[sortColumn as keyof typeof b];
+  //   const aValue = a[sortColumn as keyof typeof a];
+  //   const bValue = b[sortColumn as keyof typeof b];
 
-    if (!aValue || !bValue) return 0;
-    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-    return 0;
-  });
+  //   if (!aValue || !bValue) return 0;
+  //   if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+  //   if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+  //   return 0;
+  // });
 
-  // Calculate pagination
-  const totalItems = sortedVehicles.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedVehicles = sortedVehicles.slice(startIndex, endIndex);
+  
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -417,18 +241,18 @@ console.log(staffs.data)
     }
   };
 
-  const getInsuranceColor = (insurance: string) => {
-    switch (insurance) {
-      case "Valid":
-        return "bg-green-100 text-green-700";
-      case "Expiring Soon":
-        return "bg-yellow-100 text-yellow-700";
-      case "Expired":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
+  // const getInsuranceColor = (insurance: string) => {
+  //   switch (insurance) {
+  //     case "Valid":
+  //       return "bg-green-100 text-green-700";
+  //     case "Expiring Soon":
+  //       return "bg-yellow-100 text-yellow-700";
+  //     case "Expired":
+  //       return "bg-red-100 text-red-700";
+  //     default:
+  //       return "bg-gray-100 text-gray-700";
+  //   }
+  // };
 
   const handleDelete = async()=>{
     try {

@@ -1,7 +1,7 @@
 import api from "@/lib/api/api";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { FaTruck, FaCheckCircle, FaClock, FaTimesCircle, FaUserTie, FaTruckMonster, FaBuilding, FaClipboardList } from "react-icons/fa";
+import {  FaCheckCircle, FaClock, FaTimesCircle, FaUserTie, FaTruckMonster, FaBuilding, FaClipboardList } from "react-icons/fa";
 
 const Shipment = () => {
   interface DashboardSummary {
@@ -26,7 +26,7 @@ const Shipment = () => {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [stats, setStats] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  
+  console.log(loading)
 
   const fetchDashboard = async () => {
     try {

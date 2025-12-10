@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Formik, Form, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -70,7 +69,7 @@ const CreateVehicle = () => {
   const fleetDetail = query.get("fleet")
     ? JSON.parse(query.get("fleet")!)
     : null;
-console.log(fleetDetail,"fleetDetail")
+console.log(fleetDetail,"fleetDetail",fleet)
   // Fetch vehicle data if in edit mode
   useEffect(() => {
     const fetchVehicleData = async () => {

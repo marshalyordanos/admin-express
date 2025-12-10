@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -17,20 +16,10 @@ import {
   IoAdd,
   IoConstruct,
   IoSearch,
-  IoFilter,
   IoArrowBack,
-  IoCalendar,
-  IoWallet,
-  IoCheckmarkCircle,
-  IoWarning,
+
 } from "react-icons/io5";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import api from "@/lib/api/api";
 import type { Pagination } from "@/types/types";
 import toast from "react-hot-toast";
@@ -159,36 +148,7 @@ const maintenanceLogs = [
   },
 ];
 
-const metrics = [
-  {
-    label: "Total Maintenance",
-    value: "8",
-    sublabel: "This month",
-    icon: <IoConstruct className="h-5 w-5" />,
-    color: "blue",
-  },
-  {
-    label: "In Progress",
-    value: "1",
-    sublabel: "VH-003",
-    icon: <IoWarning className="h-5 w-5" />,
-    color: "orange",
-  },
-  {
-    label: "Total Cost",
-    value: "39,300 ETB",
-    sublabel: "This month",
-    icon: <IoWallet className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    label: "Upcoming",
-    value: "5",
-    sublabel: "Next 30 days",
-    icon: <IoCalendar className="h-5 w-5" />,
-    color: "purple",
-  },
-];
+
 
 export default function MaintenanceLog() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -199,12 +159,13 @@ export default function MaintenanceLog() {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState<boolean>(true);
-  const [searchText, setSearchText] = useState("");
+  // const [searchText, setSearchText] = useState("");
   const [fleetLogs,setFleetLogs] =useState<any>([])
   const navigate = useNavigate();
 
-  const [pagination, setPagination] = useState<Pagination | null>(null);
 
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+console.log(pagination,setFilterStatus,setFilterType)
   const featchFleetLogs = async (page=1,limit=10) => {
     try {
       setLoading(true);
@@ -266,9 +227,9 @@ export default function MaintenanceLog() {
   // Calculate pagination
   const totalItems = sortedLogs.length;
   const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedLogs = sortedLogs.slice(startIndex, endIndex);
+  // const startIndex = (currentPage - 1) * pageSize;
+  // const endIndex = startIndex + pageSize;
+  // const paginatedLogs = sortedLogs.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -288,31 +249,31 @@ export default function MaintenanceLog() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return "bg-green-100 text-green-700";
-      case "In Progress":
-        return "bg-orange-100 text-orange-700";
-      case "Scheduled":
-        return "bg-blue-100 text-blue-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
+  // const getStatusColor = (status: string) => {
+  //   switch (status) {
+  //     case "Completed":
+  //       return "bg-green-100 text-green-700";
+  //     case "In Progress":
+  //       return "bg-orange-100 text-orange-700";
+  //     case "Scheduled":
+  //       return "bg-blue-100 text-blue-700";
+  //     default:
+  //       return "bg-gray-100 text-gray-700";
+  //   }
+  // };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "Scheduled":
-        return "bg-blue-100 text-blue-700";
-      case "Repair":
-        return "bg-orange-100 text-orange-700";
-      case "Emergency":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
+  // const getTypeColor = (type: string) => {
+  //   switch (type) {
+  //     case "Scheduled":
+  //       return "bg-blue-100 text-blue-700";
+  //     case "Repair":
+  //       return "bg-orange-100 text-orange-700";
+  //     case "Emergency":
+  //       return "bg-red-100 text-red-700";
+  //     default:
+  //       return "bg-gray-100 text-gray-700";
+  //   }
+  // };
 
   return (
     <div className="min-h-screen">

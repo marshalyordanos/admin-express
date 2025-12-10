@@ -3,7 +3,6 @@ import { Formik, Form, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -46,7 +45,7 @@ const CreateCustomer = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
-
+console.log(setMessage,setStatus)
   // Fetch customer data if in edit mode
   useEffect(() => {
     const fetchCustomerData = async () => {

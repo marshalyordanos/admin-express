@@ -1,26 +1,4 @@
-import axios, {
-  type AxiosInstance,
-  type AxiosRequestConfig,
-  type AxiosResponse,
-  type AxiosError,
-} from "axios";
-
-let isRefreshing = false;
-
-interface CustomAxiosRequestConfig extends AxiosRequestConfig {
-  _retry?: boolean;
-  suppressErrorToast?: boolean;
-}
-
-interface Tokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
-interface RefreshResponse {
-  accessToken: string;
-  refreshToken: string;
-}
+import axios, { type AxiosInstance, type AxiosError } from "axios";
 
 const api: AxiosInstance = axios.create({
   // baseURL: "https://localhost:10000/",
@@ -34,15 +12,12 @@ const api: AxiosInstance = axios.create({
 
 /**
  * Global error handler (can be replaced with your own UI logic)
- */
-const handleErrorResponse = (errorMessage: string) => {
-  console.error("API Error:", errorMessage);
-};
 
 /**
  * Setup function for Axios interceptors
  */
 const setup = (store: any) => {
+  console.log(store);
   // Request interceptor
   api.interceptors.request.use(
     (config: any) => {

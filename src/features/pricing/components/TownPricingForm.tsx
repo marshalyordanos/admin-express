@@ -57,7 +57,7 @@ export default function TownPricingForm() {
     profitMargin: 0,
     driverCommission: [],
   };
-
+console.log(loading,)
   useEffect(() => {
     const fetchVehicleTypes = async () => {
       try {
@@ -65,6 +65,7 @@ export default function TownPricingForm() {
         const vehicles = res.data.data?.vehicleTypes || [];
         setVehicleTypes(vehicles);
       } catch (error) {
+        setSuccessMessage("")
         console.error("Error fetching vehicle types", error);
       }
     };
@@ -121,7 +122,7 @@ export default function TownPricingForm() {
         validationSchema={TownPricingSchema}
         onSubmit={handleSubmit}
       >
-        {({ values, setFieldValue, errors, touched }) => (
+        {({ values, errors, touched }) => (
           <Form>
             <PricingFormHeader title="Town Pricing Configuration" />
 

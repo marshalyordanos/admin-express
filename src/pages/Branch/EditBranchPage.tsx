@@ -1,4 +1,3 @@
-import CreateBranch from "../../features/branch/components/CreateBranch";
 
 import { useEffect, useState } from "react";
 import { Formik, Form, Field } from "formik";
@@ -11,11 +10,10 @@ import MapAddressSelector from "@/components/common/MapAddressSelector";
 import { CreateBranchSchema } from "../../features/branch/schemas/CreateBranchSchema";
 import { IoArrowBack } from "react-icons/io5";
 import { BsBuildingFillAdd } from "react-icons/bs";
-import { data, useNavigate, useParams } from "react-router-dom";
+import {  useNavigate, useParams } from "react-router-dom";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
 import type { Branch, BranchDetailResponse } from "@/types/types";
-import ConfirmDialog from "@/components/common/DeleteModal";
 
 const EditBranchPage = () => {
   const [status] = useState<"idle" | "submitting" | "success" | "error">(
@@ -39,7 +37,7 @@ const EditBranchPage = () => {
   const { id } = useParams();
   const isEditMode = !!id;
   const [branch,setBranch] =useState<Branch|null>(null);
-
+console.log(branch)
 
 
   const featchBranch = async()=>{

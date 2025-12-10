@@ -179,7 +179,7 @@ function StaffPage() {
         {
           title: "Branches Covered",
           value: summary.branchesCovered.value,
-          change: "All branches staffed" || "",
+          change: "All branches staffed" ,
           trend: "up",
           color: "purple",
           icon: <Building2 className="h-5 w-5" />,

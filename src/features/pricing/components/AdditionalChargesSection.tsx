@@ -30,6 +30,10 @@ export default function AdditionalChargesSection({
   driverCommission,
   showAirportFee = true,
 }: AdditionalChargesSectionProps) {
+  console.log(  costPerKmError,
+    costPerKmTouched,
+    airportFeeError,
+    airportFeeTouched,showAirportFee)
   return (
     <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
       <h2 className="text-lg font-medium mb-4">Additional Charges</h2>

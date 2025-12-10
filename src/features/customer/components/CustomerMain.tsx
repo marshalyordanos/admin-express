@@ -36,7 +36,7 @@ import {
   IoLockOpen,
   IoFilter,
 } from "react-icons/io5";
-import { MdEdit, MdDelete } from "react-icons/md";
+import {  MdDelete } from "react-icons/md";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
 import type { Customer, CustomerListResponse, Pagination } from "@/types/types";
@@ -45,109 +45,6 @@ import { Skeleton } from "antd";
 import { Spinner } from "@/utils/spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { exportToExcel } from "@/utils/exportToExcel";
-
-const customers2 = [
-  {
-    id: "CUST-001",
-    customerId: "C001",
-    name: "Abebe Kebede",
-    email: "abebe.k@email.com",
-    phone: "+251 911 234 567",
-    type: "Individual",
-    status: "Active",
-    registrationDate: "2024-01-15",
-    lastOrderDate: "2024-12-10",
-    totalOrders: 12,
-    totalSpent: 45000,
-    loyaltyPoints: 450,
-    address: "Bole, Addis Ababa",
-    city: "Addis Ababa",
-    companyName: null,
-    contactPerson: null,
-    preferredLanguage: "Amharic",
-    communicationPreference: "SMS",
-  },
-  {
-    id: "CUST-002",
-    customerId: "C002",
-    name: "Ethiopian Airlines",
-    email: "logistics@ethiopianairlines.com",
-    phone: "+251 115 517 000",
-    type: "Corporate",
-    status: "Active",
-    registrationDate: "2023-06-20",
-    lastOrderDate: "2024-12-08",
-    totalOrders: 156,
-    totalSpent: 1250000,
-    loyaltyPoints: 0,
-    address: "Bole International Airport",
-    city: "Addis Ababa",
-    companyName: "Ethiopian Airlines",
-    contactPerson: "Tigist Hailu",
-    preferredLanguage: "English",
-    communicationPreference: "Email",
-  },
-  {
-    id: "CUST-003",
-    customerId: "C003",
-    name: "Marta Tadesse",
-    email: "marta.t@email.com",
-    phone: "+251 911 345 678",
-    type: "Individual",
-    status: "Active",
-    registrationDate: "2024-03-10",
-    lastOrderDate: "2024-12-05",
-    totalOrders: 8,
-    totalSpent: 28000,
-    loyaltyPoints: 280,
-    address: "Merkato, Addis Ababa",
-    city: "Addis Ababa",
-    companyName: null,
-    contactPerson: null,
-    preferredLanguage: "Amharic",
-    communicationPreference: "Phone",
-  },
-  {
-    id: "CUST-004",
-    customerId: "C004",
-    name: "Dashen Bank",
-    email: "procurement@dashenbank.com",
-    phone: "+251 115 151 151",
-    type: "Corporate",
-    status: "Active",
-    registrationDate: "2023-09-15",
-    lastOrderDate: "2024-12-12",
-    totalOrders: 89,
-    totalSpent: 780000,
-    loyaltyPoints: 0,
-    address: "Ras Abebe Aregay Street",
-    city: "Addis Ababa",
-    companyName: "Dashen Bank",
-    contactPerson: "Yohannes Desta",
-    preferredLanguage: "English",
-    communicationPreference: "Email",
-  },
-  {
-    id: "CUST-005",
-    customerId: "C005",
-    name: "Dawit Alemu",
-    email: "dawit.a@email.com",
-    phone: "+251 911 456 789",
-    type: "Individual",
-    status: "Inactive",
-    registrationDate: "2024-02-28",
-    lastOrderDate: "2024-08-15",
-    totalOrders: 3,
-    totalSpent: 12000,
-    loyaltyPoints: 120,
-    address: "Hawassa, SNNPR",
-    city: "Hawassa",
-    companyName: null,
-    contactPerson: null,
-    preferredLanguage: "Amharic",
-    communicationPreference: "SMS",
-  },
-];
 
 
 interface DashboardStats {
@@ -186,15 +83,10 @@ export default function CustomerMain() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
 
   // Calculate pagination
-  const totalItems = customers2.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedCustomers = customers2.slice(startIndex, endIndex);
   const [summary, setSummary] = useState<DashboardStats | null>(null);
   const [loadingSummary, setLoadingSummary] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
-  const [customers,setCustomers] = useState<Customer[]>([])
+  const [customers,setCustomers] = useState<any[]>([])
   const [searchText, setSearchText] = useState("");
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -239,7 +131,7 @@ export default function CustomerMain() {
     try {
       setLoadingSummary(true);
 
-      const staffs = await api.get<DashboardStats>(
+      const staffs = await api.get<any>(
         "/report/dashboard/customer-summary"
       );
       setSummary(staffs.data?.data);

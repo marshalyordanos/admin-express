@@ -1,6 +1,7 @@
 import type { LoginResponse, RegisterResponse } from "@/types/auth";
 
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+// const BASE_URL = import.meta.env.VITE_BASE_URL;
+const BASE_URL = "https://test-courier.servehalflife.com";
 
 export const register = async (
   name: string,

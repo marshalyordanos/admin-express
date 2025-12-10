@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Formik, Form, Field } from "formik";
+import { Formik, Form } from "formik";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,14 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import {
   IoArrowBack,
   IoPerson,
@@ -31,7 +23,6 @@ import {
   IoTime,
   IoCube,
   IoShield,
-  IoPeople,
   IoMap,
 } from "react-icons/io5";
 
@@ -68,29 +59,7 @@ const drivers = [
   { id: "4", name: "Lisa Brown", status: "Available", rating: 4.6 },
 ];
 
-const relatedOrders = [
-  {
-    id: "#1003",
-    customer: "Jane Doe",
-    address: "789 Pine St, Brooklyn, NY",
-    distance: "0.5 mi",
-    status: "Pending Approval",
-  },
-  {
-    id: "#1005",
-    customer: "Bob Smith",
-    address: "321 Elm St, Brooklyn, NY",
-    distance: "0.8 mi",
-    status: "Approved",
-  },
-  {
-    id: "#1008",
-    customer: "Alice Johnson",
-    address: "654 Maple Ave, Brooklyn, NY",
-    distance: "1.2 mi",
-    status: "Pending Approval",
-  },
-];
+
 
 const categories = [
   "Documents",
@@ -107,7 +76,7 @@ export default function OrderDetails() {
   //   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedDriver, setSelectedDriver] = useState("");
-  const [groupedOrders, setGroupedOrders] = useState<string[]>([]);
+  // const [groupedOrders, setGroupedOrders] = useState<string[]>([]);
   const query = new URLSearchParams(location.search);
 
   const orderDetail = query.get("order")
@@ -130,13 +99,13 @@ console.log("orderdetail: ",orderDetail)
     setSelectedDriver(driverId);
   };
 
-  const handleOrderGrouping = (orderId: string) => {
-    setGroupedOrders((prev) =>
-      prev.includes(orderId)
-        ? prev.filter((id) => id !== orderId)
-        : [...prev, orderId]
-    );
-  };
+  // const handleOrderGrouping = (orderId: string) => {
+  //   setGroupedOrders((prev) =>
+  //     prev.includes(orderId)
+  //       ? prev.filter((id) => id !== orderId)
+  //       : [...prev, orderId]
+  //   );
+  // };
 
   const getFulfillmentColor = (destination: string) => {
     switch (destination) {

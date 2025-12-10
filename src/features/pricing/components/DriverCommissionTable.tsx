@@ -9,14 +9,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface DriverCommission {
-  category: string;
-  fixedCost: number;
-  driverCost: number;
-}
+// interface DriverCommission {
+//   category: string;
+//   fixedCost: number;
+//   driverCost: number;
+// }
 
 interface DriverCommissionTableProps {
-  driverCommission: DriverCommission[];
+  driverCommission: any[];
 }
 
 export default function DriverCommissionTable({
