@@ -121,16 +121,15 @@ function StaffPage() {
 
   const navigate = useNavigate();
 
-  const totalItems = 100;
-  const [staffs, setStaffs] = useState<Staff[]>([]);
+  const [staffs, setStaffs] = useState<any[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [summary, setSummary] = useState<StaffStats | null>(null);
-  const [loadingSummary, setLoadingSummary] = useState<boolean>(true);
+  const [_, setLoadingSummary] = useState<boolean>(true);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [searchText, setSearchText] = useState("");
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [_, setDeleteId] = useState<string | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [deleteLaoding, setDeleteLoading] = useState<boolean>(false);
 
@@ -174,7 +173,7 @@ function StaffPage() {
     try {
       setLoadingSummary(true);
 
-      const staffs = await api.get<StaffStats>(
+      const staffs = await api.get<any>(
         "/report/dashboard/staff-summary"
       );
       setSummary(staffs.data?.data);

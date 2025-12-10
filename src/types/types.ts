@@ -20,154 +20,95 @@ export interface PaginatedResponse<T> {
   pagination: Pagination;
 }
 
-/** ───── Enums ───── */
-export enum DriverStatus {
-  OFFLINE = "OFFLINE",
-  ONLINE = "ONLINE",
-  AVAILABLE = "AVAILABLE",
-  BUSY = "BUSY",
-  INTAKE = "INTAKE",
-  ENROUTE = "ENROUTE",
-  BREAK = "BREAK",
-}
+/** ───── Enums as Type Unions ───── */
+export type DriverStatus =
+  | "OFFLINE"
+  | "ONLINE"
+  | "AVAILABLE"
+  | "BUSY"
+  | "INTAKE"
+  | "ENROUTE"
+  | "BREAK";
 
-export enum DriverType {
-  INTERNAL = "INTERNAL",
-  EXTERNAL = "EXTERNAL",
-}
+export type DriverType = "INTERNAL" | "EXTERNAL";
 
-export enum AddressPurpose {
-  USER_HOME = "USER_HOME",
-  USER_WORK = "USER_WORK",
-  ORDER_PICKUP = "ORDER_PICKUP",
-  ORDER_DELIVERY = "ORDER_DELIVERY",
-  BRANCH_LOCATION = "BRANCH_LOCATION",
-}
+export type AddressPurpose =
+  | "USER_HOME"
+  | "USER_WORK"
+  | "ORDER_PICKUP"
+  | "ORDER_DELIVERY"
+  | "BRANCH_LOCATION";
 
-export enum CongestionLevel {
-  FREE = "FREE",
-  LIGHT = "LIGHT",
-  MEDIUM = "MEDIUM",
-  HEAVY = "HEAVY",
-}
+export type CongestionLevel = "FREE" | "LIGHT" | "MEDIUM" | "HEAVY";
 
-export enum OptimizationType {
-  SINGLE_ROUTE = "SINGLE_ROUTE",
-  MULTI_STOP = "MULTI_STOP",
-}
+export type OptimizationType = "SINGLE_ROUTE" | "MULTI_STOP";
 
-export enum OptimizationStatus {
-  PENDING = "PENDING",
-  RUNNING = "RUNNING",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-}
+export type OptimizationStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
 
-export enum VehicleStatus {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-  MAINTENANCE = "MAINTENANCE",
-}
+export type VehicleStatus = "ACTIVE" | "INACTIVE" | "MAINTENANCE";
 
-export enum FeeType {
-  PERCENTAGE = "PERCENTAGE",
-  FLAT = "FLAT",
-  PER_KG = "PER_KG",
-  PER_KM = "PER_KM",
-}
+export type FeeType = "PERCENTAGE" | "FLAT" | "PER_KG" | "PER_KM";
 
-export enum OrderStatus {
-  CREATED = "CREATED",
-  COLLECTED = "COLLECTED",
-  PENDING_APPROVAL = "PENDING_APPROVAL",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
-  VALIDATED = "VALIDATED",
-  SUCCESS = "SUCCESS",
-  ASSIGNED = "ASSIGNED",
-  READY_FOR_PICKUP = "READY_FOR_PICKUP",
-  PICKUP_ATTEMPTED = "PICKUP_ATTEMPTED",
-  PICKED_UP = "PICKED_UP",
-  IN_TRANSIT = "IN_TRANSIT",
-  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
-  DROPOFF_ATTEMPTED = "DROPOFF_ATTEMPTED",
-  DROPPED_OFF = "DROPPED_OFF",
-  DISPATCHED = "DISPATCHED",
-  PENDING = "PENDING",
-  DELIVERED = "DELIVERED",
-  FAILED = "FAILED",
-  EXCEPTION = "EXCEPTION",
-  CANCELED = "CANCELED",
-}
+export type OrderStatus =
+  | "CREATED"
+  | "COLLECTED"
+  | "PENDING_APPROVAL"
+  | "APPROVED"
+  | "REJECTED"
+  | "VALIDATED"
+  | "SUCCESS"
+  | "ASSIGNED"
+  | "READY_FOR_PICKUP"
+  | "PICKUP_ATTEMPTED"
+  | "PICKED_UP"
+  | "IN_TRANSIT"
+  | "OUT_FOR_DELIVERY"
+  | "DROPOFF_ATTEMPTED"
+  | "DROPPED_OFF"
+  | "DISPATCHED"
+  | "PENDING"
+  | "DELIVERED"
+  | "FAILED"
+  | "EXCEPTION"
+  | "CANCELED";
 
-export enum ServiceType {
-  STANDARD = "STANDARD",
-  EXPRESS = "EXPRESS",
-  SAME_DAY = "SAME_DAY",
-  OVERNIGHT = "OVERNIGHT",
-}
+export type ServiceType = "STANDARD" | "EXPRESS" | "SAME_DAY" | "OVERNIGHT";
 
-export enum PaymentMethod {
-  TELEBIRR = "TELEBIRR",
-  WALLET = "WALLET",
-  BANK = "BANK",
-  CASH_ON_DELIVERY = "CASH_ON_DELIVERY",
-}
+export type PaymentMethod = "TELEBIRR" | "WALLET" | "BANK" | "CASH_ON_DELIVERY";
 
-export enum PaymentStatus {
-  PENDING = "PENDING",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-}
+export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED";
 
-export enum FulfillmentType {
-  PICKUP = "PICKUP",
-  DROPOFF = "DROPOFF",
-}
+export type FulfillmentType = "PICKUP" | "DROPOFF";
 
-export enum ParcelCategory {
-  DOCUMENT = "DOCUMENT",
-  ELECTRONICS = "ELECTRONICS",
-  FOOD = "FOOD",
-  FRAGILE_ITEM = "FRAGILE_ITEM",
-  CHEMICAL = "CHEMICAL",
-  OTHER = "OTHER",
-}
+export type ParcelCategory =
+  | "DOCUMENT"
+  | "ELECTRONICS"
+  | "FOOD"
+  | "FRAGILE_ITEM"
+  | "CHEMICAL"
+  | "OTHER";
 
-export enum ShipmentType {
-  PARCEL = "PARCEL",
-  CARRIER = "CARRIER",
-}
+export type ShipmentType = "PARCEL" | "CARRIER";
 
-export enum ShippingScope {
-  REGIONAL = "REGIONAL",
-  TOWN = "TOWN",
-  INTERNATIONAL = "INTERNATIONAL",
-}
+export type ShippingScope = "REGIONAL" | "TOWN" | "INTERNATIONAL";
 
-export enum ApprovalStatus {
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
-  ESCALATED = "ESCALATED",
-}
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED" | "ESCALATED";
 
-export enum DispatchStatus {
-  PENDING = "PENDING",
-  READY = "READY",
-  ASSIGNED = "ASSIGNED",
-  COLLECTED = "COLLECTED",
-  DISPATCHED = "DISPATCHED",
-  PICKEDUP = "PICKEDUP",
-  DELIVERED_TO_AIRPORT = "DELIVERED_TO_AIRPORT",
-  IN_TRANSIT = "IN_TRANSIT",
-  ARRIVED_AT_DESTINATION = "ARRIVED_AT_DESTINATION",
-  OUT_FOR_BRANCH_TRANSFER = "OUT_FOR_BRANCH_TRANSFER",
-  AT_BRANCH = "AT_BRANCH",
-  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
-}
+export type DispatchStatus =
+  | "PENDING"
+  | "READY"
+  | "ASSIGNED"
+  | "COLLECTED"
+  | "DISPATCHED"
+  | "PICKEDUP"
+  | "DELIVERED_TO_AIRPORT"
+  | "IN_TRANSIT"
+  | "ARRIVED_AT_DESTINATION"
+  | "OUT_FOR_BRANCH_TRANSFER"
+  | "AT_BRANCH"
+  | "OUT_FOR_DELIVERY"
+  | "COMPLETED"
+  | "CANCELLED";
 
 /** ───── Core Models ───── */
 export interface Role {
@@ -285,14 +226,9 @@ export interface CustomerRole {
   createdBy: string | null;
 }
 
-export interface CustomerCorporateInfo {
-  // Assuming corporate info can have its own fields
-  // Keep as nullable for now since the JSON shows null
-}
+export interface CustomerCorporateInfo {}
 
-export interface CustomerPreferences {
-  // Assuming preferences structure, nullable for now
-}
+export interface CustomerPreferences {}
 
 export interface Customer {
   id: string;
@@ -310,17 +246,14 @@ export interface Customer {
   address: string;
   city: string;
   notes: string;
-  // Corporate specific fields
   companyName?: string;
   contactPerson?: string;
   contractNumber?: string;
   creditLimit?: number;
   paymentTerms?: string;
-  // Additional fields
   preferredLanguage: string;
   communicationPreference: "Email" | "SMS" | "Phone";
   marketingOptIn: boolean;
-
   isStaff: boolean;
   isSuperAdmin: boolean;
   createdAt: string;
@@ -342,27 +275,27 @@ export interface Receiver {
 export interface Order {
   id: string;
   trackingCode: string;
-  serviceType: "EXPRESS" | string;
-  fulfillmentType: "PICKUP" | string;
+  serviceType: ServiceType | string;
+  fulfillmentType: FulfillmentType | string;
   pickupDriverId: string | null;
   deliveryDriverId: string | null;
-  status: string;
+  status: OrderStatus | string;
   weight: number;
   length: number;
   width: number;
   height: number;
-  category: string[];
+  category: ParcelCategory[];
   isFragile: boolean;
-  shipmentType: "PARCEL" | string;
-  shippingScope: "TOWN" | string;
+  shipmentType: ShipmentType | string;
+  shippingScope: ShippingScope | string;
   isUnusual: boolean;
   unusualReason: string | null;
   pickupAddressId: string;
-  pickupDate: string; // ISO date string
+  pickupDate: string;
   deliveryAddressId: string;
   deliveryAddress: any;
   pickupAddress: any;
-  deliveryDate: string; // ISO date string
+  deliveryDate: string;
   distance: number;
   validatedBy: string | null;
   validatedNotes: string | null;
@@ -373,8 +306,8 @@ export interface Order {
   currency: string;
   customer: Customer;
   receiver: Receiver;
-  branch: any | null; // Replace 'any' with proper type if known
-  payment: any | null; // Replace 'any' with proper type if known
+  branch: any | null;
+  payment: any | null;
 }
 
 /** ───── Driver ───── */
@@ -450,29 +383,20 @@ export interface RoleWithPermissions {
 export type RoleWithPermissionsResponse = ApiResponse<RoleWithPermissions>;
 export type RoleWithPermissionsListResponse =
   PaginatedResponse<RoleWithPermissions>;
-/** ───── Response Types ───── */
-// Single staff
-export type StaffDetailResponse = ApiResponse<Staff>;
 
-// Staff list
+export type StaffDetailResponse = ApiResponse<Staff>;
 export type StaffListResponse = PaginatedResponse<Staff>;
 
-// Vehicle response
 export type VehicleDetailResponse = ApiResponse<Vehicle>;
 export type VehicleListResponse = PaginatedResponse<Vehicle>;
 
-// Order response
 export type OrderDetailResponse = ApiResponse<Order>;
 export type OrderListResponse = PaginatedResponse<Order>;
 
-// Driver response
 export type DriverDetailResponse = ApiResponse<Driver>;
 export type DriverListResponse = PaginatedResponse<Driver>;
 
-// Single Branch
 export type BranchDetailResponse = ApiResponse<Branch>;
-
-// Branch list
 export type BranchListResponse = PaginatedResponse<Branch>;
 
 export type CustomerDetailResponse = ApiResponse<Customer>;
@@ -481,7 +405,6 @@ export type CustomerListResponse = PaginatedResponse<Customer>;
 export type FleetDetailResponse = ApiResponse<FleetVehicle>;
 export type FleetListResponse = PaginatedResponse<FleetVehicle>;
 
-// Generic create/update/delete response
 export interface GenericResponse {
   success: boolean;
   message: string;

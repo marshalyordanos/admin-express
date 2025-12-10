@@ -114,7 +114,7 @@ interface BranchDashboardStats {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const res = await api.get<BranchDashboardStats>("/report/dashboard/branch-summary");
+      const res = await api.get<any>("/report/dashboard/branch-summary");
       setStats(res.data?.data);
     } catch (error: any) {
       const message =

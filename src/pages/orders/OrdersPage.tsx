@@ -58,147 +58,7 @@ export interface OrderStats {
   avgBranchProcessingTime: number;
 }
 
-const orders2 = [
-  {
-    id: "#1002",
-    date: "11 Feb, 2024",
-    customer: "Wade Warren",
-    payment: "Pending",
-    total: "$20.00",
-    delivery: "N/A",
-    items: "2 Items",
-    fulfillment: "Unfulfilled",
-    destination: "Town",
-    status: "Pending Approval",
-  },
-  {
-    id: "#1004",
-    date: "13 Feb, 2024",
-    customer: "Esther Howard",
-    payment: "Success",
-    total: "$22.00",
-    delivery: "N/A",
-    items: "3 Items",
-    fulfillment: "Fulfilled",
-    destination: "Regional",
-    status: "Approved",
-  },
-  {
-    id: "#1007",
-    date: "15 Feb, 2024",
-    customer: "Jenny Wilson",
-    payment: "Pending",
-    total: "$25.00",
-    delivery: "N/A",
-    items: "1 Items",
-    fulfillment: "Unfulfilled",
-    destination: "International",
-    status: "Pending Approval",
-  },
-  {
-    id: "#1009",
-    date: "17 Feb, 2024",
-    customer: "Guy Hawkins",
-    payment: "Success",
-    total: "$27.00",
-    delivery: "N/A",
-    items: "5 Items",
-    fulfillment: "Fulfilled",
-    destination: "Town",
-    status: "Approved",
-  },
-  {
-    id: "#1011",
-    date: "19 Feb, 2024",
-    customer: "Jacob Jones",
-    payment: "Pending",
-    total: "$32.00",
-    delivery: "N/A",
-    items: "4 Items",
-    fulfillment: "Unfulfilled",
-    destination: "Regional",
-    status: "Pending Approval",
-  },
-  {
-    id: "#1013",
-    date: "21 Feb, 2024",
-    customer: "Kristin Watson",
-    payment: "Success",
-    total: "$25.00",
-    delivery: "N/A",
-    items: "3 Items",
-    fulfillment: "Fulfilled",
-    destination: "International",
-    status: "Approved",
-  },
-  {
-    id: "#1015",
-    date: "23 Feb, 2024",
-    customer: "Albert Flores",
-    payment: "Pending",
-    total: "$28.00",
-    delivery: "N/A",
-    items: "2 Items",
-    fulfillment: "Unfulfilled",
-    destination: "Town",
-    status: "Pending Approval",
-  },
-  {
-    id: "#1018",
-    date: "25 Feb, 2024",
-    customer: "Eleanor Pena",
-    payment: "Success",
-    total: "$35.00",
-    delivery: "N/A",
-    items: "1 Items",
-    fulfillment: "Fulfilled",
-    destination: "Regional",
-    status: "Approved",
-  },
-  {
-    id: "#1019",
-    date: "27 Feb, 2024",
-    customer: "Theresa Webb",
-    payment: "Pending",
-    total: "$20.00",
-    delivery: "N/A",
-    items: "2 Items",
-    fulfillment: "Unfulfilled",
-    destination: "International",
-    status: "Pending Approval",
-  },
-];
 
-const metrics = [
-  {
-    title: "Total Orders",
-    value: "21",
-    change: "25.2% last week",
-    trend: "up",
-    color: "orange",
-  },
-  {
-    title: "Order items over time",
-    value: "15",
-    change: "18.2% last week",
-    trend: "up",
-    color: "green",
-  },
-  {
-    title: "Returns Orders",
-    value: "0",
-    change: "1.2% last week",
-    trend: "down",
-    color: "red",
-  },
-  {
-    title: "Fulfilled orders over time",
-    value: "12",
-    change: "12.2% last week",
-    trend: "up",
-    color: "teal",
-  },
-];
 
 const MiniChart = ({ color }: { color: string }) => {
   const colors = {
@@ -252,12 +112,7 @@ export default function OrdersPage() {
   const navigate = useNavigate();
 
   // Calculate pagination
-  const totalItems = 10;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedOrders = orders2.slice(startIndex, endIndex);
-  const [orderSummary, setOrderSummary] = useState<OrderStats | null>(null);
+  const [orderSummary, setOrderSummary] = useState<any | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -279,14 +134,14 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const [isApproveLoading, setIsApproveLoading] = useState(false);
-  const [selectedTab, setSelectedTab] = useState("All");
+  // const [selectedTab, setSelectedTab] = useState("All");
 
-  const [reason, setReason] = useState("");
+  // const [reason, setReason] = useState("");
 
 
   const [driverSearch, setDriverSearch] = useState("");
   const [showDriverDropdown, setShowDriverDropdown] = useState(false);
-  const [paginationDriver, setPaginationDriver] = useState<Pagination | null>(null);
+  const [_, setPaginationDriver] = useState<Pagination | null>(null);
   const [loadingDriver, setLoadingDriver] = useState(false);
   const [driver, setDriver] = useState<any[]>([]);
   const [selectedDriver,setSelectedDriver] = useState<any>(null)
@@ -322,7 +177,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
   const fetchOrderSummary = async () => {
     try {
       setLoadingSummary(true);
-      const res = await api.get<OrderStats>("/report/dashboard/order-summary");
+      const res = await api.get<any>("/report/dashboard/order-summary");
       setOrderSummary(res.data.data);
     } catch (error: any) {
       const message =
@@ -381,22 +236,22 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
-  const handleApprove = async () => {
-    try {
-      setIsApproveLoading(true);
-      const res = await api.post("/order/approve", {
-        orderId: selectedOrder?.id,
-        reason: reason,
-      });
-      toast.success(res.data.message);
-      featchOrders(currentPage, pageSize);
-      setIsDialogOpen(false);
-      setIsApproveLoading(false);
-    } catch (error: any) {
-      toast.error(error?.response.data.message || "Something went wrong!");
-      setIsApproveLoading(false);
-    }
-  };
+  // const handleApprove = async () => {
+  //   try {
+  //     setIsApproveLoading(true);
+  //     const res = await api.post("/order/approve", {
+  //       orderId: selectedOrder?.id,
+  //       reason: reason,
+  //     });
+  //     toast.success(res.data.message);
+  //     featchOrders(currentPage, pageSize);
+  //     setIsDialogOpen(false);
+  //     setIsApproveLoading(false);
+  //   } catch (error: any) {
+  //     toast.error(error?.response.data.message || "Something went wrong!");
+  //     setIsApproveLoading(false);
+  //   }
+  // };
 
   const handleRequest = async () => {
     try {
@@ -486,7 +341,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
       setLoadingDriver(true);
 
       const staffs = await api.get<any>(
-        `/users/driver?search=all:${driverSearch}&page=${1}&pageSize=${20}`
+        `/users/driver?search=all:${driverSearch}&page=${page}&pageSize=${limit}`
       );
       setDriver(staffs.data.data?.drivers);
       setPaginationDriver(staffs.data.pagination);
