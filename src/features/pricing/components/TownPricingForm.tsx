@@ -1,7 +1,7 @@
 "use client";
 
 import { Formik, Form } from "formik";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
 import SuccessModal from "@/components/common/SuccessModal";
@@ -43,12 +43,14 @@ type InitialValues = {
 
 export default function TownPricingForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [parsedPrice, setParsedPrice] = useState<any | null>(null);
 
-  const initialValues: InitialValues = {
+  const createInitialValues: InitialValues = {
     zone: "town",
     standard: 0,
     sameDay: 0,
@@ -57,7 +59,6 @@ export default function TownPricingForm() {
     profitMargin: 0,
     driverCommission: [],
   };
-console.log(loading,)
   useEffect(() => {
     const fetchVehicleTypes = async () => {
       try {
@@ -71,6 +72,62 @@ console.log(loading,)
     };
     fetchVehicleTypes();
   }, []);
+
+  // Parse query param if editing
+  useEffect(() => {
+    const raw = searchParams.get("price");
+    if (!raw) return;
+    try {
+      const decoded = decodeURIComponent(raw);
+      const obj = JSON.parse(decoded);
+      setParsedPrice(obj);
+    } catch {
+      setParsedPrice(null);
+    }
+  }, [searchParams]);
+
+  const isEditing = Boolean(parsedPrice && parsedPrice.id);
+
+  const buildInitialValues = (): InitialValues => {
+    const base = { ...createInitialValues };
+
+    // driver commission skeleton
+    const driverSkeleton = vehicleTypes.map(v => ({
+      category: v.id,
+      name: v.name,
+      fixedCost: 0,
+      driverCost: 0,
+      percentage: 0,
+    }));
+    base.driverCommission = driverSkeleton;
+
+    if (!isEditing) return base;
+
+    const serviceTypes: any[] = parsedPrice.serviceTypes || [];
+    const standardST = serviceTypes.find(s => s.serviceType === "STANDARD");
+    const expressST = serviceTypes.find(s => s.serviceType === "EXPRESS");
+    const overnightST = serviceTypes.find(s => s.serviceType === "OVERNIGHT");
+
+    base.standard = standardST?.baseFee ?? 0;
+    base.sameDay = expressST?.baseFee ?? 0;
+    base.overnight = overnightST?.baseFee ?? 0;
+    base.profitMargin = parsedPrice.profitMargin?.percentage ?? parsedPrice.profit ?? 0;
+
+    // map driver commissions
+    const backendDCs: any[] = parsedPrice.driverCommissions || [];
+    base.driverCommission = vehicleTypes.map(v => {
+      const matched = backendDCs.find(d => d.vehicleTypeId === v.id);
+      return {
+        category: v.id,
+        name: v.name,
+        fixedCost: matched?.fixed ?? 0,
+        driverCost: matched?.perKm ?? 0,
+        percentage: matched?.percentage ?? 0,
+      };
+    });
+
+    return base;
+  };
 
   const handleSubmit = async (values: InitialValues) => {
     try {
@@ -93,13 +150,21 @@ console.log(loading,)
         profit: values.profitMargin,
       };
 
-      await api.post("/pricing/tariff", payload);
+      if (isEditing) {
+        await api.patch(`/pricing/tariff/${parsedPrice.id}`, payload);
+        toast.success("Town pricing updated successfully!");
+      } else {
+        await api.post("/pricing/tariff", payload);
+        toast.success("Town pricing saved successfully!");
+      }
 
-      toast.success("Town pricing saved successfully!");
       navigate("/pricing");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to save tariff");
+      const message =
+        error?.response?.data?.message ||
+        "Failed to save tariff";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -109,22 +174,15 @@ console.log(loading,)
     <div className="max-w-4xl p-6 bg-white">
       <Formik
         enableReinitialize
-        initialValues={{
-          ...initialValues,
-          driverCommission: vehicleTypes.map(v => ({
-            category: v.id,
-            name: v.name,
-            fixedCost: 0,
-            driverCost: 0,
-            percentage: 0,
-          })),
-        }}
+        initialValues={buildInitialValues()}
         validationSchema={TownPricingSchema}
         onSubmit={handleSubmit}
       >
         {({ values, errors, touched }) => (
           <Form>
-            <PricingFormHeader title="Town Pricing Configuration" />
+            <PricingFormHeader 
+              title={isEditing ? "Edit Town Pricing Configuration" : "Town Pricing Configuration"} 
+            />
 
             {/* Services without weight ranges */}
             <ServiceTypeSection
@@ -193,7 +251,7 @@ console.log(loading,)
               showAirportFee={false}
             />
 
-            <ActionButtons />
+            <ActionButtons isEditing={isEditing} loading={loading} />
           </Form>
         )}
       </Formik>

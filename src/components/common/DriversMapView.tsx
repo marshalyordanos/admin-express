@@ -34,10 +34,11 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom driver icon
-const createDriverIcon = (status: string) => {
-  const color =
-    status === "Available" ? "green" : status === "On Route" ? "blue" : "red";
+// Custom driver icon - different colors for INTERNAL and EXTERNAL drivers
+const createDriverIcon = (type: string) => {
+  // Use different colors based on driver type
+  const color = type === "INTERNAL" ? "#3b82f6" : "#10b981"; // Blue for INTERNAL, Green for EXTERNAL
+  
   return L.divIcon({
     className: "custom-driver-icon",
     html: `<div style="
@@ -55,116 +56,58 @@ const createDriverIcon = (status: string) => {
 
 interface Driver {
   id: string;
-  name: string;
-  status: "Available" | "On Route" | "On Break" | "Offline";
-  currentLocation: string;
-  vehicle: string;
-  capacity: number;
-  currentLoad: number;
-  rating: number;
-  phone: string;
-  lastUpdate: string;
-  route: string;
-  deliveries: number;
-  completed: number;
-  remaining: number;
-  latitude: number;
-  longitude: number;
-  city: string;
+  userId: string;
+  vehicleId: string;
+  status: string;
+  availablityStatus: string;
+  type: "INTERNAL" | "EXTERNAL";
+  licenseNumber?: string | null;
+  licenseExpiry?: string | null;
+  licenseIssue?: string | null;
+  frontImageUrl?: string | null;
+  backImageUrl?: string | null;
+  verifiedByOCR?: boolean;
+  currentLat?: number;
+  currentLon?: number;
+  updatedAt: string;
+  createdBy?: string | null;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    isActive: boolean;
+  };
+  vehicles?: Array<{
+    id: string;
+    model: string;
+    plateNumber: string;
+    status: string;
+  }>;
+  performance?: {
+    totalOrders: number;
+    completedOrders: number;
+    failedOrders: number;
+    completionRate: string;
+  };
 }
 
 interface DriversMapViewProps {
   onCreateDriver: () => void;
 }
 
-const mockDrivers: Driver[] = [
-  {
-    id: "1",
-    name: "Dagim Birhan",
-    status: "On Route",
-    currentLocation: "Mexico",
-    vehicle: "Van #001",
-    capacity: 15,
-    currentLoad: 8,
-    rating: 4.8,
-    phone: "+1 (555) 123-4567",
-    lastUpdate: "2 min ago",
-    route: "Route A",
-    deliveries: 10,
-    completed: 5,
-    remaining: 5,
-    latitude: 9.0192,
-    longitude: 38.7525,
-    city: "Addis Ababa",
-  },
-  {
-    id: "2",
-    name: "Wondimu Alelgne",
-    status: "Available",
-    currentLocation: "Dawnton",
-    vehicle: "Truck #002",
-    capacity: 25,
-    currentLoad: 0,
-    rating: 4.9,
-    phone: "+1 (555) 234-5678",
-    lastUpdate: "5 min ago",
-    route: "None",
-    deliveries: 0,
-    completed: 0,
-    remaining: 0,
-    latitude: 9.025,
-    longitude: 38.76,
-    city: "Adama",
-  },
-  {
-    id: "3",
-    name: "Kirubel",
-    status: "On Route",
-    currentLocation: "Shinasha",
-    vehicle: "Van #003",
-    capacity: 12,
-    currentLoad: 5,
-    rating: 4.7,
-    phone: "+1 (555) 345-6789",
-    lastUpdate: "10 min ago",
-    route: "Route B",
-    deliveries: 13,
-    completed: 12,
-    remaining: 1,
-    latitude: 9.03,
-    longitude: 38.74,
-    city: "Gambela",
-  },
-  {
-    id: "4",
-    name: "Thomas Derbe",
-    status: "Available",
-    currentLocation: "Sarbet",
-    vehicle: "Van #004",
-    capacity: 10,
-    currentLoad: 3,
-    rating: 4.6,
-    phone: "+1 (555) 456-7890",
-    lastUpdate: "15 min ago",
-    route: "None",
-    deliveries: 0,
-    completed: 0,
-    remaining: 0,
-    latitude: 9.015,
-    longitude: 38.77,
-    city: "Addis Ababa",
-  },
-];
-
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Available":
+  switch (status?.toUpperCase()) {
+    case "AVAILABLE":
+    case "ONLINE":
       return "bg-green-100 text-green-700";
-    case "On Route":
+    case "ON_ROUTE":
+    case "ON ROUTE":
       return "bg-blue-100 text-blue-700";
-    case "On Break":
+    case "ON_BREAK":
+    case "ON BREAK":
       return "bg-yellow-100 text-yellow-700";
-    case "Offline":
+    case "OFFLINE":
       return "bg-gray-100 text-gray-700";
     default:
       return "bg-gray-100 text-gray-700";
@@ -175,27 +118,14 @@ export default function DriversMapView({
   onCreateDriver,
 }: DriversMapViewProps) {
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  // const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
-  const [filterStatus] = useState<string>("all");
   const [dispatchProgress] = useState(75);
 
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [drivers,setDrivers] = useState<any>([])
-  const [driverLoading,setDriverLoading] = useState(false)
-  const [pagination,setPagination] = useState<Pagination | null>(null)
-  const [driverSearch,setDriverSearch] = useState("")
-
-  const filteredDrivers = mockDrivers.filter((driver) => {
-    const matchesSearch =
-      driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      driver.city.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      filterStatus === "all" || driver.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const [currentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [driverLoading, setDriverLoading] = useState(false);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [driverSearch] = useState("");
 
   
   // const handlePageChange = (page: number) => {
@@ -208,26 +138,26 @@ export default function DriversMapView({
   // };
 
  
-  console.log(setCurrentPage,setPageSize,driverLoading,pagination,setDriverSearch,setSearchQuery,filteredDrivers)
   const featchOrders = async () => {
     try {
       setDriverLoading(true);
 
-      // const staffs = await api.get<any>(`/staff/driver?search=all:${driverSearch}&page=${page}&pageSize=${limit}`)
-      const staffs = await api.get<any>(`/staff/driver`)
+      const staffs = await api.get<{
+        data: { drivers: Driver[] };
+        pagination: Pagination;
+      }>(`/staff/driver`);
 
-      setDrivers(staffs.data.data?.drivers);
+      setDrivers(staffs.data.data?.drivers || []);
       setPagination(staffs.data.pagination);
-      // toast.success(staffs.data.message);
       setDriverLoading(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setDriverLoading(false);
 
       const message =
-        error?.response?.data?.message ||
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         "Something went wrong. Please try again.";
       toast.error(message);
-      console.error(error); // optional: log the full error
+      console.error(error);
     }
   };
 
@@ -266,7 +196,7 @@ export default function DriversMapView({
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
-              Drivers ({mockDrivers.length})
+              Drivers ({driverLoading ? "..." : drivers?.length || 0})
             </h2>
             <Button
               onClick={onCreateDriver}
@@ -307,86 +237,142 @@ export default function DriversMapView({
 
         {/* Driver List */}
         <div className="flex-1 overflow-y-auto">
-          {drivers?.map((driver:any) => (
-            <div
-              key={driver.id}
-              className={`p-4 border-b border-gray-100 cursor-pointer transition-colors ${
-                selectedDriver?.id === driver.id
-                  ? "bg-blue-50"
-                  : "hover:bg-gray-50"
-              }`}
-              onClick={() => handleSelectDriver(driver)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <IoPerson className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-gray-900">
-                        {driver?.user.name}
-                      </h3>
-                      {driver?.user?.deliveries > 0 && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-100 text-blue-700"
-                        >
-                          {driver.deliveries}
-                        </Badge>
-                      )}
+          {driverLoading ? (
+            // Loading skeleton
+            <div className="p-4 space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="p-4 border-b border-gray-100 animate-pulse"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        <div className="h-2 bg-gray-200 rounded w-1/4"></div>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-500">{driver.city}</p>
-                    <div className="flex items-center gap-4 mt-2">
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm text-gray-600">
-                          {driver.completed}/{driver.deliveries}
-                        </span>
-                        <div className="w-16 bg-gray-200 rounded-full h-1">
-                          <div
-                            className="bg-blue-600 h-1 rounded-full"
-                            style={{
-                              width: `${30
-                              }%`,
-                            }}
-                          ></div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                      <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : drivers && drivers.length > 0 ? (
+            drivers.map((driver) => (
+              <div
+                key={driver.id}
+                className={`p-4 border-b border-gray-100 cursor-pointer transition-colors ${
+                  selectedDriver?.id === driver.id
+                    ? "bg-blue-50"
+                    : "hover:bg-gray-50"
+                }`}
+                onClick={() => handleSelectDriver(driver)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <IoPerson className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-gray-900">
+                          {driver?.user?.name || "Unknown"}
+                        </h3>
+                        {(driver?.performance?.totalOrders ?? 0) > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-blue-100 text-blue-700"
+                          >
+                            {driver.performance?.totalOrders ?? 0}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {driver?.type || "N/A"}
+                      </p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm text-gray-600">
+                            {driver?.performance?.completedOrders || 0}/{driver?.performance?.totalOrders || 0}
+                          </span>
+                          <div className="w-16 bg-gray-200 rounded-full h-1">
+                            <div
+                              className="bg-blue-600 h-1 rounded-full"
+                              style={{
+                                width: `${
+                                  (driver?.performance?.totalOrders ?? 0) > 0
+                                    ? (((driver.performance?.completedOrders ?? 0) / (driver.performance?.totalOrders ?? 1)) *
+                                      100)
+                                    : 0
+                                }%`,
+                              }}
+                            ></div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Handle location tracking
-                    }}
-                  >
-                    <IoLocation className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Handle calling driver
-                    }}
-                  >
-                    <IoCall className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle location tracking
+                      }}
+                    >
+                      <IoLocation className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle calling driver
+                      }}
+                    >
+                      <IoCall className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
+            ))
+          ) : (
+            // Empty state
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+              <IoPerson className="h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-500 font-medium">No drivers found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Add a new driver to get started
+              </p>
+              <Button
+                onClick={onCreateDriver}
+                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                size="sm"
+              >
+                <IoAdd className="h-4 w-4 mr-2" />
+                Add Driver
+              </Button>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Pagination */}
         <div className="p-4 border-t border-gray-200">
-          <p className="text-sm text-gray-500">
-            1-{mockDrivers.length} of {mockDrivers.length} results
-          </p>
+          {driverLoading ? (
+            <div className="h-5 bg-gray-200 rounded animate-pulse w-32"></div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              {drivers && drivers.length > 0
+                ? `1-${drivers.length} of ${pagination?.total || drivers.length} results`
+                : "0 results"}
+            </p>
+          )}
         </div>
       </div>
 
@@ -433,6 +419,14 @@ export default function DriversMapView({
 
         {/* Map Section */}
         <div className="flex-1 relative">
+          {driverLoading ? (
+            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading map...</p>
+              </div>
+            </div>
+          ) : null}
           <MapContainer
             center={[9.0192, 38.7525]}
             zoom={13}
@@ -443,26 +437,45 @@ export default function DriversMapView({
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {mockDrivers.map((driver) => (
-              <Marker
-                key={driver.id}
-                position={[driver.latitude, driver.longitude]}
-                icon={createDriverIcon(driver.status)}
-                eventHandlers={{
-                  click: () => handleSelectDriver(driver),
-                }}
-              >
-                <Popup>
-                  <div className="p-2">
-                    <h3 className="font-medium">{driver.name}</h3>
-                    <p className="text-sm text-gray-500">{driver.city}</p>
-                    <Badge className={getStatusColor(driver.status)}>
-                      {driver.status}
-                    </Badge>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {drivers &&
+              drivers
+                .filter(
+                  (driver) =>
+                    driver.currentLat !== undefined &&
+                    driver.currentLon !== undefined &&
+                    !isNaN(driver.currentLat) &&
+                    !isNaN(driver.currentLon)
+                )
+                .map((driver) => (
+                  <Marker
+                    key={driver.id}
+                    position={[driver.currentLat as number, driver.currentLon as number]}
+                    icon={createDriverIcon(
+                      driver.type || "EXTERNAL"
+                    )}
+                    eventHandlers={{
+                      click: () => handleSelectDriver(driver),
+                    }}
+                  >
+                    <Popup>
+                      <div className="p-2">
+                        <h3 className="font-medium">
+                          {driver?.user?.name || "Unknown"}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {driver.type || "N/A"}
+                        </p>
+                        <Badge
+                          className={getStatusColor(
+                            driver.availablityStatus || driver.status || "OFFLINE"
+                          )}
+                        >
+                          {driver.availablityStatus || driver.status || "OFFLINE"}
+                        </Badge>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
           </MapContainer>
         </div>
 
@@ -484,9 +497,11 @@ export default function DriversMapView({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <h3 className="font-medium">{selectedDriver.name}</h3>
+                    <h3 className="font-medium">
+                      {selectedDriver?.user?.name || "Unknown"}
+                    </h3>
                     <p className="text-sm text-gray-500">
-                      {selectedDriver.city}
+                      {selectedDriver?.type || "N/A"} • {selectedDriver?.user?.phone || "N/A"}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -536,7 +551,7 @@ export default function DriversMapView({
                       <IoCar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-gray-500">Live camera feed</p>
                       <p className="text-xs text-gray-400">
-                        From {selectedDriver.name}'s vehicle
+                        From {selectedDriver?.user?.name || "Unknown"}'s vehicle
                       </p>
                     </div>
                   </div>

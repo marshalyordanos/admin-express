@@ -1,26 +1,63 @@
-import axios, { type AxiosInstance, type AxiosError } from "axios";
+import axios, {
+  type AxiosInstance,
+  type AxiosError,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from "axios";
+import { logout } from "@/utils/auth";
+import { setCredentials } from "@/features/auth/authSlice";
+
+interface RefreshResponse {
+  success: boolean;
+  message: string;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
 
 const api: AxiosInstance = axios.create({
   // baseURL: "https://localhost:10000/",
-  // baseURL: "http://localhost:10000",
-  baseURL: "https://test-courier.servehalflife.com",
+  baseURL: "http://localhost:10000",
+  // baseURL: "https://test-courier.servehalflife.com",
 
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-/**
- * Global error handler (can be replaced with your own UI logic)
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: string | null) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (
+  error: AxiosError | null,
+  token: string | null = null
+) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
 
 /**
  * Setup function for Axios interceptors
  */
-const setup = (store: any) => {
-  console.log(store);
+const setup = (store: { dispatch: (action: unknown) => void }) => {
   // Request interceptor
   api.interceptors.request.use(
-    (config: any) => {
+    (config: InternalAxiosRequestConfig) => {
       const token = localStorage.getItem("accessToken");
       if (token && config.headers) {
         config.headers["Authorization"] = `Bearer ${token}`;
@@ -31,66 +68,110 @@ const setup = (store: any) => {
   );
 
   // Response interceptor
-  // instance.interceptors.response.use(
-  //   (response: AxiosResponse) => {
-  //     isRefreshing = false;
-  //     return response;
-  //   },
-  //   async (error: AxiosError) => {
-  //     const originalConfig = error.config as CustomAxiosRequestConfig;
+  api.interceptors.response.use(
+    (response: AxiosResponse) => {
+      return response;
+    },
+    async (error: AxiosError) => {
+      const originalConfig = error.config as CustomAxiosRequestConfig;
 
-  //     if (originalConfig.url !== "/auth/signin" && error.response) {
-  //       if (error.response.status === 401 && !isRefreshing) {
-  //         originalConfig._retry = true;
-  //         isRefreshing = true;
+      // Skip refresh logic for login endpoint
+      if (
+        originalConfig.url === "/auth/login" ||
+        originalConfig.url === "/auth/refresh"
+      ) {
+        return Promise.reject(error);
+      }
 
-  //         try {
-  //           // Call refresh endpoint
-  //           const rs = await instance.get<RefreshResponse>("/auth/refresh", {
-  //             headers: {
-  //               Authorization: `Bearer ${localStorage.getItem("refreshToken")}`,
-  //             },
-  //           });
+      // Handle 401 Unauthorized errors
+      if (error.response?.status === 401 && !originalConfig._retry) {
+        if (isRefreshing) {
+          // If already refreshing, queue this request
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then((token) => {
+              if (originalConfig.headers) {
+                originalConfig.headers["Authorization"] = `Bearer ${token}`;
+              }
+              return api(originalConfig);
+            })
+            .catch((err) => {
+              return Promise.reject(err);
+            });
+        }
 
-  //           const { accessToken, refreshToken } = rs.data;
+        originalConfig._retry = true;
+        isRefreshing = true;
 
-  //           // Save tokens in localStorage
-  //           localStorage.setItem("accessToken", accessToken);
-  //           localStorage.setItem("refreshToken", refreshToken);
+        const refreshToken = localStorage.getItem("refreshToken");
 
-  //           return instance(originalConfig);
-  //         } catch (_error: any) {
-  //           // Clear tokens if refresh fails
-  //           localStorage.removeItem("accessToken");
-  //           localStorage.removeItem("refreshToken");
-  //           localStorage.removeItem("user");
-  //           localStorage.removeItem("role");
+        if (!refreshToken) {
+          // No refresh token, logout user
+          processQueue(error, null);
+          isRefreshing = false;
+          logout();
+          return Promise.reject(error);
+        }
 
-  //           if (!originalConfig?.suppressErrorToast) {
-  //             handleErrorResponse(
-  //               error.response?.data?.message || error.message
-  //             );
-  //           }
+        try {
+          // Call refresh endpoint
+          const response = await api.get<RefreshResponse>("/auth/refresh", {
+            headers: {
+              Authorization: `Bearer ${refreshToken}`,
+            },
+          });
 
-  //           return Promise.reject(_error);
-  //         } finally {
-  //           isRefreshing = false;
-  //         }
-  //       } else {
-  //         if (!originalConfig?.suppressErrorToast) {
-  //           handleErrorResponse(error.response?.data?.message || error.message);
-  //         }
-  //         return Promise.reject(error);
-  //       }
-  //     }
+          if (response.data.success && response.data.data) {
+            const { accessToken, refreshToken: newRefreshToken } =
+              response.data.data;
 
-  //     if (!originalConfig?.suppressErrorToast) {
-  //       handleErrorResponse(error.response?.data?.message || error.message);
-  //     }
+            // Save tokens in localStorage
+            localStorage.setItem("accessToken", accessToken);
+            localStorage.setItem("refreshToken", newRefreshToken);
 
-  //     return Promise.reject(error);
-  //   }
-  // );
+            // Update Redux state
+            const userStr = localStorage.getItem("user");
+            if (userStr) {
+              try {
+                const user = JSON.parse(userStr);
+                store.dispatch(
+                  setCredentials({
+                    user,
+                    accessToken,
+                    refreshToken: newRefreshToken,
+                  })
+                );
+              } catch {
+                // If user parsing fails, continue anyway
+              }
+            }
+
+            // Process queued requests
+            processQueue(null, accessToken);
+
+            // Update the original request with new token
+            if (originalConfig.headers) {
+              originalConfig.headers["Authorization"] = `Bearer ${accessToken}`;
+            }
+
+            isRefreshing = false;
+            return api(originalConfig);
+          } else {
+            throw new Error("Refresh failed: Invalid response");
+          }
+        } catch (_error: unknown) {
+          // Refresh token expired or invalid, logout user
+          processQueue(_error as AxiosError, null);
+          isRefreshing = false;
+          logout();
+          return Promise.reject(_error);
+        }
+      }
+
+      return Promise.reject(error);
+    }
+  );
 };
 
 export default api;

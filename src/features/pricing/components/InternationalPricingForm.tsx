@@ -90,7 +90,6 @@ export default function InternationalPricingForm() {
     overnightWeightRanges: [{ from: "1", to: "3", price: 0 }],
     driverCommission: [],
   };
-  console.log(loading)
 
   const fetchVehicleTypes = async () => {
     try {
@@ -180,6 +179,50 @@ export default function InternationalPricingForm() {
   const handleSubmit = async (values: InitialValues) => {
     try {
       setLoading(true);
+      
+      // Map service types to get serviceTypeId when editing
+      const serviceTypeMap = new Map();
+      if (isEditing && parsedPrice?.serviceTypes) {
+        parsedPrice.serviceTypes.forEach((st: any) => {
+          serviceTypeMap.set(st.serviceType, st.id);
+        });
+      }
+
+      const airportFees = [
+        {
+          ...(isEditing && serviceTypeMap.has("STANDARD") 
+            ? { serviceTypeId: serviceTypeMap.get("STANDARD") } 
+            : {}),
+          serviceType: "STANDARD",
+          brackets: values.standardWeightRanges.map(r => ({
+            minKg: Number(r.from),
+            maxKg: Number(r.to),
+            rate: r.price,
+          })),
+        },
+        {
+          ...(isEditing && serviceTypeMap.has("EXPRESS") 
+            ? { serviceTypeId: serviceTypeMap.get("EXPRESS") } 
+            : {}),
+          serviceType: "EXPRESS",
+          brackets: values.sameDayWeightRanges.map(r => ({
+            minKg: Number(r.from),
+            maxKg: Number(r.to),
+            rate: r.price,
+          })),
+        },
+        {
+          ...(isEditing && serviceTypeMap.has("OVERNIGHT") 
+            ? { serviceTypeId: serviceTypeMap.get("OVERNIGHT") } 
+            : {}),
+          serviceType: "OVERNIGHT",
+          brackets: values.overnightWeightRanges.map(r => ({
+            minKg: Number(r.from),
+            maxKg: Number(r.to),
+            rate: r.price,
+          })),
+        },
+      ];
 
       const payload = {
         name: "International Delivery Tariff",
@@ -197,32 +240,7 @@ export default function InternationalPricingForm() {
           ...(c.percentage ? { percentage: c.percentage } : {}),
         })),
         profit: values.profitMargin,
-        airportFees: [
-          {
-            serviceType: "STANDARD",
-            brackets: values.standardWeightRanges.map(r => ({
-              minKg: Number(r.from),
-              maxKg: Number(r.to),
-              rate: r.price,
-            })),
-          },
-          {
-            serviceType: "EXPRESS",
-            brackets: values.sameDayWeightRanges.map(r => ({
-              minKg: Number(r.from),
-              maxKg: Number(r.to),
-              rate: r.price,
-            })),
-          },
-          {
-            serviceType: "OVERNIGHT",
-            brackets: values.overnightWeightRanges.map(r => ({
-              minKg: Number(r.from),
-              maxKg: Number(r.to),
-              rate: r.price,
-            })),
-          },
-        ],
+        airportFees,
       };
 
       if (isEditing) {
@@ -234,11 +252,14 @@ export default function InternationalPricingForm() {
       }
 
       navigate("/pricing");
-      setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      const message =
+        error?.response?.data?.message ||
+        "Failed to save tariff";
+      toast.error(message);
+    } finally {
       setLoading(false);
-      toast.error("Failed to save tariff");
     }
   };
 
@@ -346,7 +367,7 @@ export default function InternationalPricingForm() {
               showAirportFee={true}
             />
 
-            <ActionButtons isEditing={isEditing} />
+            <ActionButtons isEditing={isEditing} loading={loading} />
           </Form>
         )}
       </Formik>

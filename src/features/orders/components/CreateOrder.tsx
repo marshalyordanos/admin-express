@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import * as Yup from "yup";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
-import type { Customer, CustomerListResponse, Pagination } from "@/types/types";
+import type { Customer, CustomerListResponse, Pagination, Branch, BranchListResponse } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 import { Select as Style2 } from "antd";
 
@@ -71,6 +71,9 @@ interface ConvertedShipment {
   unusualReason: any;
   quantity: any;
   cost: any;
+  pickupDate?: any;
+  deliveryDate?: any;
+  branchId?: any;
 
   width?: any;
   height?: any;
@@ -112,6 +115,9 @@ export default function OrderForm() {
     receiverAddress: "",
     receiverLatitude: 0,
     receiverLongitude: 0,
+    pickupDate: "",
+    deliveryDate: "",
+    branchId: "",
   };
   const navigate = useNavigate();
   const [estimatePrice, setEstimatePrice] = useState(""); // sample estimate
@@ -127,8 +133,14 @@ export default function OrderForm() {
   // const [searchText, setSearchText] = useState("");
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [custoemr, setCustomer] = useState<Customer[]>([]);
-const [priceLoading,setPriceLoading] = useState(false)
-// const [priceLoading,setPriceLoad] = useState(false)
+  const [priceLoading, setPriceLoading] = useState(false);
+  
+  // Branch selection state (for DROPOFF)
+  const [branchSearch, setBranchSearch] = useState("");
+  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+  const [loadingBranch, setLoadingBranch] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  
 console.log(pagination)
 
   const featchStaffs = async () => {
@@ -156,6 +168,30 @@ console.log(pagination)
   useEffect(() => {
     featchStaffs();
   }, [managerSearch]);
+
+  const fetchBranches = async () => {
+    try {
+      setLoadingBranch(true);
+
+      const response = await api.get<BranchListResponse>(
+        `/branch?search=all:${branchSearch}&page=${1}&pageSize=${20}`
+      );
+      setBranches(response.data.data);
+      setLoadingBranch(false);
+    } catch (error: any) {
+      setLoadingBranch(false);
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBranches();
+  }, [branchSearch]);
   const onEstimate =async (_values:any) => {
     setPriceLoading(true)
     const converted :ConvertedShipment= {
@@ -207,7 +243,14 @@ console.log(pagination)
       // senderEntity: _values.senderEntity,
       // shippingScope: _values.destination,
       cost: _values.cost,
+      pickupDate: _values.pickupDate ? new Date(_values.pickupDate).toISOString() : undefined,
+      deliveryDate: _values.deliveryDate ? new Date(_values.deliveryDate).toISOString() : undefined,
     };
+    
+    if (_values.fulfillmentType === "DROPOFF" && _values.branchId) {
+      converted.branchId = _values.branchId;
+    }
+    
     if(_values.shipmentType=="PARCEL"){
       converted.width= _values?.width
       converted.height= _values?.height
@@ -309,7 +352,14 @@ console.log(pagination)
       // senderEntity: _values.senderEntity,
       // shippingScope: _values.destination,
       cost: _values.cost,
+      pickupDate: _values.pickupDate ? new Date(_values.pickupDate).toISOString() : undefined,
+      deliveryDate: _values.deliveryDate ? new Date(_values.deliveryDate).toISOString() : undefined,
     };
+    
+    if (_values.fulfillmentType === "DROPOFF" && _values.branchId) {
+      converted.branchId = _values.branchId;
+    }
+    
     console.log("values: ", converted);
     if(_values.shipmentType=="PARCEL"){
       converted.width= _values?.width
@@ -330,6 +380,7 @@ console.log(pagination)
       setEstimatePrice("");
       
       setManagerSearch("");
+      setBranchSearch("");
       
     } catch (error: any) {
       console.log(error.response?.data);
@@ -368,6 +419,22 @@ console.log(pagination)
     setFieldValue("managerName", manager.name);
     setManagerSearch(`${manager.name} (${manager.id})`);
     setShowManagerDropdown(false);
+  };
+
+  const clearBranch = (
+    setFieldValue: (field: string, value: string) => void
+  ) => {
+    setFieldValue("branchId", "");
+    setBranchSearch("");
+  };
+
+  const selectBranch = (
+    branch: { id: string; name: string },
+    setFieldValue: (field: string, value: string) => void
+  ) => {
+    setFieldValue("branchId", branch.id);
+    setBranchSearch(`${branch.name} (${branch.id})`);
+    setShowBranchDropdown(false);
   };
 
   return (
@@ -662,7 +729,13 @@ console.log(pagination)
                 <Label className="mb-1">Courier Collection Type</Label>
                 <Select
                   value={values.fulfillmentType}
-                  onValueChange={(val) => setFieldValue("fulfillmentType", val)}
+                  onValueChange={(val) => {
+                    setFieldValue("fulfillmentType", val);
+                    if (val !== "DROPOFF") {
+                      setFieldValue("branchId", "");
+                      setBranchSearch("");
+                    }
+                  }}
                 >
                   <SelectTrigger
                     className={`bg-none py-7 !w-full ${
@@ -683,6 +756,111 @@ console.log(pagination)
                     {errors.fulfillmentType}
                   </p>
                 )}
+              </div>
+
+              {/* Branch Selection (only for DROPOFF) */}
+              {values.fulfillmentType === "DROPOFF" && (
+                <div className="relative">
+                  <Label className="mb-2">Branch *</Label>
+                  <div className="relative">
+                    <Input
+                      placeholder="Search branch"
+                      value={branchSearch}
+                      onChange={(e) => {
+                        setBranchSearch(e.target.value);
+                        setShowBranchDropdown(true);
+                        if (!e.target.value) {
+                          clearBranch(setFieldValue);
+                        }
+                      }}
+                      onFocus={() => setShowBranchDropdown(true)}
+                      onBlur={() =>
+                        setTimeout(() => setShowBranchDropdown(false), 200)
+                      }
+                      className="py-7"
+                    />
+                    {values.branchId && (
+                      <button
+                        type="button"
+                        onClick={() => clearBranch(setFieldValue)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {showBranchDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {loadingBranch && (
+                        <div className="flex justify-center items-center py-8">
+                          <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                        </div>
+                      )}
+                      {branches.length > 0 ? (
+                        branches.map((branch) => (
+                          <div
+                            key={branch.id}
+                            onClick={() => selectBranch(branch, setFieldValue)}
+                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-gray-900">
+                              {branch.name}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              ID: {branch.id}
+                            </div>
+                            {branch.location && (
+                              <div className="text-sm text-gray-500">
+                                {branch.location}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : !loadingBranch ? (
+                        <div className="px-4 py-3 text-gray-500 text-center">
+                          No branches found
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                  {!values.branchId && values.fulfillmentType === "DROPOFF" && (
+                    <p className="text-red-500 text-sm mt-1">
+                      Branch is required for DROPOFF orders
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="mb-1">Pickup Date</Label>
+                  <Field
+                    as={Input}
+                    type="datetime-local"
+                    name="pickupDate"
+                    className="py-7"
+                  />
+                  {errors.pickupDate && touched.pickupDate && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.pickupDate}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="mb-1">Delivery Date</Label>
+                  <Field
+                    as={Input}
+                    type="datetime-local"
+                    name="deliveryDate"
+                    className="py-7"
+                  />
+                  {errors.deliveryDate && touched.deliveryDate && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.deliveryDate}
+                    </p>
+                  )}
+                </div>
               </div>
               {/* <div>
                 <Label className="mb-1">Sender Entity</Label>
@@ -922,16 +1100,19 @@ console.log(pagination)
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="mb-1 lex flex-row justify-center items-center cursor-pointer hover:bg-blue-700"
-                  >  {loading?
-                    <Spinner className="h-6 w-6 text-center text-white mr-2" />
-            :
-            "Submit order"}
-                   
+                    className="mb-1 flex flex-row justify-center items-center cursor-pointer hover:bg-blue-700"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center w-full">
+                        <Spinner className="h-6 w-6 text-white mr-2" />
+                        <span>Submitting...</span>
+                      </span>
+                    ) : (
+                      "Submit order"
+                    )}
                   </Button>
                   <Button
                     disabled={loading}
-
                     type="button"
                     onClick={() => navigate(-1)}
                     className="flex-1 bg-gray-100 hover:bg-gray-200 cursor-pointer !text-black border border-gray-300 !w-full"
@@ -939,6 +1120,7 @@ console.log(pagination)
                     Cancel
                   </Button>
                 </div>
+
               </div>
             </div>
           </Form>

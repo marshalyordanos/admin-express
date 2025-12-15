@@ -58,11 +58,10 @@ function DispatchModal({
   order,
 }: DispatchModalProps) {
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
-  const [selectedExternalDriver, setSelectedExternalDriver] = useState<any>(null);
+  const [selectedExternalDrivers, setSelectedExternalDrivers] = useState<any[]>([]);
   const [dispatchNotes, setDispatchNotes] = useState("");
   const [activeTab, setActiveTab] = useState("internal");
-  // const [isContactingExternal, setIsContactingExternal] = useState(false);
-const [ loading,setLaoding]= useState(false)
+  const [loading, setLoading] = useState(false);
   const [driverSearch, setDriverSearch] = useState("");
   // const [showDriverDropdown, setShowDriverDropdown] = useState(false);
   const [paginationDriver, setPaginationDriver] = useState<Pagination | null>(null);
@@ -188,50 +187,75 @@ const [ loading,setLaoding]= useState(false)
   ]);
   const [paginationExternalDriver, setPaginationExternalDriver] = useState<Pagination | null>(null);
 
-console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,loadingDriver)
+  // Reset selections when switching tabs
+  useEffect(() => {
+    if (activeTab === "internal") {
+      setSelectedExternalDrivers([]);
+    } else {
+      setSelectedDriver(null);
+    }
+  }, [activeTab]);
 
-  console.log(customerName,orderId,)
-  const handleDispatch = async() => {
-    setLaoding(true)
-    if (selectedDriver || selectedExternalDriver) {
-      let driverId 
-      if(activeTab=="external"){
-        driverId = selectedExternalDriver?.driverId
-      }else{
-        driverId = selectedDriver?.userId
+  const handleDispatch = async () => {
+    // Check if we have at least one driver selected
+    if (activeTab === "internal" && !selectedDriver) {
+      toast.error("Please select a driver");
+      return;
+    }
+    if (activeTab === "external" && selectedExternalDrivers.length === 0) {
+      toast.error("Please select at least one driver");
+      return;
+    }
 
-      }
-     
- const payload = {
-  "orderId": order?.id,
-  "driverId": driverId
-}
-      try {
-        setLoadingDriver(true);
-  
-        const res = await api.post<any>(
-          `dispatch/assign-pickup`,payload
-        );
-    setLaoding(false)
+    setLoading(true);
+    
+    try {
+      if (activeTab === "external") {
+        // For external drivers: create request with multiple driverIds
+        const driverIds = selectedExternalDrivers.map((driver) => driver.driverId);
+        const payload = {
+          orderId: order?.id,
+          driverIds: driverIds,
+        };
+
+        const res = await api.post<any>("/dispatch/driver/requests", payload);
         
-       if(res.data.data){
-        setPaginationDriver(res.data.pagination);
-       }
-       onClose();
-       // Reset form
-       setSelectedDriver("");
-       setSelectedExternalDriver("");
-       setDispatchNotes("");
-       setDriverSearch("")
-            } catch (error: any) {
-              setLaoding(false)
-  
-        const message =
-          error?.response?.data?.message ||
-          "Something went wrong. Please try again.";
-        toast.error(message);
-        console.error(error); // optional: log the full error
+        toast.success(res.data.message || "Driver request created successfully");
+        
+        // Reset form
+        setSelectedExternalDrivers([]);
+        setDispatchNotes("");
+        setDriverSearch("");
+        onClose();
+      } else {
+        // For internal drivers: assign pickup with single driverId
+        const payload = {
+          orderId: order?.id,
+          driverId: selectedDriver?.userId,
+        };
+
+        const res = await api.post<any>("/dispatch/assign-pickup", payload);
+        
+        toast.success(res.data.message || "Order dispatched successfully");
+        
+        if (res.data.data) {
+          setPaginationDriver(res.data.pagination);
+        }
+        
+        // Reset form
+        setSelectedDriver(null);
+        setDispatchNotes("");
+        setDriverSearch("");
+        onClose();
       }
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -245,7 +269,7 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
   // };
 
    
-  const featchIntenalDriver= async () => {
+  const fetchInternalDriver = async () => {
     try {
       setLoadingDriver(true);
 
@@ -260,7 +284,6 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
       setDriver(res.data.data);
       setPaginationDriver(res.data.pagination);
      }
-      // toast.success(staffs.data.message);
       setLoadingDriver(false);
     } catch (error: any) {
       setLoadingDriver(false);
@@ -269,16 +292,17 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
         error?.response?.data?.message ||
         "Something went wrong. Please try again.";
       toast.error(message);
-      console.error(error); // optional: log the full error
+      console.error(error);
     }
   };
 
   useEffect(() => {
    if(order){
-    featchIntenalDriver();
+    fetchInternalDriver();
    }
   }, [driverSearch,order]);
-  const featchExternalDriver= async () => {
+  
+  const fetchExternalDriver = async () => {
     try {
       setLoadingExternalDriver(true);
 
@@ -287,7 +311,6 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
       );
       setExternalDriver(res.data.data);
       setPaginationExternalDriver(res.data.pagination);
-      // toast.success(staffs.data.message);
       setLoadingExternalDriver(false);
     } catch (error: any) {
       setLoadingExternalDriver(false);
@@ -296,13 +319,15 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
         error?.response?.data?.message ||
         "Something went wrong. Please try again.";
       toast.error(message);
-      console.error(error); // optional: log the full error
+      console.error(error);
     }
   };
 
   useEffect(() => {
-    featchExternalDriver();
-  }, [driverSearch]);
+    if (activeTab === "external") {
+      fetchExternalDriver();
+    }
+  }, [driverSearch, activeTab]);
   
 
   if (!isOpen) return null;
@@ -328,7 +353,7 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
             </Button>
           </div>
           <div className="text-sm text-gray-600">
-            Customer: {order?.customer?.name} • Scop: {order?.shippingScope} • Service:{" "}
+            Customer: {order?.customer?.name} • Scope: {order?.shippingScope} • Service:{" "}
             {order?.serviceType}
           </div>
         </CardHeader>
@@ -382,8 +407,18 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
                 <h3 className="font-medium text-gray-900">
                   Available Internal Drivers
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {driver.map((driver) => (
+                {loadingDriver ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-gray-600">Loading drivers...</span>
+                  </div>
+                ) : driver.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No internal drivers available
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {driver.map((driver) => (
                     <Card
                       key={driver.id}
                       className={`cursor-pointer transition-all ${
@@ -456,8 +491,9 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
                         )}
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -465,19 +501,41 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
             {activeTab === "external" && (
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">
-                  External Driver Partners
+                  External Driver Partners (Select Multiple)
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {externalDriver.map((driver) => (
-                    <Card
-                      key={driver.driverId}
-                      className={`cursor-pointer transition-all ${
-                        selectedExternalDriver?.driverId === driver.driverId
-                          ? "ring-2 ring-blue-500 bg-blue-50"
-                          : "hover:bg-gray-50"
-                      }`}
-                      onClick={() => setSelectedExternalDriver(driver)}
-                    >
+                {loadingExternalDriver ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-gray-600">Loading drivers...</span>
+                  </div>
+                ) : externalDriver.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No external drivers available
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {externalDriver.map((driver) => {
+                      const isSelected = selectedExternalDrivers.some(
+                        (d) => d.driverId === driver.driverId
+                      );
+                      return (
+                        <Card
+                          key={driver.driverId}
+                          className={`cursor-pointer transition-all ${
+                            isSelected
+                              ? "ring-2 ring-blue-500 bg-blue-50"
+                              : "hover:bg-gray-50"
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedExternalDrivers((prev) =>
+                                prev.filter((d) => d.driverId !== driver.driverId)
+                              );
+                            } else {
+                              setSelectedExternalDrivers((prev) => [...prev, driver]);
+                            }
+                          }}
+                        >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -510,21 +568,8 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
                           </div>
                         </div>
 
-                        <div className="mt-3 flex gap-2">
-                          {/* <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleContactExternal(driver);
-                            }}
-                            disabled={isContactingExternal}
-                            className="flex-1 cursor-pointer"
-                          >
-                            <IoPhonePortraitOutline className="h-4 w-4 mr-2" />
-                            Contact
-                          </Button> */}
-                          {selectedExternalDriver?.driverId === driver.driverId && (
+                        <div className="mt-3">
+                          {isSelected && (
                             <div className="flex items-center gap-2 text-blue-600">
                               <IoCheckmarkCircle className="h-4 w-4" />
                               <span className="text-sm font-medium">
@@ -535,8 +580,10 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -556,14 +603,24 @@ console.log(loadingExternalDriver,paginationExternalDriver,paginationDriver,load
           <div className="flex gap-3 pt-4 border-t">
             <Button
               onClick={handleDispatch}
-              disabled={!selectedDriver && !selectedExternalDriver}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+              disabled={
+                (activeTab === "internal" && !selectedDriver) ||
+                (activeTab === "external" && selectedExternalDrivers.length === 0) ||
+                loading
+              }
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <IoCheckmarkCircle className="h-4 w-4 mr-2" />
-              {loading?<span className="flex items-center gap-2">
+              {loading ? (
+                <span className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Processing...</span>
-                </span>:"Dispatch Order"}
+                </span>
+              ) : activeTab === "external" ? (
+                `Create Request (${selectedExternalDrivers.length} driver${selectedExternalDrivers.length !== 1 ? "s" : ""})`
+              ) : (
+                "Dispatch Order"
+              )}
             </Button>
             <Button
               variant="outline"

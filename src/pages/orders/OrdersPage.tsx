@@ -120,8 +120,9 @@ export default function OrdersPage() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [accpetDroppoffModal, setIsAcceptDropoffModal] = useState(false);
-// ........................ reuest stets 
+  const [acceptDropoffModal, setIsAcceptDropoffModal] = useState(false);
+  const [isExportLoading, setIsExportLoading] = useState(false);
+// ........................ request states 
 
 const [weight, setWeight] = useState(0);
 const [isFragile, setIsFragile] = useState(true);
@@ -133,7 +134,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const [isApproveLoading, setIsApproveLoading] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   // const [selectedTab, setSelectedTab] = useState("All");
 
   // const [reason, setReason] = useState("");
@@ -148,16 +149,15 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
 
 
 
-  const featchOrders = async (page = 1, limit = 10) => {
+  const fetchOrders = async (page = 1, limit = 10) => {
     try {
       setLoading(true);
 
-      const staffs = await api.get<OrderListResponse>(
+      const response = await api.get<OrderListResponse>(
         `/order?search=all:${searchText}&page=${page}&pageSize=${limit}&filter=${activeTab!=="All"?`status:${activeTab}`:""}`
       );
-      setOrders(staffs.data.data);
-      setPagination(staffs.data.pagination);
-      // toast.success(staffs.data.message);
+      setOrders(response.data.data);
+      setPagination(response.data.pagination);
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
@@ -166,12 +166,12 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
         error?.response?.data?.message ||
         "Something went wrong. Please try again.";
       toast.error(message);
-      console.error(error); // optional: log the full error
+      console.error(error);
     }
   };
 
   useEffect(() => {
-    featchOrders(currentPage, pageSize);
+    fetchOrders(currentPage, pageSize);
   }, [searchText, currentPage, pageSize, activeTab]);
 
   const fetchOrderSummary = async () => {
@@ -255,7 +255,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
 
   const handleRequest = async () => {
     try {
-      setIsApproveLoading(true);
+      setIsActionLoading(true);
       const payload = {
         weight,
         isFragile,
@@ -264,88 +264,97 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
       };
       const res = await api.patch("/order/validate/"+selectedOrder?.id, payload);
       toast.success(res.data.message);
-      featchOrders(currentPage, pageSize);
+      fetchOrders(currentPage, pageSize);
       setIsDialogOpen(false);
-      setIsApproveLoading(false);
+      setIsActionLoading(false);
     } catch (error: any) {
       toast.error(error?.response.data.message || "Something went wrong!");
-      setIsApproveLoading(false);
+      setIsActionLoading(false);
     }
   };
-  const handleRequestTwon = async () => {
+  const handleRequestTwo = async () => {
     try {
-      setIsApproveLoading(true);
+      setIsActionLoading(true);
       const payload = {
         orderIds:[selectedOrder?.id]
       };
       const res = await api.post("/order/request/approval", payload);
       toast.success(res.data.message);
-      featchOrders(currentPage, pageSize);
+      fetchOrders(currentPage, pageSize);
       setIsDialogOpen(false);
-      setIsApproveLoading(false);
+      setIsActionLoading(false);
     } catch (error: any) {
       toast.error(error?.response.data.message || "Something went wrong!");
-      setIsApproveLoading(false);
+      setIsActionLoading(false);
     }
   };
   const handleAcceptDropoff = async () => {
     try {
-      setIsApproveLoading(true);
+      setIsActionLoading(true);
       const payload = {
         trackingCode:selectedOrder?.trackingCode,
   
       };
       const res = await api.post("/order/accept", payload);
       toast.success(res.data.message);
-      featchOrders(currentPage, pageSize);
-      setIsDialogOpen(false);
-      setIsApproveLoading(false);
+      fetchOrders(currentPage, pageSize);
+      setIsAcceptDropoffModal(false);
+      setIsActionLoading(false);
     } catch (error: any) {
       toast.error(error?.response.data.message || "Something went wrong!");
-      setIsApproveLoading(false);
+      setIsActionLoading(false);
     }
   };
   const handleAssignDriver = async () => {
     try {
-      setIsApproveLoading(true);
+      setIsActionLoading(true);
       const res = await api.post("/dispatch/assign-pickup", {
         orderId: selectedOrder?.id,
         driverId: selectedDriver?.id,
       });
       toast.success(res.data.message);
-      featchOrders(currentPage, pageSize);
+      fetchOrders(currentPage, pageSize);
       setIsAssignDriverDialogOpen(false);
-      setIsApproveLoading(false);
+      setIsActionLoading(false);
     } catch (error: any) {
       toast.error(error?.response.data.message || "Something went wrong!");
-      setIsApproveLoading(false);
+      setIsActionLoading(false);
     }
   };
  
-  const handleExport = () => {
-    exportToExcel("orders", orders, (order) => ({
-      "Tracking Code": order.trackingCode ?? "",
-      Customer: order.customer.name ?? "",
-      Payment: order?.payment ?? "N/A",
-      Total: order?.finalPrice,
-      "Pickup address": Number(order?.pickupAddress?.city),
-      "Delivery Address": Number(order?.deliveryAddress?.city),
-      "Fulfillment Type": order?.fulfillmentType,
-      Status: order?.status,
-    }));
+  const handleExport = async () => {
+    try {
+      setIsExportLoading(true);
+      exportToExcel("orders", orders, (order) => ({
+        "Tracking Code": order.trackingCode ?? "",
+        Customer: order.customer.name ?? "",
+        Payment: order?.payment ?? "N/A",
+        Total: order?.finalPrice,
+        "Pickup address": Number(order?.pickupAddress?.city),
+        "Delivery Address": Number(order?.deliveryAddress?.city),
+        "Fulfillment Type": order?.fulfillmentType,
+        Status: order?.status,
+      }));
+      // Small delay to show loading state for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error: any) {
+      toast.error("Failed to export orders");
+      console.error(error);
+    } finally {
+      setIsExportLoading(false);
+    }
   };
 
   
-  const featchDriver= async (page = 1, limit = 10) => {
+  const fetchDriver = async (page = 1, limit = 10) => {
     try {
       setLoadingDriver(true);
 
-      const staffs = await api.get<any>(
+      const response = await api.get<any>(
         `/users/driver?search=all:${driverSearch}&page=${page}&pageSize=${limit}`
       );
-      setDriver(staffs.data.data?.drivers);
-      setPaginationDriver(staffs.data.pagination);
-      // toast.success(staffs.data.message);
+      setDriver(response.data.data?.drivers);
+      setPaginationDriver(response.data.pagination);
       setLoadingDriver(false);
     } catch (error: any) {
       setLoadingDriver(false);
@@ -354,12 +363,12 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
         error?.response?.data?.message ||
         "Something went wrong. Please try again.";
       toast.error(message);
-      console.error(error); // optional: log the full error
+      console.error(error);
     }
   };
 
   useEffect(() => {
-    featchDriver();
+    fetchDriver();
   }, [driverSearch]);
  
   return (
@@ -375,10 +384,20 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
             <Button
               variant="outline"
               onClick={handleExport}
+              disabled={isExportLoading || orders.length === 0}
               className="text-gray-600 bg-transparent"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Export
+              {isExportLoading ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </>
+              )}
             </Button>
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white !cursor-pointer"
@@ -512,7 +531,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                 </TableHead>
                 
                 <TableHead className="text-gray-600 font-medium">
-                  Fulfillment
+                  Service Mode
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
                   Status
@@ -523,9 +542,9 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                {loading && (
-                  <TableCell colSpan={11}>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={12}>
                     <div className="flex justify-center items-center py-8">
                       <Spinner className="h-6 w-6 text-blue-600 mr-2" />
                       <span className="text-gray-600 font-medium">
@@ -533,9 +552,19 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                       </span>
                     </div>
                   </TableCell>
-                )}
-              </TableRow>
-              {orders.map((order, index) => (
+                </TableRow>
+              ) : orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={12}>
+                    <div className="flex justify-center items-center py-8">
+                      <span className="text-gray-500 font-medium">
+                        No orders found
+                      </span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                orders.map((order, index) => (
                 <TableRow
                   key={index}
                   className="border-gray-100 hover:bg-gray-50 cursor-pointer"
@@ -560,8 +589,14 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                     </Button>
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {order.pickupDate}
-                  </TableCell>
+                      {order.pickupDate
+                        ? new Date(order.pickupDate).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : "-"}
+                    </TableCell>
                   <TableCell className="text-gray-900">
                     {order.customer.name}
                   </TableCell>
@@ -580,7 +615,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
-                    {order.finalPrice} ETB
+                    {order.finalPrice?.toFixed(2)} ETB
                   </TableCell>
                   <TableCell className="text-gray-600">
                     {order?.pickupAddress?.city}
@@ -652,8 +687,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                         className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // navigate(`/staff/edit/${member.id}`);
-                          setIsAcceptDropoffModal(true); //
+                          setIsAcceptDropoffModal(true);
                           setSelectedOrder(order);
                         }}
                       >
@@ -698,7 +732,8 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                     )} */}
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
           <TablePagination
@@ -729,14 +764,16 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
           className=" placeholder-gray-500 py-4 h-32 resize-none border rounded-md px-4 w-full"
         />
       </ConfirmationModal> */}
+      
 <ConfirmationModal
   isOpen={isDialogOpen}
   onClose={() => setIsDialogOpen(false)}
-  title="Approve Object"
-  description="Review and update the object information before approving."
-  onConfirm={selectedOrder?.fulfillmentType == "DROPOFF"?handleRequest:handleRequestTwon}
+  title="Request Approval"
+  description="Submit a request for approval. Please review the object information as needed before sending your request."
+  onConfirm={selectedOrder?.fulfillmentType == "DROPOFF"?handleRequest:handleRequestTwo}
   variant="info"
   confirmText="Request"
+  isLoading={isActionLoading}
 >
 {(selectedOrder?.fulfillmentType == "DROPOFF") &&<>
   {/* Weight */}
@@ -784,16 +821,16 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
   )}</>}
 
 </ConfirmationModal>
+
        <ConfirmationModal
-        isOpen={accpetDroppoffModal}
+        isOpen={acceptDropoffModal}
         onClose={() => setIsAcceptDropoffModal(false)}
-        title="Accpet Dropoff "
+        title="Accept Dropoff"
         description={`You are about to accept the drop-off for package with tracking code: ${selectedOrder?.trackingCode}. Please confirm this action.`}
         onConfirm={handleAcceptDropoff}
         variant="info"
         confirmText="Accept"
-
-        // loading={deleteLaoding}
+        isLoading={isActionLoading}
       >
         {/* <textarea
           value={reason}
@@ -812,7 +849,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
         onConfirm={handleAssignDriver}
         variant="info"
         confirmText="Assign"
-        isLoading={isApproveLoading}
+        isLoading={isActionLoading}
       >
         <div className="relative">
                     <Label className="mb-2">Driver *</Label>
@@ -857,31 +894,31 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                           </div>
                         )}
                         {driver.length > 0 ? (
-                          driver.map((manager) => (
+                          driver.map((driverItem) => (
                             <div
-                              key={manager.id}
+                              key={driverItem.id}
                               onClick={() =>
-                               {setSelectedDriver(manager)
-                               setDriverSearch(manager.name)}
+                               {setSelectedDriver(driverItem)
+                               setDriverSearch(driverItem.name || driverItem.user?.name || "")}
                               }
                               className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                             >
                               <div className="font-medium text-gray-900">
-                                {manager.name}
+                                {driverItem.name || driverItem.user?.name || "Unknown"}
                               </div>
                               <div className="text-sm text-gray-600">
-                                ID: {manager.id}
+                                ID: {driverItem.id}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {manager.email}
+                                {driverItem.email || driverItem.user?.email || ""}
                               </div>
                             </div>
                           ))
-                        ) : (
+                        ) : !loadingDriver ? (
                           <div className="px-4 py-3 text-gray-500 text-center">
-                            No managers found
+                            No drivers found
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     )}
                    

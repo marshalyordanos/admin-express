@@ -312,6 +312,7 @@ export default function Dispatch() {
   const [reason, setReason] = useState("");
   const [isApproveLoading, setIsApproveLoading] = useState(false);
   const [isRejectLoading, setIsRejectLoading] = useState(false);
+  const [isAssignCargoOfficerLoading, setIsAssignCargoOfficerLoading] = useState(false);
   const [showCargoOfficerDropdown, setShowCargoOfficerDropdown] = useState(false);
   const [selectedCargoOfficer,setSelectedCargoOfficer] = useState<any>(null)
   const [loadingCargoOfficer, setLoadingCargoOfficer] = useState(false);
@@ -570,18 +571,20 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
   }, [cargoOfficerSearch]);
   const handleAssignCargoOfficer = async () => {
     try {
-      setIsApproveLoading(true);
+      setIsAssignCargoOfficerLoading(true);
       const res = await api.post("/dispatch/assign-pickup", {
         orderId: selectedOrder?.id,
         driverId: selectedCargoOfficer?.id,
       });
       toast.success(res.data.message);
       featchOrders(currentPage, pageSize);
-      setIsCreateDriverModalOpen(false);
-      setIsApproveLoading(false);
+      setisAssignCargoOfficerModal(false);
+      setSelectedCargoOfficer(null);
+      setCargoOfficerSearch("");
+      setIsAssignCargoOfficerLoading(false);
     } catch (error: any) {
       toast.error(error?.response.data.message || "Something went wrong!");
-      setIsApproveLoading(false);
+      setIsAssignCargoOfficerLoading(false);
     }
   };
  
@@ -715,7 +718,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                     Shipping Scope
                   </TableHead>
                   <TableHead className="text-gray-600 font-medium">
-                    Fulfillment
+                    Service Mode
                   </TableHead>
                   <TableHead className="text-gray-600 font-medium">
                     Status
@@ -726,19 +729,29 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  {orderLoading && (
-                    <TableCell colSpan={11}>
+                {orderLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={12}>
                       <div className="flex justify-center items-center py-8">
                         <Spinner className="h-6 w-6 text-blue-600 mr-2" />
                         <span className="text-gray-600 font-medium">
-                          Loading Beanch data...
+                          Loading order data...
                         </span>
                       </div>
                     </TableCell>
-                  )}
-                </TableRow>
-                {orders.map((order, index) => (
+                  </TableRow>
+                ) : orders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={12}>
+                      <div className="flex justify-center items-center py-8">
+                        <span className="text-gray-500 font-medium">
+                          No orders found
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  orders.map((order, index) => (
                   <TableRow
                     key={index}
                     className="border-gray-100 hover:bg-gray-50 cursor-pointer"
@@ -763,7 +776,13 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                       </Button>
                     </TableCell>
                     <TableCell className="text-gray-600">
-                      {order.pickupDate}
+                      {order.pickupDate
+                        ? new Date(order.pickupDate).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-gray-900">
                       {order.customer.name}
@@ -783,7 +802,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium text-gray-900">
-                      {order.finalPrice} ETB
+                      {order.finalPrice?.toFixed(2)} ETB
                     </TableCell>
                     <TableCell className="text-gray-600">
                       {order?.pickupAddress?.city}
@@ -835,7 +854,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                           className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
                           disabled
                         >
-                          Wating for request
+                          Waiting for request
                         </Button>
                       ) :( (order.fulfillmentType == "PICKUP"||order.fulfillmentType == "DROPOFF") &&
                         order.status == "PENDING_APPROVAL")? (
@@ -866,7 +885,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                               // handleDispatchOrder(order);
                             }}
                           >
-                            Regect
+                            Reject
                           </Button>
                         </div>
                       ) : ( order.fulfillmentType == "DROPOFF" &&
@@ -914,7 +933,8 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                       
                     </TableCell>
                   </TableRow>
-                ))}
+                  ))
+                )}
               </TableBody>
             </Table>
             <TablePagination
@@ -1194,8 +1214,8 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
         <ConfirmationModal
           isOpen={approveModal}
           onClose={() => setApproveModal(false)}
-          title="Approve Staff Member"
-          description="Are you sure you want to Aprove this Order?"
+          title="Approve Order"
+          description="Are you sure you want to approve this order?"
           onConfirm={handleApprove}
           variant="info"
           confirmText="Approve"
@@ -1212,11 +1232,11 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
         <ConfirmationModal
           isOpen={rejectModal}
           onClose={() => setRejectModal(false)}
-          title="Reject Staff Member"
-          description="Are you sure you want to cancel this Order?."
+          title="Cancel Order"
+          description="Are you sure you want to cancel this order?"
           onConfirm={handleReject}
           variant="info"
-          confirmText="Regect"
+          confirmText="Reject"
           isLoading={isRejectLoading}
         >
           <textarea
@@ -1232,20 +1252,20 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
         isOpen={isAssignCargoOfficerModal}
         onClose={() => setisAssignCargoOfficerModal(false)}
         title="Assign Cargo Officer"
-        description=""
+        description="Select a cargo officer to assign for this order pickup."
         onConfirm={handleAssignCargoOfficer}
         variant="info"
         confirmText="Assign"
-        isLoading={isApproveLoading}
+        isLoading={isAssignCargoOfficerLoading}
       >
      <div>
      <div className="relative">
-      <p className=" px-2 py-2">Cargo Oficer</p>
+      <p className=" px-2 py-2">Cargo Officer</p>
                     {/* <Label className="mb-2">Driver *</Label> */}
                    <div className="relative">
                       <Input
                         // type="text"
-                        placeholder="Search driver "
+                        placeholder="Search cargo officer "
                         value={cargoOfficerSearch}
                         onChange={(e) => {
                           console.log(e.target.value);
@@ -1303,11 +1323,11 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                               </div>
                             </div>
                           ))
-                        ) : (
+                        ) : !loadingCargoOfficer ? (
                           <div className="px-4 py-3 text-gray-500 text-center">
-                            No managers found
+                            No cargo officers found
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     )} 
                    
