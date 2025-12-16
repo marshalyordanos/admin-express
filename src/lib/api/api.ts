@@ -22,8 +22,8 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 
 const api: AxiosInstance = axios.create({
   // baseURL: "https://localhost:10000/",
-  baseURL: "http://localhost:10000",
-  // baseURL: "https://test-courier.servehalflife.com",
+  // baseURL: "http://localhost:10000",
+  baseURL: "https://courier-app-production.up.railway.app",
 
   headers: {
     "Content-Type": "application/json",
