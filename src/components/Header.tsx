@@ -123,8 +123,8 @@ export default function Header() {
 
   return (
     <header
-      className={`bg-white font-text border-b border-gray px-3 sm:px-4 lg:px-6 flex justify-between items-center sticky top-0 z-15 ${
-        isCollapsed ? "py-3 sm:py-4" : "py-3 sm:py-4 lg:py-5"
+      className={`bg-white font-text border-b border-gray px-3 sm:px-4 lg:px-6 flex justify-between items-center fixed top-0 z-15 transition-all duration-300 ${
+        isCollapsed ? "py-3 sm:py-4 left-0 lg:left-20 right-0" : "py-3 sm:py-4 lg:py-5 left-0 lg:left-80 right-0"
       }`}
     >
       <div className="flex items-center gap-2 sm:gap-3">

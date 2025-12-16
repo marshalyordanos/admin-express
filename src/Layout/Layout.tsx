@@ -15,7 +15,7 @@ const SidebarLayout = () => {
         }`}
       >
         <Header />
-        <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 overflow-x-hidden max-w-full">
+        <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 overflow-x-hidden max-w-full pt-16 sm:pt-20 lg:pt-24">
           <Outlet />
         </div>
       </div>
