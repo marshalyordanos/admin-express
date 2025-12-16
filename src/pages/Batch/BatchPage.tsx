@@ -66,32 +66,28 @@ function BatchPage() {
     setPageSize(size);
     setCurrentPage(1);
   };
-
   const fetchBatches = async (page = 1, limit = 10) => {
     try {
       setLoading(true);
-      const response = await getBatches({
+      const response :any= await getBatches({
         page,
         pageSize: limit,
         search: searchText || undefined,
       });
-      console.log("Batches API Response:", response); // Debug log
-      // Ensure data is always an array - handle both response.data and direct array
-      const batchesData = Array.isArray(response.data)
-        ? response.data
-        : Array.isArray(response)
-        ? response
-        : [];
+
+      console.log("Batches API Response:", response);
+
+      // Backend shape:
+      // { success, message, data: { batches: Batch[], pagination: Pagination } }
+      const batchesData: any[] = response.data?.batches ?? [];
+      const paginationData: Pagination | null = response.data?.pagination ?? null;
+
       setBatches(batchesData);
-      setPagination(
-        response.pagination ||
-          (response as any).data?.pagination ||
-          null
-      );
+      setPagination(paginationData);
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
-      setBatches([]); // Reset to empty array on error
+      setBatches([]);
       const message =
         error?.response?.data?.message ||
         "Something went wrong. Please try again.";
@@ -451,7 +447,9 @@ function BatchPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() =>
-                              navigate(`/batch/details/${batch.id}`)
+                              navigate(`/batch/details/${batch.id}`, {
+                                state: { batch },
+                              })
                             }
                             className="flex items-center gap-1"
                           >

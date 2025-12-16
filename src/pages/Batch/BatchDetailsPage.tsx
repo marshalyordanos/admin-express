@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { IoArrowBack, IoAdd } from "react-icons/io5";
-import { getBatches, addOrdersToBatch, getCategorizedOrders } from "@/lib/api/batch";
+import {  addOrdersToBatch, getCategorizedOrders } from "@/lib/api/batch";
 import type { Batch, Order, CategorizedOrdersResponse } from "@/types/types";
 import toast from "react-hot-toast";
 import { Skeleton } from "antd";
@@ -16,6 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 function BatchDetailsPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const locationState = location.state as { batch?: Batch } | null;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -27,24 +29,27 @@ function BatchDetailsPage() {
   const [loadingOrders, setLoadingOrders] = useState(false);
 
   const fetchBatch = async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const response = await getBatches({ page: 1, pageSize: 1 });
-      const foundBatch = response.data.find((b) => b.id === id);
-      if (foundBatch) {
-        setBatch(foundBatch);
-      } else {
-        toast.error("Batch not found");
-        navigate("/batch");
-      }
+    // Prefer data passed via navigation state to avoid refetching
+    if (locationState?.batch) {
+      setBatch(locationState.batch);
       setLoading(false);
-    } catch (error: any) {
-      setLoading(false);
-      const message =
-        error?.response?.data?.message || "Failed to load batch";
-      toast.error(message);
+      return;
     }
+
+    // If there is no state (e.g. direct URL access), you can either:
+    // - redirect back, or
+    // - optionally fetch from backend.
+    // For now, just show an error and send user back to list.
+    if (!id) {
+      setLoading(false);
+      toast.error("Invalid batch id");
+      navigate("/batch");
+      return;
+    }
+
+    setLoading(false);
+    toast.error("Batch details not available. Please open from batch list.");
+    navigate("/batch");
   };
 
   const fetchCategorizedOrders = async () => {
