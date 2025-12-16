@@ -10,12 +10,20 @@ interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   trackingNumber: string;
+  title?: string;
+  description?: string;
+  trackingLabel?: string;
+  qrCodeLabel?: string;
 }
 
 export default function SuccessModal({
   isOpen,
   onClose,
   trackingNumber,
+  title = "Order Submitted Successfully!",
+  description = "Your order has been processed and is ready for pickup.",
+  trackingLabel = "Tracking Number",
+  qrCodeLabel = "Scan this QR code to track your order",
 }: SuccessModalProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
@@ -75,10 +83,10 @@ export default function SuccessModal({
             </div>
             <div>
               <CardTitle className="text-2xl font-bold text-gray-900">
-                Order Submitted Successfully!
+                {title}
               </CardTitle>
               <p className="text-gray-600 mt-2">
-                Your order has been processed and is ready for pickup.
+                {description}
               </p>
             </div>
           </div>
@@ -88,7 +96,7 @@ export default function SuccessModal({
           {/* Tracking Number */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-medium text-gray-900">Tracking Number</h3>
+              <h3 className="font-medium text-gray-900">{trackingLabel}</h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -124,7 +132,7 @@ export default function SuccessModal({
               )}
             </div>
             <p className="text-sm text-gray-500 mt-2">
-              Scan this QR code to track your order
+              {qrCodeLabel}
             </p>
           </div>
 

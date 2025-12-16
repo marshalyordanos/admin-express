@@ -90,7 +90,7 @@ export type ParcelCategory =
 
 export type ShipmentType = "PARCEL" | "CARRIER";
 
-export type ShippingScope = "REGIONAL" | "TOWN" | "INTERNATIONAL";
+export type ShippingScope = "REGIONAL" | "TOWN" | "INTERNATIONAL" | "IN_TOWN";
 
 export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED" | "ESCALATED";
 
@@ -108,7 +108,9 @@ export type DispatchStatus =
   | "AT_BRANCH"
   | "OUT_FOR_DELIVERY"
   | "COMPLETED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "ACCEPTED"
+  | "CLOSED";
 
 /** ───── Core Models ───── */
 export interface Role {
@@ -496,3 +498,128 @@ export interface AssignRoleToUserRequest {
   userId: string;
   roleId: string;
 }
+
+/** ───── Batch Management Types ───── */
+export interface BatchOrder {
+  id: string;
+  trackingCode: string;
+}
+
+export interface Batch {
+  id: string;
+  batchCode: string;
+  scope: "IN_TOWN" | "REGIONAL" | "INTERNATIONAL";
+  serviceType: ServiceType;
+  category: string[];
+  isFragile: boolean;
+  status: DispatchStatus;
+  originId: string;
+  destinationId: string;
+  notes?: string;
+  driverId?: string;
+  vehicleId?: string;
+  awbNumber?: string;
+  weight?: number;
+  orders: BatchOrder[];
+  officerId?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateBatchRequest {
+  // Backend currently expects "TOWN" for in-town scope,
+  // but we keep "IN_TOWN" for internal usage as well.
+  scope: "IN_TOWN" | "REGIONAL" | "INTERNATIONAL" | "TOWN";
+  serviceType: ServiceType;
+  // Can be a single category or multiple
+  category?: string | string[];
+  isFragile?: boolean;
+  originId: string;
+  destinationId: string;
+  notes?: string;
+  weight?: number;
+  orders: string[];
+  shipmentDate: string;
+}
+
+export interface AddOrdersToBatchRequest {
+  orders: string[];
+}
+
+export interface AssignOfficerRequest {
+  batchId: string[];
+  officerId: string;
+}
+
+export interface AcceptBatchRequest {
+  batchId: string[];
+  officerId: string;
+}
+
+export interface CategorizedOrdersResponse {
+  grouped: {
+    IN_TOWN?: {
+      SAME_DAY: Order[];
+      EXPRESS: Order[];
+      STANDARD: Order[];
+      OVERNIGHT: Order[];
+    };
+    TOWN?: {
+      SAME_DAY: Order[];
+      EXPRESS: Order[];
+      STANDARD: Order[];
+      OVERNIGHT: Order[];
+    };
+    REGIONAL: {
+      SAME_DAY: Order[];
+      EXPRESS: Order[];
+      STANDARD: Order[];
+      OVERNIGHT: Order[];
+    };
+    INTERNATIONAL: {
+      SAME_DAY: Order[];
+      EXPRESS: Order[];
+      STANDARD: Order[];
+      OVERNIGHT: Order[];
+    };
+  };
+  pagination: Pagination;
+}
+
+export interface BranchSortOrdersResponse {
+  unbatchedOrders: Order[];
+  inboundBatchOrders: Order[];
+  totalOrders: number;
+  categorized: {
+    IN_TOWN?: {
+      SAME_DAY: Order[];
+      EXPRESS: Order[];
+      STANDARD: Order[];
+      OVERNIGHT: Order[];
+    };
+    TOWN?: {
+      SAME_DAY: Order[];
+      EXPRESS: Order[];
+      STANDARD: Order[];
+      OVERNIGHT: Order[];
+    };
+    REGIONAL: {
+      SAME_DAY: Order[];
+      EXPRESS: Order[];
+      STANDARD: Order[];
+      OVERNIGHT: Order[];
+    };
+    INTERNATIONAL: {
+      SAME_DAY: Order[];
+      EXPRESS: Order[];
+      STANDARD: Order[];
+      OVERNIGHT: Order[];
+    };
+  };
+}
+
+export type BatchDetailResponse = ApiResponse<Batch>;
+export type BatchListResponse = PaginatedResponse<Batch>;
+export type CategorizedOrdersApiResponse =
+  ApiResponse<CategorizedOrdersResponse>;
+export type BranchSortOrdersApiResponse = ApiResponse<BranchSortOrdersResponse>;

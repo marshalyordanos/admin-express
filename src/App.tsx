@@ -13,6 +13,10 @@ import OrdersPage from "./pages/orders/OrdersPage";
 import CreateOrder from "./features/orders/components/CreateOrder";
 import OrderDetails from "./features/orders/components/OrderDetails";
 import DispatchPage from "./pages/DispatchPage";
+import BatchPage from "./pages/Batch/BatchPage";
+import CreateBatchPage from "./pages/Batch/CreateBatchPage";
+import BatchDetailsPage from "./pages/Batch/BatchDetailsPage";
+import OfficerBatchesPage from "./pages/Batch/OfficerBatchesPage";
 import FleetPage from "./pages/Fleet/FleetPage";
 import CreateVehiclePage from "./pages/Fleet/CreateVehiclePage";
 import EditVehiclePage from "./pages/Fleet/EditVehiclePage";
@@ -220,6 +224,38 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredPermission={Permission.DISPATCH}>
                     <DispatchPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batch"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.DISPATCH}>
+                    <BatchPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batch/create"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.DISPATCH}>
+                    <CreateBatchPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batch/details/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.DISPATCH}>
+                    <BatchDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batch/officer"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.DISPATCH}>
+                    <OfficerBatchesPage />
                   </ProtectedRoute>
                 }
               />

@@ -7,6 +7,7 @@ import {
   FaTruckLoading,
   FaLock,
   FaShieldAlt,
+  FaBoxes,
 } from "react-icons/fa";
 import { IoPricetags } from "react-icons/io5";
 import { IoDocumentText } from "react-icons/io5";
@@ -41,6 +42,12 @@ const menuItems = [
     name: "Dispatch Management",
     path: "/dispatch",
     icon: <FaExchangeAlt />,
+    permission: Permission.DISPATCH,
+  },
+  {
+    name: "Batch Management",
+    path: "/batch",
+    icon: <FaBoxes />,
     permission: Permission.DISPATCH,
   },
   {
