@@ -613,7 +613,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                       const mockPayment = statuses[Math.floor(Math.random() * statuses.length)];
                       return (
                         <Badge
-                          variant={mockPayment.variant}
+                          // variant={mockPayment.variant}
                           className={mockPayment.color}
                         >
                           ● {mockPayment.label}
