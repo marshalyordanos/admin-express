@@ -602,18 +602,24 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                     {order.customer.name}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        order.payment === "Success" ? "default" : "secondary"
-                      }
-                      className={
-                        order.payment === "Success"
-                          ? "bg-green-100 text-green-700 hover:bg-green-100"
-                          : "bg-orange-100 text-orange-700 hover:bg-orange-100"
-                      }
-                    >
-                      ● {order?.payment?.status}
-                    </Badge>
+                    {(() => {
+                      // Mock payment statuses
+                      const statuses = [
+                        { label: "Pending", color: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100", variant: "secondary" },
+                        { label: "Success", color: "bg-green-100 text-green-700 hover:bg-green-100", variant: "default" },
+                        { label: "Failed",  color: "bg-red-100 text-red-700 hover:bg-red-100", variant: "secondary" }
+                      ];
+                      // Pick random status each render
+                      const mockPayment = statuses[Math.floor(Math.random() * statuses.length)];
+                      return (
+                        <Badge
+                          variant={mockPayment.variant}
+                          className={mockPayment.color}
+                        >
+                          ● {mockPayment.label}
+                        </Badge>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
                     {order.finalPrice?.toFixed(2)} ETB
