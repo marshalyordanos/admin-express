@@ -681,7 +681,8 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
         {/* Orders Table */}
         {activeTab === "orders" && (
           <Card className="bg-white">
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow className="border-gray-200">
                   <TableHead className="w-12">
@@ -937,6 +938,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                 )}
               </TableBody>
             </Table>
+            </div>
             <TablePagination
               currentPage={currentPage}
               totalPages={orderPagination?.totalPages || 1}

@@ -243,7 +243,8 @@ export default function StaffMain() {
 
         {/* Staff Table */}
         <Card className="bg-white">
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow className="border-gray-200">
                 <TableHead className="w-12">
@@ -392,6 +393,7 @@ export default function StaffMain() {
               ))}
             </TableBody>
           </Table>
+          </div>
           <TablePagination
             currentPage={currentPage}
             totalPages={totalPages}

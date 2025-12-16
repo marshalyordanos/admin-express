@@ -265,7 +265,8 @@ export default function BranchMain() {
 
         {/* Branches Table */}
         <Card className="bg-white">
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow className="border-gray-200">
                 <TableHead className="w-12">
@@ -428,6 +429,7 @@ export default function BranchMain() {
               ))}
             </TableBody>
           </Table>
+          </div>
           <TablePagination
             currentPage={currentPage}
             totalPages={totalPages}

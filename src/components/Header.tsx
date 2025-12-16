@@ -2,11 +2,124 @@ import { FaBell, FaBars } from "react-icons/fa";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { toggleSidebar } from "../features/sidebar/sidebarSlice";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Drawer, List, Badge, Empty, Button } from "antd";
+import { BellOutlined, CheckOutlined } from "@ant-design/icons";
+import type { NotificationItem } from "../types/types";
+
+// Mock notification data
+const mockNotifications: NotificationItem[] = [
+  {
+    id: "1",
+    title: "New Order Assigned",
+    message: "Order #ORD-2024-001 has been assigned to driver John Doe",
+    type: "info",
+    timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+    read: false,
+  },
+  {
+    id: "2",
+    title: "Order Delivered",
+    message: "Order #ORD-2024-002 has been successfully delivered",
+    type: "success",
+    timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+    read: false,
+  },
+  {
+    id: "3",
+    title: "Driver Request Pending",
+    message: "Driver Michael Smith has requested assignment for Order #ORD-2024-003",
+    type: "warning",
+    timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+    read: false,
+  },
+  {
+    id: "4",
+    title: "System Maintenance",
+    message: "Scheduled maintenance will occur tonight from 11 PM to 1 AM",
+    type: "info",
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    read: true,
+  },
+  {
+    id: "5",
+    title: "Low Stock Alert",
+    message: "Fuel level is below 20% for Vehicle #VEH-001",
+    type: "warning",
+    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+    read: true,
+  },
+  {
+    id: "6",
+    title: "Payment Received",
+    message: "Payment of $500 received for Order #ORD-2024-004",
+    type: "success",
+    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+    read: true,
+  },
+  {
+    id: "7",
+    title: "Order Cancelled",
+    message: "Order #ORD-2024-005 has been cancelled by customer",
+    type: "error",
+    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
+    read: false,
+  },
+  {
+    id: "8",
+    title: "New Customer Registered",
+    message: "ABC Corporation has been registered as a new corporate client",
+    type: "info",
+    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+    read: true,
+  },
+];
 
 export default function Header() {
   const isCollapsed = useAppSelector((state) => state.sidebar.isCollapsed);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+
+  const formatTime = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case "success":
+        return "text-green-600";
+      case "warning":
+        return "text-yellow-600";
+      case "error":
+        return "text-red-600";
+      default:
+        return "text-blue-600";
+    }
+  };
 
   return (
     <header
@@ -28,10 +141,14 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-        <button className="p-1.5 sm:p-2 rounded-lg text-black relative hover:bg-gray-100 transition-colors">
-          <FaBell className="text-sm sm:text-base" />
-          <span className="absolute top-0 right-0 w-2 h-2 bg-red rounded-full"></span>
-        </button>
+        <Badge count={unreadCount} offset={[-5, 5]} style={{ backgroundColor: "#e62727" }}>
+          <button
+            onClick={() => setOpen(true)}
+            className="p-1.5 sm:p-2 rounded-lg text-black hover:bg-gray-100 transition-colors"
+          >
+            <FaBell className="text-sm sm:text-base" />
+          </button>
+        </Badge>
 
         <div className="h-5 sm:h-6 w-px bg-gray-300"></div>
 
@@ -75,6 +192,85 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      <Drawer
+        title={
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <BellOutlined className="text-blue-600" />
+              <span className="font-semibold text-lg">Notifications</span>
+              {unreadCount > 0 && (
+                <Badge count={unreadCount} style={{ backgroundColor: "#e62727" }} />
+              )}
+            </div>
+            {unreadCount > 0 && (
+              <Button
+                type="text"
+                size="small"
+                onClick={handleMarkAllAsRead}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                Mark all as read
+              </Button>
+            )}
+          </div>
+        }
+        placement="right"
+        onClose={() => setOpen(false)}
+        open={open}
+        width={400}
+        className="notification-drawer"
+        styles={{
+          body: { padding: "16px" }
+        }}
+      >
+        {notifications.length === 0 ? (
+          <Empty
+            description="No notifications"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        ) : (
+          <List
+            itemLayout="vertical"
+            dataSource={notifications}
+            renderItem={(item) => (
+              <List.Item
+                className={`px-4 py-3 mb-2 rounded-lg border transition-all cursor-pointer hover:bg-gray-50 ${
+                  !item.read ? "bg-blue-50 border-blue-200" : "bg-white border-gray-200"
+                }`}
+                onClick={() => !item.read && handleMarkAsRead(item.id)}
+              >
+                <div className="flex items-start  px-2 justify-between w-full">
+                  <div className="flex-1 pr-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`font-semibold text-sm ${getNotificationColor(item.type)}`}>
+                        {item.title}
+                      </span>
+                      {!item.read && (
+                        <span className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2 leading-relaxed">{item.message}</p>
+                    <span className="text-xs text-gray-400">{formatTime(item.timestamp)}</span>
+                  </div>
+                  {!item.read && (
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<CheckOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsRead(item.id);
+                      }}
+                      className="text-green-600 hover:text-green-700 flex-shrink-0"
+                    />
+                  )}
+                </div>
+              </List.Item>
+            )}
+          />
+        )}
+      </Drawer>
     </header>
   );
 }

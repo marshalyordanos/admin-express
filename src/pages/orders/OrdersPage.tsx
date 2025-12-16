@@ -493,7 +493,8 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
 
         {/* Orders Table */}
         <Card className="bg-white">
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow className="border-gray-200">
                 <TableHead className="w-12">
@@ -736,6 +737,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
               )}
             </TableBody>
           </Table>
+          </div>
           <TablePagination
             currentPage={currentPage}
             totalPages={pagination?.totalPages || 1}

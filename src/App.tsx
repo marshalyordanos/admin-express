@@ -34,6 +34,11 @@ import ComplaintsPage from "./pages/Customer/ComplaintsPage";
 import AddPointsPage from "./pages/Customer/AddPointsPage";
 import CreateComplaintPage from "./pages/Customer/CreateComplaintPage";
 import PricingPage from "./pages/PricingPage";
+import RolesPage from "./pages/Roles/RolesPage";
+import PermissionsPage from "./pages/Roles/PermissionsPage";
+import CreateRolePage from "./pages/Roles/CreateRolePage";
+import CreatePermissionPage from "./pages/Roles/CreatePermissionPage";
+import RoleDetailsPage from "./pages/Roles/RoleDetailsPage";
 import TownPricingPage from "./pages/Pricing/TownPricingPage";
 import RegionalPricingPage from "./pages/Pricing/RegionalPricingPage";
 import InternationalPricingPage from "./pages/Pricing/InternationalPricingPage";
@@ -397,6 +402,62 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredPermission={Permission.PRICING}>
                     <InternationalPricingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/roles"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ROLE}>
+                    <RolesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/roles/create"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ROLE}>
+                    <CreateRolePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/roles/edit/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ROLE}>
+                    <CreateRolePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/roles/details/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ROLE}>
+                    <RoleDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/permissions"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ROLE}>
+                    <PermissionsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/permissions/create"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ROLE}>
+                    <CreatePermissionPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/permissions/edit/:id"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.ROLE}>
+                    <CreatePermissionPage />
                   </ProtectedRoute>
                 }
               />

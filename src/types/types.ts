@@ -410,3 +410,89 @@ export interface GenericResponse {
   message: string;
   data?: any;
 }
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  timestamp: Date;
+  read: boolean;
+}
+
+// Role Management Types
+export interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RolePermission {
+  id: string;
+  permission: {
+    id: string;
+    resource: string;
+    description?: string;
+  };
+  createAction: boolean;
+  readAction: boolean;
+  updateAction: boolean;
+  deleteAction: boolean;
+  scope: string[];
+}
+
+export interface RoleWithPermissions extends Role {
+  rolePermissions: RolePermission[];
+}
+
+export type RoleListResponse = PaginatedResponse<Role>;
+export type RoleDetailResponse = ApiResponse<RoleWithPermissions>;
+export type RoleResponse = ApiResponse<Role>;
+
+// Permission Management Types (Access Control - separate from Role Permission models)
+export interface AccessControlPermission {
+  id: string;
+  resource: string;
+  description?: string;
+  createdAt: string;
+}
+
+export type AccessControlPermissionListResponse =
+  PaginatedResponse<AccessControlPermission>;
+export type AccessControlPermissionResponse =
+  ApiResponse<AccessControlPermission>;
+
+// Role-Permission Assignment Types
+export interface AssignPermissionRequest {
+  permissionId: string;
+  createAction: boolean;
+  readAction: boolean;
+  updateAction: boolean;
+  deleteAction: boolean;
+  scopes: string[];
+}
+
+export interface AssignPermissionsToRoleRequest {
+  roleId: string;
+  permissions: AssignPermissionRequest[];
+}
+
+export interface UpdatePermissionActionRequest {
+  permissionId: string;
+  createAction: boolean;
+  readAction: boolean;
+  updateAction: boolean;
+  deleteAction: boolean;
+  scopes: string[];
+}
+
+export interface RemovePermissionRequest {
+  permissionId: string;
+}
+
+export interface AssignRoleToUserRequest {
+  userId: string;
+  roleId: string;
+}

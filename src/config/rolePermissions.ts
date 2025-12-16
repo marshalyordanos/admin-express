@@ -22,6 +22,7 @@ export const Permission = {
   DISPATCH: "dispatch",
   PRICING: "pricing",
   REPORT: "report",
+  ROLE: "role",
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];
@@ -38,6 +39,7 @@ export const rolePermissions: Record<string, Permission[]> = {
     Permission.DISPATCH,
     Permission.PRICING,
     Permission.REPORT,
+    Permission.ROLE,
   ],
   [RoleName.HR_MANAGER]: [
     Permission.DASHBOARD,

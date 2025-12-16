@@ -323,7 +323,8 @@ function StaffPage() {
 
         {/* Staff Table */}
         <Card className="bg-white">
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow className="border-gray-200">
                 <TableHead className="w-12">
@@ -493,6 +494,7 @@ function StaffPage() {
             </TableBody>
             <TableBody></TableBody>
           </Table>
+          </div>
           <TablePagination
             currentPage={currentPage}
             totalPages={pagination?.totalPages||1}

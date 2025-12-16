@@ -5,6 +5,8 @@ import {
   FaCodeBranch,
   FaUsersCog,
   FaTruckLoading,
+  FaLock,
+  FaShieldAlt,
 } from "react-icons/fa";
 import { IoPricetags } from "react-icons/io5";
 import { IoDocumentText } from "react-icons/io5";
@@ -64,6 +66,18 @@ const menuItems = [
     path: "/report",
     icon: <IoDocumentText />,
     permission: Permission.REPORT, // Can be seen by all
+  },
+  {
+    name: "Roles",
+    path: "/roles",
+    icon: <FaLock />,
+    permission: Permission.ROLE,
+  },
+  {
+    name: "Permissions",
+    path: "/permissions",
+    icon: <FaShieldAlt />,
+    permission: Permission.ROLE,
   },
 
   // {
