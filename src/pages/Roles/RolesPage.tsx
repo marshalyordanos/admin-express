@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Search, Download, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -109,10 +109,14 @@ function RolesPage() {
         "Role ID": role.id,
         Name: role.name,
         Description: role.description || "",
-        "Created At": new Date(role.createdAt).toLocaleDateString(),
-        "Updated At": new Date(role.updatedAt).toLocaleDateString(),
+        "Created At": role.createdAt
+          ? new Date(role.createdAt).toLocaleDateString()
+          : "",
+        "Updated At": role.updatedAt
+          ? new Date(role.updatedAt).toLocaleDateString()
+          : "",
       }));
-      exportToExcel(data, "roles");
+      exportToExcel("roles", data);
       toast.success("Roles exported successfully");
     } catch (error: any) {
       toast.error("Failed to export roles");
@@ -238,10 +242,14 @@ function RolesPage() {
                       {role.description || "-"}
                     </TableCell>
                     <TableCell className="text-gray-600">
-                      {new Date(role.createdAt).toLocaleDateString()}
+                      {role.createdAt
+                        ? new Date(role.createdAt).toLocaleDateString()
+                        : ""}
                     </TableCell>
                     <TableCell className="text-gray-600">
-                      {new Date(role.updatedAt).toLocaleDateString()}
+                      {role.updatedAt
+                        ? new Date(role.updatedAt).toLocaleDateString()
+                        : ""}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">

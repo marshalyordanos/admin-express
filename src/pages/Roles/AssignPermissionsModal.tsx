@@ -17,7 +17,6 @@ import toast from "react-hot-toast";
 import type {
   AccessControlPermission,
   AccessControlPermissionListResponse,
-  RoleWithPermissions,
   RoleDetailResponse,
   AssignPermissionsToRoleRequest,
   AssignPermissionRequest,
@@ -42,7 +41,6 @@ export default function AssignPermissionsModal({
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [allPermissions, setAllPermissions] = useState<AccessControlPermission[]>([]);
-  const [role, setRole] = useState<RoleWithPermissions | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<
     Map<string, AssignPermissionRequest>
   >(new Map());
@@ -73,8 +71,6 @@ export default function AssignPermissionsModal({
       const response = await api.get<RoleDetailResponse>(
         `/access-control/roles/${roleId}`
       );
-      setRole(response.data.data);
-      
       // Initialize selected permissions from existing role permissions
       const initialPermissions = new Map<string, AssignPermissionRequest>();
       if (response.data.data.rolePermissions) {

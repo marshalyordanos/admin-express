@@ -19,7 +19,7 @@ import {
   IoPhonePortraitOutline,
   IoPodium,
 } from "react-icons/io5";
-import type { Order, Pagination } from "@/types/types";
+import type { Order } from "@/types/types";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
 
@@ -27,13 +27,9 @@ import toast from "react-hot-toast";
 interface DispatchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  orderId: string;
-  customerName: string;
-  deliveryAddress: string;
-  priority: string;
-  serviceType: string;
+  // Derived from order, so no need to pass separately
   onDispatch: (driverId: string, notes?: string) => void;
-  order:Order
+  order: Order;
 }
 
 const getStatusColor = (status: string) => {
@@ -52,9 +48,6 @@ const getStatusColor = (status: string) => {
 function DispatchModal({
   isOpen,
   onClose,
-  orderId,
-  customerName,
- 
   order,
 }: DispatchModalProps) {
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
@@ -64,7 +57,6 @@ function DispatchModal({
   const [loading, setLoading] = useState(false);
   const [driverSearch, setDriverSearch] = useState("");
   // const [showDriverDropdown, setShowDriverDropdown] = useState(false);
-  const [paginationDriver, setPaginationDriver] = useState<Pagination | null>(null);
   const [loadingDriver, setLoadingDriver] = useState(false);
   const [driver, setDriver] = useState<any[]>( [
     // {
@@ -185,8 +177,6 @@ function DispatchModal({
     //   }
     // }
   ]);
-  const [paginationExternalDriver, setPaginationExternalDriver] = useState<Pagination | null>(null);
-
   // Reset selections when switching tabs
   useEffect(() => {
     if (activeTab === "internal") {
@@ -238,10 +228,7 @@ function DispatchModal({
         
         toast.success(res.data.message || "Order dispatched successfully");
         
-        if (res.data.data) {
-          setPaginationDriver(res.data.pagination);
-        }
-        
+        // Optionally handle pagination if needed in the future
         // Reset form
         setSelectedDriver(null);
         setDispatchNotes("");
@@ -282,7 +269,6 @@ function DispatchModal({
       
      if(res.data.data){
       setDriver(res.data.data);
-      setPaginationDriver(res.data.pagination);
      }
       setLoadingDriver(false);
     } catch (error: any) {
@@ -310,7 +296,6 @@ function DispatchModal({
         `maps/external/nearby-drivers?lat=9.0079232&lon=38.7678208&radius=232`
       );
       setExternalDriver(res.data.data);
-      setPaginationExternalDriver(res.data.pagination);
       setLoadingExternalDriver(false);
     } catch (error: any) {
       setLoadingExternalDriver(false);

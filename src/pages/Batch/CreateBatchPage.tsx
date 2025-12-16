@@ -18,13 +18,19 @@ import {
 import { IoArrowBack, IoAdd, IoRemove } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { getCategorizedOrders, createBatch } from "@/lib/api/batch";
-import type { Order, CategorizedOrdersResponse } from "@/types/types";
+import api from "@/lib/api/api";
+import type {
+  Order,
+  CategorizedOrdersResponse,
+  Branch,
+  BranchListResponse,
+} from "@/types/types";
 import toast from "react-hot-toast";
 import { Skeleton } from "antd";
 import { Spinner } from "@/utils/spinner";
 import SuccessModal from "@/components/common/SuccessModal";
 
-const SCOPES = ["IN_TOWN", "REGIONAL", "INTERNATIONAL"] as const;
+const SCOPES = ["TOWN", "REGIONAL", "INTERNATIONAL"] as const;
 const SERVICE_TYPES = ["SAME_DAY", "EXPRESS", "STANDARD", "OVERNIGHT"] as const;
 
 function CreateBatchPage() {
@@ -43,12 +49,13 @@ function CreateBatchPage() {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [category, setCategory] = useState<string[]>([]);
   const [categoryInput, setCategoryInput] = useState("");
-  const [isFragile, setIsFragile] = useState(false);
   const [notes, setNotes] = useState("");
-  const [weight, setWeight] = useState("");
   const [shipmentDate, setShipmentDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
+  const [destinationBranchId, setDestinationBranchId] = useState("");
 
   const fetchCategorizedOrders = async () => {
     try {
@@ -65,8 +72,26 @@ function CreateBatchPage() {
     }
   };
 
+  const fetchBranches = async () => {
+    try {
+      setLoadingBranches(true);
+      const response = await api.get<BranchListResponse>(
+        `/branch?page=${1}&pageSize=${50}`
+      );
+      setBranches(response.data.data);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        "Failed to load branches";
+      toast.error(message);
+    } finally {
+      setLoadingBranches(false);
+    }
+  };
+
   useEffect(() => {
     fetchCategorizedOrders();
+    fetchBranches();
   }, []);
 
   const handleOrderToggle = (orderId: string) => {
@@ -105,8 +130,8 @@ function CreateBatchPage() {
     if (!categorizedOrders || !selectedScope || !selectedServiceType) {
       return [];
     }
-    // Handle both "TOWN" and "IN_TOWN" - API returns "TOWN" but we use "IN_TOWN" for batch creation
-    const scopeKey = selectedScope === "IN_TOWN" ? "TOWN" : selectedScope;
+    // API returns "TOWN" for in-town orders
+    const scopeKey = selectedScope === "TOWN" ? "TOWN" : selectedScope;
     const scopeData = categorizedOrders.grouped[scopeKey as keyof typeof categorizedOrders.grouped];
     return scopeData?.[selectedServiceType] || [];
   };
@@ -116,7 +141,7 @@ function CreateBatchPage() {
     if (!categorizedOrders) return [];
     const available: string[] = [];
     if (categorizedOrders.grouped.TOWN || categorizedOrders.grouped.IN_TOWN) {
-      available.push("IN_TOWN");
+      available.push("TOWN");
     }
     if (categorizedOrders.grouped.REGIONAL) {
       available.push("REGIONAL");
@@ -125,6 +150,29 @@ function CreateBatchPage() {
       available.push("INTERNATIONAL");
     }
     return available;
+  };
+
+  // Get order count for a specific scope (across all service types)
+  const getScopeOrderCount = (scope: string): number => {
+    if (!categorizedOrders) return 0;
+    const scopeKey = scope === "TOWN" ? "TOWN" : scope;
+    const scopeData = categorizedOrders.grouped[scopeKey as keyof typeof categorizedOrders.grouped];
+    if (!scopeData) return 0;
+    
+    let total = 0;
+    SERVICE_TYPES.forEach((serviceType) => {
+      total += (scopeData[serviceType]?.length || 0);
+    });
+    return total;
+  };
+
+  // Get order count for a specific service type within selected scope
+  const getServiceTypeOrderCount = (serviceType: string): number => {
+    if (!categorizedOrders || !selectedScope) return 0;
+    const scopeKey = selectedScope === "TOWN" ? "TOWN" : selectedScope;
+    const scopeData = categorizedOrders.grouped[scopeKey as keyof typeof categorizedOrders.grouped];
+    if (!scopeData) return 0;
+    return scopeData[serviceType as keyof typeof scopeData]?.length || 0;
   };
 
   const handleSubmit = async () => {
@@ -138,6 +186,11 @@ function CreateBatchPage() {
       return;
     }
 
+    if (!destinationBranchId) {
+      toast.error("Please select destination branch");
+      return;
+    }
+
     // Resolve origin and destination automatically from the first selected order
     const ordersForSelection = getOrdersForSelection();
     const firstSelectedOrder = ordersForSelection.find(
@@ -148,9 +201,30 @@ function CreateBatchPage() {
       toast.error("Unable to resolve addresses from selected order");
       return;
     }
+    // Use the branch of the first selected order as origin
+    const originId =
+      // Prefer explicit branchId if present on the order
+      (firstSelectedOrder as any).branchId ||
+      // Fallback to nested branch object if available
+      (firstSelectedOrder as any).branch?.id;
 
-    const originId = firstSelectedOrder.pickupAddressId;
-    const destinationId = firstSelectedOrder.deliveryAddressId;
+    if (!originId) {
+      toast.error("Unable to resolve origin branch from selected order");
+      return;
+    }
+
+    const destinationId = destinationBranchId;
+
+    // Calculate total weight from selected orders
+    const selectedOrdersList = ordersForSelection.filter((o) =>
+      selectedOrders.includes(o.id)
+    );
+    const totalWeight = selectedOrdersList.reduce(
+      (sum, o) => sum + (o.weight || 0),
+      0
+    );
+    // Batch is fragile if any selected order is fragile
+    const hasFragileItem = selectedOrdersList.some((o) => o.isFragile);
 
     if (!shipmentDate) {
       toast.error("Please select a shipment date");
@@ -160,8 +234,7 @@ function CreateBatchPage() {
     try {
       setSubmitting(true);
       const batchData = {
-        // Backend expects "TOWN" instead of "IN_TOWN"
-        scope: selectedScope === "IN_TOWN" ? ("TOWN" as const) : selectedScope,
+        scope: selectedScope,
         serviceType: selectedServiceType,
         // If user didn't manually add category, derive from first order if available
         category:
@@ -171,11 +244,11 @@ function CreateBatchPage() {
               firstSelectedOrder.category.length > 0
             ? firstSelectedOrder.category
             : undefined,
-        isFragile,
+        isFragile: hasFragileItem,
         originId,
         destinationId,
         notes: notes || undefined,
-        weight: weight ? parseFloat(weight) : undefined,
+        weight: totalWeight || undefined,
         orders: selectedOrders,
         shipmentDate,
       };
@@ -204,6 +277,7 @@ function CreateBatchPage() {
   const selectedOrdersData = ordersForSelection.filter((o) =>
     selectedOrders.includes(o.id)
   );
+  const batchIsFragile = selectedOrdersData.some((o) => o.isFragile);
 
   return (
     <div className="space-y-6">
@@ -253,16 +327,50 @@ function CreateBatchPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {getAvailableScopes().length > 0
-                        ? getAvailableScopes().map((scope) => (
-                            <SelectItem key={scope} value={scope}>
-                              {scope === "IN_TOWN" ? "IN TOWN" : scope.replace("_", " ")}
-                            </SelectItem>
-                          ))
-                        : SCOPES.map((scope) => (
-                            <SelectItem key={scope} value={scope}>
-                              {scope === "IN_TOWN" ? "IN TOWN" : scope.replace("_", " ")}
-                            </SelectItem>
-                          ))}
+                        ? getAvailableScopes().map((scope) => {
+                            const count = getScopeOrderCount(scope);
+                            return (
+                              <SelectItem
+                                key={scope}
+                                value={scope}
+                                disabled={count === 0}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <span>
+                                    {scope === "TOWN" ? "IN TOWN" : scope.replace("_", " ")}
+                                  </span>
+                                  <Badge
+                                    variant={count > 0 ? "default" : "secondary"}
+                                    className="ml-2"
+                                  >
+                                    {count} {count === 1 ? "order" : "orders"}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            );
+                          })
+                        : SCOPES.map((scope) => {
+                            const count = getScopeOrderCount(scope);
+                            return (
+                              <SelectItem
+                                key={scope}
+                                value={scope}
+                                disabled={count === 0}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <span>
+                                    {scope === "TOWN" ? "IN TOWN" : scope.replace("_", " ")}
+                                  </span>
+                                  <Badge
+                                    variant={count > 0 ? "default" : "secondary"}
+                                    className="ml-2"
+                                  >
+                                    {count} {count === 1 ? "order" : "orders"}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -281,11 +389,26 @@ function CreateBatchPage() {
                         <SelectValue placeholder="Select service type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {SERVICE_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type.replace("_", " ")}
-                          </SelectItem>
-                        ))}
+                        {SERVICE_TYPES.map((type) => {
+                          const count = getServiceTypeOrderCount(type);
+                          return (
+                            <SelectItem
+                              key={type}
+                              value={type}
+                              disabled={count === 0}
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <span>{type.replace("_", " ")}</span>
+                                <Badge
+                                  variant={count > 0 ? "default" : "secondary"}
+                                  className="ml-2"
+                                >
+                                  {count} {count === 1 ? "order" : "orders"}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
@@ -390,14 +513,33 @@ function CreateBatchPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Weight (kg)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    placeholder="Total batch weight"
-                  />
+                  <Label>Destination Branch *</Label>
+                  <Select
+                    value={destinationBranchId}
+                    onValueChange={(value) => setDestinationBranchId(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select destination branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.id}>
+                          {branch.name}{" "}
+                          {branch.location
+                            ? `- ${branch.location}`
+                            : `(${branch.id})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {loadingBranches && (
+                    <p className="text-xs text-gray-500">Loading branches...</p>
+                  )}
+                  {!loadingBranches && branches.length === 0 && (
+                    <p className="text-xs text-red-500">
+                      No branches available. Please create a branch first.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -443,14 +585,17 @@ function CreateBatchPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={isFragile}
-                    onCheckedChange={(checked) =>
-                      setIsFragile(checked as boolean)
-                    }
-                  />
-                  <Label>Fragile Items</Label>
+                <div className="space-y-1">
+                  <Label>Fragile Status</Label>
+                  {batchIsFragile ? (
+                    <Badge variant="destructive" className="text-xs">
+                      Contains fragile items
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">
+                      No fragile items
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="space-y-2">

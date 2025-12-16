@@ -488,19 +488,7 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
     setIsCreateDriverModalOpen(true);
   };
 
-  const handleSaveDriver = (driverData: {
-    name: string;
-    email: string;
-    phone: string;
-    vehicle: string;
-    vehicleType: string;
-    capacity: number;
-    licenseNumber: string;
-    address: string;
-    city: string;
-    status: string;
-    notes: string;
-  }) => {
+  const handleSaveDriver = (driverData: unknown) => {
     console.log("Creating new driver:", driverData);
     // Handle driver creation logic here
     setIsCreateDriverModalOpen(false);
@@ -709,9 +697,9 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                   <TableHead className="text-gray-600 font-medium">
                     Pickup address
                   </TableHead>
-                  {/* <TableHead className="text-gray-600 font-medium">
+                  <TableHead className="text-gray-600 font-medium">
                Items
-             </TableHead> */}
+             </TableHead>
                   <TableHead className="text-gray-600 font-medium">
                     Destination
                   </TableHead>
@@ -808,10 +796,9 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                     <TableCell className="text-gray-600">
                       {order?.pickupAddress?.city}
                     </TableCell>
-                    {/* <TableCell className="text-gray-600">
-               2 Items
-
-               </TableCell> */}
+                    <TableCell className="text-gray-600">
+                      {(order as any).quantity ?? 0}
+                    </TableCell>
                     <TableCell className="text-gray-600">
                       {order?.deliveryAddress?.city}
                     </TableCell>
@@ -1194,17 +1181,14 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
         }
 
         {/* Dispatch Modal */}
-        <DispatchModal
-          isOpen={isDispatchModalOpen}
-          onClose={handleCloseDispatchModal}
-          orderId={selectedOrder?.id || ""}
-          order={selectedOrder!}
-          customerName={selectedOrder?.customer?.id || ""}
-          deliveryAddress="123 Main St, New York, NY" // This would come from order data
-          priority="High" // This would come from order data
-          serviceType="Same-day" // This would come from order data
-          onDispatch={handleDispatch}
-        />
+        {selectedOrder && (
+          <DispatchModal
+            isOpen={isDispatchModalOpen}
+            onClose={handleCloseDispatchModal}
+            order={selectedOrder}
+            onDispatch={handleDispatch}
+          />
+        )}
 
         {/* Create Driver Modal */}
         <CreateDriverModal

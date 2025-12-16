@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { IoArrowBack, IoAdd } from "react-icons/io5";
 import { getBatches, addOrdersToBatch, getCategorizedOrders } from "@/lib/api/batch";
 import type { Batch, Order, CategorizedOrdersResponse } from "@/types/types";
@@ -15,13 +13,6 @@ import toast from "react-hot-toast";
 import { Skeleton } from "antd";
 import { Spinner } from "@/utils/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 function BatchDetailsPage() {
   const { id } = useParams<{ id: string }>();

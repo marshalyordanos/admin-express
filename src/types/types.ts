@@ -413,6 +413,36 @@ export interface GenericResponse {
   data?: any;
 }
 
+// Notification Types
+export interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  message: string;
+  read: boolean;
+  payload?: Record<string, any>;
+  createdAt: string;
+  createdBy: string | null;
+}
+
+export interface NotificationListResponse {
+  success: boolean;
+  message: string;
+  data: {
+    notifications: Notification[];
+    pagination: Pagination;
+  };
+}
+
+export interface NotificationMarkReadResponse {
+  success: boolean;
+  message: string;
+  data: {
+    message: string;
+  };
+}
+
+// Legacy NotificationItem (for backward compatibility)
 export interface NotificationItem {
   id: string;
   title: string;
@@ -422,33 +452,7 @@ export interface NotificationItem {
   read: boolean;
 }
 
-// Role Management Types
-export interface Role {
-  id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RolePermission {
-  id: string;
-  permission: {
-    id: string;
-    resource: string;
-    description?: string;
-  };
-  createAction: boolean;
-  readAction: boolean;
-  updateAction: boolean;
-  deleteAction: boolean;
-  scope: string[];
-}
-
-export interface RoleWithPermissions extends Role {
-  rolePermissions: RolePermission[];
-}
-
+// Role Management Types (Access Control module re-exports)
 export type RoleListResponse = PaginatedResponse<Role>;
 export type RoleDetailResponse = ApiResponse<RoleWithPermissions>;
 export type RoleResponse = ApiResponse<Role>;

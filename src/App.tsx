@@ -53,6 +53,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { useAppDispatch } from "./store/hooks";
 import { hydrateAuth } from "./features/auth/authSlice";
 import { Permission } from "./config/rolePermissions";
+import { SocketProvider } from "./lib/socket/SocketContext";
 
 const queryClient = new QueryClient();
 
@@ -103,7 +104,8 @@ const App = () => {
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <Routes>
+        <SocketProvider>
+          <Routes>
           <Route path="/" element={<ProtectedRoutes />}>
             <Route index element={<LoginPage />} />
             <Route element={<SidebarLayout />}>
@@ -501,6 +503,7 @@ const App = () => {
           </Route>
         </Routes>
         <Toaster position="top-center" reverseOrder={false} />
+        </SocketProvider>
       </QueryClientProvider>
     </BrowserRouter>
   );

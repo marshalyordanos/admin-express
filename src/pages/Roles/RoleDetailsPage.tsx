@@ -69,7 +69,7 @@ const RoleDetailsPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
+            type="button"
             onClick={() => navigate("/roles")}
             className="p-2 hover:bg-gray-100"
           >
@@ -83,9 +83,9 @@ const RoleDetailsPage = () => {
           </div>
         </div>
         <Button
+          type="button"
           onClick={() => navigate(`/roles/edit/${id}`)}
-          variant="outline"
-          className="text-gray-600 bg-white border-gray-300"
+          className="text-gray-600 bg-white border-gray-300 border"
         >
           <MdEdit className="h-4 w-4 mr-2" />
           Edit Role

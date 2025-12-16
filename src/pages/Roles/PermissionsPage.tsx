@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Search, Download, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -107,7 +107,7 @@ function PermissionsPage() {
         Description: permission.description || "",
         "Created At": new Date(permission.createdAt).toLocaleDateString(),
       }));
-      exportToExcel(data, "permissions");
+      exportToExcel("permissions", data);
       toast.success("Permissions exported successfully");
     } catch (error: any) {
       toast.error("Failed to export permissions");

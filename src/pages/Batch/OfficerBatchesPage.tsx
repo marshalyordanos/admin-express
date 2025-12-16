@@ -26,7 +26,6 @@ import { getOfficerBatches, acceptBatch } from "@/lib/api/batch";
 import type { Batch, Pagination } from "@/types/types";
 import toast from "react-hot-toast";
 import { Skeleton } from "antd";
-import { Spinner } from "@/utils/spinner";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { useAuthState } from "@/hooks/useAuthState";
 
@@ -340,7 +339,7 @@ function OfficerBatchesPage() {
                   currentPage={currentPage}
                   totalPages={pagination.totalPages}
                   pageSize={pageSize}
-                  total={pagination.total}
+                  totalItems={pagination.total}
                   onPageChange={handlePageChange}
                   onPageSizeChange={handlePageSizeChange}
                 />

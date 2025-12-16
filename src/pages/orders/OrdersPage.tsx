@@ -116,7 +116,7 @@ export default function OrdersPage() {
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [searchText, setSearchText] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -521,9 +521,9 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                 <TableHead className="text-gray-600 font-medium">
                   Pickup address
                 </TableHead>
-                {/* <TableHead className="text-gray-600 font-medium">
+                <TableHead className="text-gray-600 font-medium">
                   Items
-                </TableHead> */}
+                </TableHead>
                 <TableHead className="text-gray-600 font-medium">
                   Destination
                 </TableHead>
@@ -621,10 +621,10 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                   <TableCell className="text-gray-600">
                     {order?.pickupAddress?.city}
                   </TableCell>
-                  {/* <TableCell className="text-gray-600">
-                  2 Items
+                  <TableCell className="text-gray-600">
+           {order.quantity}
 
-                  </TableCell> */}
+                  </TableCell>
                   <TableCell className="text-gray-600">
                     {order?.deliveryAddress?.city}
                   </TableCell>

@@ -27,7 +27,6 @@ import { getBatches, assignOfficerToBatch } from "@/lib/api/batch";
 import type { Batch, Pagination } from "@/types/types";
 import toast from "react-hot-toast";
 import { Skeleton } from "antd";
-import { Spinner } from "@/utils/spinner";
 import { exportToExcel } from "@/utils/exportToExcel";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -471,7 +470,7 @@ function BatchPage() {
                   currentPage={currentPage}
                   totalPages={pagination.totalPages}
                   pageSize={pageSize}
-                  total={pagination.total}
+                  totalItems={pagination.total}
                   onPageChange={handlePageChange}
                   onPageSizeChange={handlePageSizeChange}
                 />
