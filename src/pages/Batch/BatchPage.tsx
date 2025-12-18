@@ -31,6 +31,7 @@ import { exportToExcel } from "@/utils/exportToExcel";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import api from "@/lib/api/api";
+import { Spinner } from "@/utils/spinner";
 
 interface Metric {
   title: string;
@@ -57,6 +58,13 @@ function BatchPage() {
   const [selectedOfficer, setSelectedOfficer] = useState<any>(null);
   const [officerSearch, setOfficerSearch] = useState("");
   const [loadingOfficers, setLoadingOfficers] = useState(false);
+  const [isAssignCargoOfficerModal, setisAssignCargoOfficerModal] = useState(false);
+  const [selectedBatchForOfficer, setSelectedBatchForOfficer] = useState<Batch | null>(null);
+  const [isAssignCargoOfficerLoading, setIsAssignCargoOfficerLoading] = useState(false);
+  const [showCargoOfficerDropdown, setShowCargoOfficerDropdown] = useState(false);
+  const [cargoOfficerSearch, setCargoOfficerSearch] = useState("");
+  const [selectedCargoOfficer, setSelectedCargoOfficer] = useState<any>(null);
+  const [loadingCargoOfficer, setLoadingCargoOfficer] = useState(false);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -189,11 +197,35 @@ function BatchPage() {
     }
   };
 
+  const featchCargoOfficer = async (page = 1, limit = 10) => {
+    try {
+      setLoadingCargoOfficer(true);
+      const response = await api.get<any>(
+        `/users/cargo-officer?search=all:${cargoOfficerSearch}&page=${page}&pageSize=${limit}`
+      );
+      setCargoOfficers(response.data.data?.cargoOfficers || []);
+      setLoadingCargoOfficer(false);
+    } catch (error: any) {
+      setLoadingCargoOfficer(false);
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     if (isAssignModalOpen) {
       fetchCargoOfficers();
     }
   }, [isAssignModalOpen, officerSearch]);
+
+  useEffect(() => {
+    if (isAssignCargoOfficerModal) {
+      featchCargoOfficer();
+    }
+  }, [cargoOfficerSearch, isAssignCargoOfficerModal]);
 
   const handleAssignOfficer = async () => {
     if (selectedBatches.length === 0) {
@@ -224,6 +256,38 @@ function BatchPage() {
       toast.error(message);
     } finally {
       setAssigning(false);
+    }
+  };
+
+  const handleAssignCargoOfficer = async () => {
+    if (!selectedBatchForOfficer) {
+      toast.error("No batch selected");
+      return;
+    }
+
+    if (!selectedCargoOfficer) {
+      toast.error("Please select a cargo officer");
+      return;
+    }
+
+    try {
+      setIsAssignCargoOfficerLoading(true);
+      const response = await api.post("/dispatch/batch/assign-officer", {
+        batchId: [selectedBatchForOfficer.id],
+        officerId: selectedCargoOfficer.id,
+      });
+      toast.success(response.data.message || "Cargo officer assigned successfully");
+      setisAssignCargoOfficerModal(false);
+      setSelectedBatchForOfficer(null);
+      setSelectedCargoOfficer(null);
+      setCargoOfficerSearch("");
+      fetchBatches(currentPage, pageSize);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message || "Failed to assign cargo officer";
+      toast.error(message);
+    } finally {
+      setIsAssignCargoOfficerLoading(false);
     }
   };
 
@@ -443,19 +507,37 @@ function BatchPage() {
                             : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              navigate(`/batch/details/${batch.id}`, {
-                                state: { batch },
-                              })
-                            }
-                            className="flex items-center gap-1"
-                          >
-                            <IoEye className="h-4 w-4" />
-                            View
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            {!batch.officerId && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBatchForOfficer(batch);
+                                  setisAssignCargoOfficerModal(true);
+                                }}
+                                className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <IoPersonAdd className="h-4 w-4" />
+                                Assign Officer
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/batch/details/${batch.id}`, {
+                                  state: { batch },
+                                });
+                              }}
+                              className="flex items-center gap-1"
+                            >
+                              <IoEye className="h-4 w-4" />
+                              View
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -542,6 +624,117 @@ function BatchPage() {
               <p className="text-sm font-medium">Selected Officer:</p>
               <p className="text-sm text-gray-600">
                 {selectedOfficer.user?.name} ({selectedOfficer.user?.email})
+              </p>
+            </div>
+          )}
+        </div>
+      </ConfirmationModal>
+
+      {/* Assign Cargo Officer Modal */}
+      <ConfirmationModal
+        isOpen={isAssignCargoOfficerModal}
+        onClose={() => {
+          setisAssignCargoOfficerModal(false);
+          setSelectedBatchForOfficer(null);
+          setSelectedCargoOfficer(null);
+          setCargoOfficerSearch("");
+        }}
+        title="Assign Cargo Officer"
+        description={`Assign a cargo officer to batch: ${selectedBatchForOfficer?.batchCode || ""}`}
+        onConfirm={handleAssignCargoOfficer}
+        variant="info"
+        confirmText="Assign"
+        cancelText="Cancel"
+        isLoading={isAssignCargoOfficerLoading}
+      >
+        <div className="mt-4 space-y-4">
+          <div className="relative">
+            <label className="text-sm font-medium mb-2 block">
+              Search Cargo Officer
+            </label>
+            <div className="relative">
+              <Input
+                placeholder="Search cargo officer by name or email..."
+                value={cargoOfficerSearch}
+                onChange={(e) => {
+                  setCargoOfficerSearch(e.target.value);
+                  setShowCargoOfficerDropdown(true);
+                  if (!e.target.value) {
+                    setSelectedCargoOfficer(null);
+                  }
+                }}
+                onFocus={() => setShowCargoOfficerDropdown(true)}
+                onBlur={() =>
+                  setTimeout(() => setShowCargoOfficerDropdown(false), 200)
+                }
+                className="py-7"
+              />
+              {selectedCargoOfficer && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCargoOfficer(null);
+                    setCargoOfficerSearch("");
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {showCargoOfficerDropdown && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {loadingCargoOfficer ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                    <span className="text-gray-600">Loading...</span>
+                  </div>
+                ) : cargoOfficers.length > 0 ? (
+                  cargoOfficers.map((officer: any) => (
+                    <div
+                      key={officer?.id}
+                      onClick={() => {
+                        setSelectedCargoOfficer(officer);
+                        setCargoOfficerSearch(
+                          officer?.user?.name || officer?.name || ""
+                        );
+                        setShowCargoOfficerDropdown(false);
+                      }}
+                      className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                        selectedCargoOfficer?.id === officer?.id
+                          ? "bg-blue-50"
+                          : ""
+                      }`}
+                    >
+                      <div className="font-medium text-gray-900">
+                        {officer?.user?.name || officer?.name || "Unknown"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {officer?.user?.email || officer?.email || ""}
+                      </div>
+                      {officer?.id && (
+                        <div className="text-xs text-gray-500">
+                          ID: {officer.id}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-gray-500 text-center">
+                    No cargo officers found
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {selectedCargoOfficer && (
+            <div className="pt-2 border-t">
+              <p className="text-sm font-medium">Selected Cargo Officer:</p>
+              <p className="text-sm text-gray-600">
+                {selectedCargoOfficer?.user?.name || selectedCargoOfficer?.name}{" "}
+                ({selectedCargoOfficer?.user?.email || selectedCargoOfficer?.email})
               </p>
             </div>
           )}

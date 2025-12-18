@@ -506,8 +506,11 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                 <TableHead className="text-gray-600 font-medium">
                   <div className="flex items-center">
                     Date
-                    <ArrowUpDown className="h-3 w-3 ml-1" />
+                    {/* <ArrowUpDown className="h-3 w-3 ml-1" /> */}
                   </div>
+                </TableHead>
+                <TableHead className="text-gray-600 font-medium">
+                  Pickup Date
                 </TableHead>
                 <TableHead className="text-gray-600 font-medium">
                   Customer
@@ -590,14 +593,29 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                     </Button>
                   </TableCell>
                   <TableCell className="text-gray-600">
-                      {order.pickupDate
-                        ? new Date(order.pickupDate).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                        : "-"}
-                    </TableCell>
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true
+                        })
+                      : "-"}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {order.pickupDate
+                      ? new Date(order.pickupDate).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true
+                        })
+                      : "-"}
+                  </TableCell>
                   <TableCell className="text-gray-900">
                     {order.customer.name}
                   </TableCell>

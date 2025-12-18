@@ -46,6 +46,7 @@ import RoleDetailsPage from "./pages/Roles/RoleDetailsPage";
 import TownPricingPage from "./pages/Pricing/TownPricingPage";
 import RegionalPricingPage from "./pages/Pricing/RegionalPricingPage";
 import InternationalPricingPage from "./pages/Pricing/InternationalPricingPage";
+import ReportPage from "./pages/Report/ReportPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoutes from "./components/ProtectedRoutes";
@@ -496,6 +497,14 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredPermission={Permission.ROLE}>
                     <CreatePermissionPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/report"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.REPORT}>
+                    <ReportPage />
                   </ProtectedRoute>
                 }
               />

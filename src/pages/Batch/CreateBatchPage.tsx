@@ -253,10 +253,13 @@ function CreateBatchPage() {
         shipmentDate,
       };
 
-      const response = await createBatch(batchData);
+      const response: any = await createBatch(batchData);
       toast.success(response.message || "Batch created successfully");
       // Show success modal with batch code
-      setBatchCode(response.data?.batchCode || "");
+      // Response structure: { success, message, data: { batch: { batchCode, ... }, orderLogs: {...} } }
+      // createBatch returns response.data, so response is { success, message, data: { batch, orderLogs } }
+      const batchCode = response?.data?.batch?.batchCode || response?.batch?.batchCode || "";
+      setBatchCode(batchCode);
       setIsSuccessModalOpen(true);
     } catch (error: any) {
       const message =

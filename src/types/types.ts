@@ -310,6 +310,7 @@ export interface Order {
   receiver: Receiver;
   branch: any | null;
   payment: any | null;
+  createdAt: string;
 }
 
 /** ───── Driver ───── */

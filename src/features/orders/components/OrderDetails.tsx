@@ -1,7 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Spinner } from "@/utils/spinner";
+import toast from "react-hot-toast";
 import { Formik, Form } from "formik";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,7 +34,9 @@ import {
   IoCube,
   IoShield,
   IoMap,
+  IoList,
 } from "react-icons/io5";
+import api from "@/lib/api/api";
 
 // Mock data for demonstration
 const mockOrder = {
@@ -82,9 +94,44 @@ export default function OrderDetails() {
   const orderDetail = query.get("order")
     ? JSON.parse(query.get("order")!)
     : null;
-    const [selectedCategory, setSelectedCategory] = useState(orderDetail.category);
+    const [selectedCategory, setSelectedCategory] = useState(orderDetail?.category || []);
+    const [orderLogs, setOrderLogs] = useState<any[]>([]);
+    const [loadingLogs, setLoadingLogs] = useState(false);
 
 console.log("orderdetail: ",orderDetail)
+
+  // Fetch order logs
+  useEffect(() => {
+    const fetchOrderLogs = async () => {
+      if (!orderDetail?.id) return;
+      
+      try {
+        setLoadingLogs(true);
+        const response = await api.get(`/order/status/log`);
+        
+        // Find the logs for this specific order
+        const orderData = response.data.data?.find((item: any) => item.id === orderDetail.id);
+        if (orderData?.logs) {
+          // Sort logs by createdAt descending (newest first)
+          const sortedLogs = orderData.logs.sort((a: any, b: any) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setOrderLogs(sortedLogs);
+        } else {
+          setOrderLogs([]);
+        }
+      } catch (error: any) {
+        console.error("Error fetching order logs:", error);
+        toast.error("Failed to load order logs");
+        setOrderLogs([]);
+      } finally {
+        setLoadingLogs(false);
+      }
+    };
+
+    fetchOrderLogs();
+  }, [orderDetail?.id]);
+
   const initialValues = {
     fulfillmentDestination: orderDetail?.shippingScope,
     serviceType: orderDetail.serviceType,
@@ -128,6 +175,29 @@ console.log("orderdetail: ",orderDetail)
         return "bg-purple-100 text-purple-700";
       case "Standard":
         return "bg-blue-100 text-blue-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "CREATED":
+        return "bg-blue-100 text-blue-700";
+      case "APPROVED":
+        return "bg-green-100 text-green-700";
+      case "REJECTED":
+        return "bg-red-100 text-red-700";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-700";
+      case "DISPATCHED":
+        return "bg-purple-100 text-purple-700";
+      case "IN_TRANSIT":
+        return "bg-indigo-100 text-indigo-700";
+      case "DELIVERED":
+        return "bg-teal-100 text-teal-700";
+      case "COMPLETED":
+        return "bg-emerald-100 text-emerald-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -392,6 +462,76 @@ console.log("orderdetail: ",orderDetail)
                         </div>
                       )}
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Order Logs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <IoList className="h-5 w-5" />
+                      Order Activity Log
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingLogs ? (
+                      <div className="flex justify-center items-center py-8">
+                        <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                        <span className="text-gray-600">Loading logs...</span>
+                      </div>
+                    ) : orderLogs.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No activity logs found for this order
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                              <TableHead className="text-gray-600 font-medium">Location</TableHead>
+                              <TableHead className="text-gray-600 font-medium">Notes</TableHead>
+                              <TableHead className="text-gray-600 font-medium">Date & Time</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {orderLogs.map((log, index) => (
+                              <TableRow 
+                                key={log.id} 
+                                className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
+                              >
+                                <TableCell>
+                                  <Badge className={getStatusColor(log.status)}>
+                                    {log.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <IoLocation className="h-4 w-4 text-gray-400" />
+                                    <span className="text-sm text-gray-700">
+                                      {log.location || "N/A"}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <p className="text-sm text-gray-700 max-w-md">
+                                    {log.notes || "—"}
+                                  </p>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <IoTime className="h-4 w-4 text-gray-400" />
+                                    <span className="text-sm text-gray-600">
+                                      {new Date(log.createdAt).toLocaleString()}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 

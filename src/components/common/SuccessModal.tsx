@@ -27,24 +27,37 @@ export default function SuccessModal({
 }: SuccessModalProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [qrCodeError, setQrCodeError] = useState(false);
 
   useEffect(() => {
-    if (isOpen && trackingNumber) {
+    if (isOpen && trackingNumber && trackingNumber.trim()) {
+      // Reset error state
+      setQrCodeError(false);
+      setQrCodeDataUrl("");
+      
       // Generate QR code for the tracking number
-      QRCode.toDataURL(trackingNumber, {
+      QRCode.toDataURL(trackingNumber.trim(), {
         width: 200,
         margin: 2,
         color: {
           dark: "#000000",
           light: "#FFFFFF",
         },
+        errorCorrectionLevel: "M",
       })
         .then((url) => {
           setQrCodeDataUrl(url);
+          setQrCodeError(false);
         })
         .catch((err) => {
           console.error("Error generating QR code:", err);
+          setQrCodeError(true);
+          setQrCodeDataUrl("");
         });
+    } else {
+      // Reset if no tracking number
+      setQrCodeDataUrl("");
+      setQrCodeError(false);
     }
   }, [isOpen, trackingNumber]);
 
@@ -125,9 +138,20 @@ export default function SuccessModal({
                   alt="QR Code"
                   className="w-48 h-48 mx-auto"
                 />
-              ) : (
+              ) : qrCodeError ? (
+                <div className="w-48 h-48 bg-gray-100 rounded flex flex-col items-center justify-center">
+                  <IoQrCode className="h-12 w-12 text-gray-400 mb-2" />
+                  <p className="text-xs text-gray-500 text-center px-2">
+                    Failed to generate QR code
+                  </p>
+                </div>
+              ) : trackingNumber ? (
                 <div className="w-48 h-48 bg-gray-100 rounded flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="w-48 h-48 bg-gray-100 rounded flex items-center justify-center">
+                  <p className="text-xs text-gray-500">No tracking number</p>
                 </div>
               )}
             </div>

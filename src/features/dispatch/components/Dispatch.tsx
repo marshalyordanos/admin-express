@@ -671,266 +671,282 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
           <Card className="bg-white">
             <div className="overflow-x-auto">
               <Table>
-              <TableHeader>
-                <TableRow className="border-gray-200">
-                  <TableHead className="w-12">
-                    <Checkbox />
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Order
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    <div className="flex items-center">
-                      Date
-                      <ArrowUpDown className="h-3 w-3 ml-1" />
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Customer
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Payment
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Total
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Pickup address
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-               Items
-             </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Destination
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Shipping Scope
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Service Mode
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium">
-                    Action
-                  </TableHead>
-                </TableRow>
-              </TableHeader>//
-              <TableBody>
-                {orderLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={12}>
-                      <div className="flex justify-center items-center py-8">
-                        <Spinner className="h-6 w-6 text-blue-600 mr-2" />
-                        <span className="text-gray-600 font-medium">
-                          Loading order data...
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : orders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={12}>
-                      <div className="flex justify-center items-center py-8">
-                        <span className="text-gray-500 font-medium">
-                          No orders found
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  orders.map((order, index) => (
-                  <TableRow
-                    key={index}
-                    className="border-gray-100 hover:bg-gray-50 cursor-pointer"
-                    onClick={() =>
-                      navigate(
-                        `/order/details/${order.id.replace(
-                          "#",
-                          ""
-                        )}?order=${encodeURIComponent(JSON.stringify(order))}`
-                      )
-                    }
-                  >
-                    <TableCell>
+                <TableHeader>
+                  <TableRow className="border-gray-200">
+                    <TableHead className="w-12">
                       <Checkbox />
-                    </TableCell>
-                    <TableCell className="font-medium text-gray-900">
-                      <Button
-                        variant="ghost"
-                        className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
-                      >
-                        {order?.trackingCode}
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {order.pickupDate
-                        ? new Date(order.pickupDate).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-gray-900">
-                      {order.customer.name}
-                    </TableCell>
-                    <TableCell>
-                    {(() => {
-                      // Mock payment statuses
-                      const statuses = [
-                        { label: "Pending", color: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100", variant: "secondary" },
-                        { label: "Success", color: "bg-green-100 text-green-700 hover:bg-green-100", variant: "default" },
-                        { label: "Failed",  color: "bg-red-100 text-red-700 hover:bg-red-100", variant: "secondary" }
-                      ];
-                      // Pick random status each render
-                      const mockPayment = statuses[Math.floor(Math.random() * statuses.length)];
-                      return (
-                        <Badge
-                          // variant={mockPayment.variant}
-                          className={mockPayment.color}
-                        >
-                          ● {mockPayment.label}
-                        </Badge>
-                      );
-                    })()}
-                  </TableCell>
-                    <TableCell className="font-medium text-gray-900">
-                      {order.finalPrice?.toFixed(2)} ETB
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {order?.pickupAddress?.city}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {(order as any).quantity ?? 0}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {order?.deliveryAddress?.city}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {order?.shippingScope}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.fulfillmentType === "Fulfilled"
-                            ? "default"
-                            : "secondary"
-                        }
-                        className={
-                          order.fulfillmentType === "Fulfilled"
-                            ? "bg-green-100 text-green-700 hover:bg-green-100"
-                            : "bg-red-100 text-red-700 hover:bg-red-100"
-                        }
-                      >
-                        ● {order.fulfillmentType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={
-                          order.status === "Approved"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-orange-100 text-orange-700"
-                        }
-                      >
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {((order.fulfillmentType == "PICKUP" || order.fulfillmentType == "DROPOFF") &&
-                      order.status == "CREATED" ) ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                          disabled
-                        >
-                          Waiting for request
-                        </Button>
-                      ) :( (order.fulfillmentType == "PICKUP"||order.fulfillmentType == "DROPOFF") &&
-                        order.status == "PENDING_APPROVAL")? (
-                        <div className="flex flex-row gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // navigate(`/staff/edit/${member.id}`);
-                              setApproveModal(true); //
-                              setSelectedOrder(order);
-                              // handleDispatchOrder(order);
-                            }}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // navigate(`/staff/edit/${member.id}`);
-                              setRejectModal(true); //
-                              setSelectedOrder(order);
-                              // handleDispatchOrder(order);
-                            }}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      ) : ( order.fulfillmentType == "DROPOFF" &&
-                        order.status == "APPROVED" &&
-                        order?.shippingScope != "TOWN" )?   <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // navigate(`/staff/edit/${member.id}`);
-                          setisAssignCargoOfficerModal(true); //
-                          setSelectedOrder(order);
-                          // handleDispatchOrder(order);
-                        }}
-                      >
-                        Assign Cargo Officer
-                      </Button>:( (order.fulfillmentType == "PICKUP" ||order.fulfillmentType == "DROPOFF") &&
-                          order.status == "APPROVED" &&
-                          order?.shippingScope == "TOWN" )?
-                         <Button
-                   variant="ghost"
-                   size="sm"
-                   className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                   onClick={(e) => {
-                     e.stopPropagation();
-                     // navigate(`/staff/edit/${member.id}`);
-                    //  setIsDialogOpen(true); //
-                    //  setSelectedOrder(order)
-                    handleDispatchOrder(order);
-
-                   }}
-                 >
-                   Assign Driver
-                 </Button> 
-                        :  <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                        disabled
-                      >
-                        No Action
-                      </Button> }
-
-                      
-                    </TableCell>
+                    </TableHead>
+                    <TableHead className="text-gray-600 font-medium">Order</TableHead>
+                    <TableHead className="text-gray-600 font-medium">
+                      <div className="flex items-center">
+                        Date
+                        {/* <ArrowUpDown className="h-3 w-3 ml-1" /> */}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-gray-600 font-medium">Pickup Date</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Customer</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Payment</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Total</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Pickup address</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Items</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Destination</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Shipping Scope</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Service Mode</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Batch</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Action</TableHead>
                   </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {orderLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={13}>
+                        <div className="flex justify-center items-center py-8">
+                          <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                          <span className="text-gray-600 font-medium">
+                            Loading order data...
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={13}>
+                        <div className="flex justify-center items-center py-8">
+                          <span className="text-gray-500 font-medium">
+                            No orders found
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    orders.map((order, index) => {
+                      // Check if batchId is NOT null/undefined/empty to indicate In Batch
+                      const hasBatch = order.batchId !== null && order.batchId !== undefined;
+                      return (
+                        <TableRow
+                          key={index}
+                          className="border-gray-100 hover:bg-gray-50 cursor-pointer"
+                          onClick={() =>
+                            navigate(
+                              `/order/details/${order.id.replace(
+                                "#",
+                                ""
+                              )}?order=${encodeURIComponent(JSON.stringify(order))}`
+                            )
+                          }
+                        >
+                          <TableCell>
+                            <Checkbox />
+                          </TableCell>
+                          <TableCell className="font-medium text-gray-900">
+                            <Button
+                              variant="ghost"
+                              className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
+                            >
+                              {order?.trackingCode}
+                            </Button>
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {order.createdAt
+                              ? new Date(order.createdAt).toLocaleString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true
+                                })
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {order.pickupDate
+                              ? new Date(order.pickupDate).toLocaleString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true
+                                })
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-gray-900">
+                            {order.customer.name}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              // Mock payment statuses
+                              const statuses = [
+                                { label: "Pending", color: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100", variant: "secondary" },
+                                { label: "Success", color: "bg-green-100 text-green-700 hover:bg-green-100", variant: "default" },
+                                { label: "Failed",  color: "bg-red-100 text-red-700 hover:bg-red-100", variant: "secondary" }
+                              ];
+                              // Pick random status each render
+                              const mockPayment = statuses[Math.floor(Math.random() * statuses.length)];
+                              return (
+                                <Badge
+                                  // variant={mockPayment.variant}
+                                  className={mockPayment.color}
+                                >
+                                  ● {mockPayment.label}
+                                </Badge>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell className="font-medium text-gray-900">
+                            {order.finalPrice?.toFixed(2)} ETB
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {order?.pickupAddress?.city}
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {(order as any).quantity ?? 0}
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {order?.deliveryAddress?.city}
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {order?.shippingScope}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                order.fulfillmentType === "Fulfilled"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                              className={
+                                order.fulfillmentType === "Fulfilled"
+                                  ? "bg-green-100 text-green-700 hover:bg-green-100"
+                                  : "bg-red-100 text-red-700 hover:bg-red-100"
+                              }
+                            >
+                              ● {order.fulfillmentType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className={
+                                order.status === "Approved"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-orange-100 text-orange-700"
+                              }
+                            >
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          {/* Batch indicator */}
+                          <TableCell>
+                            {hasBatch ? (
+                              <Badge className="bg-purple-100 text-purple-700">
+                                In Batch
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-700">
+                                No Batch
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {hasBatch ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 text-gray-400 bg-gray-100 cursor-not-allowed"
+                                disabled
+                              >
+                                No Action
+                              </Button>
+                            ) : ((order.fulfillmentType == "PICKUP" || order.fulfillmentType == "DROPOFF") &&
+                                order.status == "CREATED") ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                                disabled
+                              >
+                                Waiting for request
+                              </Button>
+                            ) : ((order.fulfillmentType == "PICKUP" || order.fulfillmentType == "DROPOFF") &&
+                                order.status == "PENDING_APPROVAL") ? (
+                              <div className="flex flex-row gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setApproveModal(true); //
+                                    setSelectedOrder(order);
+                                  }}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRejectModal(true); //
+                                    setSelectedOrder(order);
+                                  }}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            ) 
+                            // : (order.fulfillmentType == "DROPOFF" &&
+                            //     order.status == "APPROVED" &&
+                            //     order?.shippingScope != "TOWN") ? (
+                            //   <Button
+                            //     variant="ghost"
+                            //     size="sm"
+                            //     className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                            //     onClick={(e) => {
+                            //       e.stopPropagation();
+                            //       setisAssignCargoOfficerModal(true);
+                            //       setSelectedOrder(order);
+                            //     }}
+                            //   >
+                            //     Assign Cargo Officer
+                            //   </Button>
+                            // )
+                             : ((order.fulfillmentType == "PICKUP" || order.fulfillmentType == "DROPOFF") &&
+                                order.status == "APPROVED" &&
+                                order?.shippingScope == "TOWN") ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // setIsDialogOpen(true);
+                                  // setSelectedOrder(order)
+                                  handleDispatchOrder(order);
+                                }}
+                              >
+                                Assign Driver
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                                disabled
+                              >
+                                No Action
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
             </div>
             <TablePagination
               currentPage={currentPage}

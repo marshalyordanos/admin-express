@@ -11,6 +11,7 @@ import AdditionalChargesSection from "./AdditionalChargesSection";
 import ActionButtons from "./ActionButtons";
 import toast from "react-hot-toast";
 import api from "@/lib/api/api";
+import { Spinner } from "@/utils/spinner";
 
 const RegionalPricingSchema = Yup.object().shape({
   standard: Yup.number()
@@ -37,8 +38,8 @@ const RegionalPricingSchema = Yup.object().shape({
 type DriverCommission = {
   category: string; // vehicleTypeId
   name: string; // vehicle name for display
-  fixedCost: number;
-  driverCost: number; // perKm
+  fixedCost?: number;
+  driverCost?: number; // perKm
   percentage?: number;
 };
 
@@ -129,9 +130,9 @@ export default function RegionalPricingForm() {
     const driverSkeleton = vehicleTypes.map((v) => ({
       category: v.id,
       name: v.name,
-      fixedCost: 0,
-      driverCost: 0,
-      percentage: 0,
+      fixedCost: undefined,
+      driverCost: undefined,
+      percentage: undefined,
     }));
     base.driverCommission = driverSkeleton;
 
@@ -168,9 +169,9 @@ export default function RegionalPricingForm() {
       return {
         category: v.id,
         name: v.name,
-        fixedCost: matched?.fixed ?? 0,
-        driverCost: matched?.perKm ?? 0,
-        percentage: matched?.percentage ?? 0,
+        fixedCost: matched?.fixed,
+        driverCost: matched?.perKm,
+        percentage: matched?.percentage,
       };
     });
 
@@ -234,12 +235,30 @@ export default function RegionalPricingForm() {
           { serviceType: "EXPRESS", baseFee: values.sameDay },
           { serviceType: "OVERNIGHT", baseFee: values.overnight },
         ],
-        driverCommissions: values.driverCommission.map((c) => ({
-          vehicleTypeId: c.category,
-          ...(c.fixedCost ? { fixed: c.fixedCost } : {}),
-          ...(c.driverCost ? { perKm: c.driverCost } : {}),
-          ...(c.percentage ? { percentage: c.percentage } : {}),
-        })),
+        driverCommissions: values.driverCommission
+          .filter(c => {
+            // Only include entries that have at least one value
+            const hasFixed = c.fixedCost !== undefined && c.fixedCost !== null && c.fixedCost !== 0;
+            const hasPerKm = c.driverCost !== undefined && c.driverCost !== null && c.driverCost !== 0;
+            const hasPercentage = c.percentage !== undefined && c.percentage !== null && c.percentage !== 0;
+            return hasFixed || hasPerKm || hasPercentage;
+          })
+          .map(c => {
+            const commission: any = {
+              vehicleTypeId: c.category,
+            };
+            // Only include fields that have values
+            if (c.fixedCost !== undefined && c.fixedCost !== null && c.fixedCost !== 0) {
+              commission.fixed = c.fixedCost;
+            }
+            if (c.driverCost !== undefined && c.driverCost !== null && c.driverCost !== 0) {
+              commission.perKm = c.driverCost;
+            }
+            if (c.percentage !== undefined && c.percentage !== null && c.percentage !== 0) {
+              commission.percentage = c.percentage;
+            }
+            return commission;
+          }),
         profit: values.profitMargin,
         airportFees,
       };
@@ -270,7 +289,17 @@ export default function RegionalPricingForm() {
   };
 
   return (
-    <div className="max-w-4xl p-6 bg-white">
+    <div className="max-w-4xl p-6 bg-white relative">
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+          <div className="flex flex-col items-center gap-3">
+            <Spinner className="h-8 w-8 text-blue-600" />
+            <p className="text-gray-600 font-medium">
+              {isEditing ? "Updating pricing..." : "Saving pricing..."}
+            </p>
+          </div>
+        </div>
+      )}
       <Formik
         enableReinitialize
         initialValues={buildInitialValues()}
@@ -278,7 +307,7 @@ export default function RegionalPricingForm() {
         onSubmit={handleSubmit}
       >
         {({ values, setFieldValue, errors, touched }) => (
-          <Form>
+          <Form className={loading ? "pointer-events-none opacity-50" : ""}>
             <PricingFormHeader
               title={
                 isEditing

@@ -13,10 +13,19 @@ export const register = async (
   const response = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
     body: JSON.stringify({ name, email, password }),
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
-  if (!response.ok) throw new Error("Failed to register");
+  // Improved error message based on API response
   const data = await response.json();
-  if (!data.success) throw new Error(data.message);
+  if (!response.ok) {
+    // Show a specific message if available, else a default
+    throw new Error(data?.message || "Failed to register");
+  }
+  if (!data.success) {
+    throw new Error(data?.message || "Registration unsuccessful.");
+  }
 
   return data;
 };
@@ -25,7 +34,6 @@ export const login = async (
   email: string,
   password: string
 ): Promise<LoginResponse> => {
-  console.log(email, password);
   const response = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     body: JSON.stringify({ email, password }),
@@ -33,10 +41,19 @@ export const login = async (
       "Content-Type": "application/json",
     },
   });
-  console.log(response);
-  if (!response.ok) throw new Error("Failed to login");
+
   const data = await response.json();
-  if (!data.success) throw new Error(data.message);
+
+  // Show a specific message if available, else a default
+  if (!response.ok) {
+    throw new Error(data?.message || "Failed to login");
+  }
+  if (!data.success) {
+    // Use API message, e.g., "Invalid credentials"
+    throw new Error(
+      data?.message || "Login unsuccessful. Please check your credentials."
+    );
+  }
 
   return data;
 };

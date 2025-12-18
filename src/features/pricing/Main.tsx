@@ -10,7 +10,7 @@ import {
   MapPin as LocationIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { useNavigate } from "react-router-dom";
@@ -127,6 +127,7 @@ export default function PricingMain() {
   const [loading, setLoading] = useState<boolean>(true);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [fleetLogs,setFleetLogs] =useState<any>([])
+  const [activatingId, setActivatingId] = useState<string | null>(null);
 
   const featchFleetLogs = async (page=1,limit=10) => {
     try {
@@ -167,6 +168,31 @@ export default function PricingMain() {
     } else {
       setSortColumn(column);
       setSortDirection("asc");
+    }
+  };
+
+  const handleActivate = async (tariffId: string, shippingScope: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click navigation
+    
+    try {
+      setActivatingId(tariffId);
+      
+      // Call activate API
+      await api.post(`/pricing/tariff/activate/${tariffId}`, {
+        shippingScope: shippingScope
+      });
+      
+      toast.success(`${shippingScope} pricing activated successfully`);
+      
+      // Refresh the list to get updated active status
+      await featchFleetLogs(currentPage, pageSize);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message || "Failed to activate pricing";
+      toast.error(message);
+      console.error(error);
+    } finally {
+      setActivatingId(null);
     }
   };
   return (
@@ -302,32 +328,32 @@ export default function PricingMain() {
                       className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort("cost")}
                     >
-                      currency
+                      Currency
                     </TableHead>
-                    {/* <TableHead
-                      className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("status")}
-                    >
-                      Status
-                    </TableHead> */}
-                    {/* <TableHead className="text-gray-600 font-medium">
-                      Next Service
-                    </TableHead> */}
+                    <TableHead className="text-gray-600 font-medium">
+                      Created Date
+                    </TableHead>
+                    <TableHead className="text-gray-600 font-medium">
+                      Remark
+                    </TableHead>
+                    <TableHead className="text-gray-600 font-medium">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                <TableRow>
                 {loading && (
-                  <TableCell colSpan={11}>
-                    <div className="flex justify-center items-center py-8">
-                      <Spinner className="h-6 w-6 text-blue-600 mr-2" />
-                      <span className="text-gray-600 font-medium">
-                        Loading Pricing data...
-                      </span>
-                    </div>
-                  </TableCell>
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <div className="flex justify-center items-center py-8">
+                        <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                        <span className="text-gray-600 font-medium">
+                          Loading Pricing data...
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </TableRow>
                   {fleetLogs.map((log:any) => (
                     <TableRow
                       key={log.id}
@@ -389,7 +415,62 @@ export default function PricingMain() {
                           {log.currency} 
                         </span>
                       </TableCell>
-                  
+                      <TableCell>
+                        <span className="text-sm text-gray-600">
+                          {log.createdAt
+                            ? new Date(log.createdAt).toLocaleDateString()
+                            : "N/A"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1 max-w-[220px]">
+                          {(() => {
+                            // DEMO: fake random remark for display - always assign a label
+                            const demoRemarks = [
+                              { label: "Holiday", color: "bg-red-100 text-red-700" },
+                              { label: "Special Event", color: "bg-purple-100 text-purple-700" },
+                              { label: "Normal Day", color: "bg-blue-100 text-blue-800" },
+                              { label: "Weekend", color: "bg-yellow-100 text-yellow-700" },
+                              { label: "Urgent", color: "bg-orange-100 text-orange-700" },
+                              { label: "Maintenance", color: "bg-gray-100 text-gray-700" },
+                            ];
+                            // Randomly pick a remark; always choose a valid one
+                            const idx = Math.floor(Math.random() * demoRemarks.length);
+                            const remark = demoRemarks[idx];
+                            return (
+                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${remark.color}`}>
+                                {remark.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          {log.isActive ? (
+                            <Badge className="bg-green-100 text-green-700">
+                              Active
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => handleActivate(log.id, log.shippingScope, e)}
+                              disabled={activatingId === log.id}
+                              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                            >
+                              {activatingId === log.id ? (
+                                <>
+                                  <Spinner className="h-3 w-3 mr-1" />
+                                  Activating...
+                                </>
+                              ) : (
+                                "Activate"
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

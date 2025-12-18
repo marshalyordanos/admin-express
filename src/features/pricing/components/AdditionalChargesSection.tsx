@@ -5,8 +5,10 @@ import DriverCommissionTable from "./DriverCommissionTable";
 
 interface DriverCommission {
   category: string;
-  fixedCost: number;
-  driverCost: number;
+  name?: string;
+  fixedCost?: number;
+  driverCost?: number;
+  percentage?: number;
 }
 
 interface AdditionalChargesSectionProps {
