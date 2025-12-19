@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   Search,
   Download,
-  ArrowUpDown,
   TrendingUp,
   TrendingDown,
 } from "lucide-react";

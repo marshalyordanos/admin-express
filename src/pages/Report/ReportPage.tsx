@@ -141,7 +141,7 @@ const mockRevenueTrend = [
 
 export default function ReportPage() {
   const [dateRange, setDateRange] = useState("last30days");
-  const [reportType, setReportType] = useState("overview");
+  // const [reportType, setReportType] = useState("overview");
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -336,7 +336,7 @@ export default function ReportPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {mockRevenueTrend.map((item, index) => {
+              {mockRevenueTrend.map((item) => {
                 const maxRevenue = Math.max(...mockRevenueTrend.map((r) => r.revenue));
                 const height = (item.revenue / maxRevenue) * 100;
                 return (
