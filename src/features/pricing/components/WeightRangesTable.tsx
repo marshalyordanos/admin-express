@@ -53,13 +53,7 @@ export default function WeightRangesTable({
               <span className="text-sm">Delete Selected</span>
             </button>
           )}
-          <button
-            type="button"
-            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 cursor-pointer transition-colors flex items-center justify-center"
-            onClick={onAddRange}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+         
         </div>
       </div>
 
@@ -109,7 +103,7 @@ export default function WeightRangesTable({
                     }}
                   />
                 </TableCell>
-                <TableCell className="border border-gray-200">
+                <TableCell className="border border-gray-200 py-0 px-2">
                   <Field
                     as={Input}
                     type="number"
@@ -118,7 +112,7 @@ export default function WeightRangesTable({
                     className="py-2 border-0 shadow-none focus-visible:outline-none focus-visible:ring-0 focus:outline-none focus:ring-0"
                   />
                 </TableCell>
-                <TableCell className="border border-gray-200">
+                <TableCell className="border border-gray-200 py-0 px-2">
                   <Field
                     as={Input}
                     type="number"
@@ -127,7 +121,7 @@ export default function WeightRangesTable({
                     className="py-2 border-0 shadow-none focus-visible:outline-none focus-visible:ring-0 focus:outline-none focus:ring-0"
                   />
                 </TableCell>
-                <TableCell className="border border-gray-200">
+                <TableCell className="border border-gray-200 py-0 px-2">
                   <Field
                     as={Input}
                     type="number"
@@ -142,6 +136,15 @@ export default function WeightRangesTable({
           </TableBody>
         </Table>
       </div>
+    <div className="pt-4">
+    <button
+            type="button"
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 cursor-pointer transition-colors flex items-center justify-center"
+            onClick={onAddRange}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+    </div>
     </div>
   );
 }

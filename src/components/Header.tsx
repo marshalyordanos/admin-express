@@ -193,9 +193,20 @@ export default function Header() {
                       <p className="text-sm text-gray-600 mb-2 leading-relaxed">
                         {item.message}
                       </p>
-                      <span className="text-xs text-gray-400">
+                   <div className="flex justify-between ">
+                   <span className="text-xs text-gray-400">
                         {formatTime(item.createdAt)}
                       </span>
+                      <span className="text-xs text-gray-400">
+                      {new Date(item.createdAt).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })}
+                      </span>
+                   </div>
                     </div>
                     {!item.read && (
                       <Button

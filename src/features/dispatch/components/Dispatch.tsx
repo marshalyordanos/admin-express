@@ -798,13 +798,13 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                             {order.finalPrice?.toFixed(2)} ETB
                           </TableCell>
                           <TableCell className="text-gray-600">
-                            {order?.pickupAddress?.city}
+                            {order?.pickupAddress?.label}
                           </TableCell>
                           <TableCell className="text-gray-600">
                             {(order as any).quantity ?? 0}
                           </TableCell>
                           <TableCell className="text-gray-600">
-                            {order?.deliveryAddress?.city}
+                            {order?.deliveryAddress?.label}
                           </TableCell>
                           <TableCell className="text-gray-600">
                             {order?.shippingScope}

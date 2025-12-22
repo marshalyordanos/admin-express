@@ -642,14 +642,14 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the obj
                     {order.finalPrice?.toFixed(2)} ETB
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {order?.pickupAddress?.city}
+                    {order?.pickupAddress?.label}
                   </TableCell>
                   <TableCell className="text-gray-600">
            {order.quantity}
 
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {order?.deliveryAddress?.city}
+                    {order?.deliveryAddress?.label}
                   </TableCell>
                   <TableCell className="text-gray-600">
                     {order?.shippingScope}

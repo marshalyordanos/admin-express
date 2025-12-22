@@ -33,6 +33,8 @@ const RegionalPricingSchema = Yup.object().shape({
     .min(0, "Profit margin must be positive")
     .max(100, "Profit margin cannot exceed 100%")
     .required("Profit margin is required"),
+    remark: Yup.string().required("Remark type is required"),
+
 });
 
 type DriverCommission = {
@@ -57,6 +59,8 @@ type InitialValues = {
   sameDayWeightRanges: WeightRange[];
   overnightWeightRanges: WeightRange[];
   driverCommission: DriverCommission[];
+  remark: string;
+
 };
 
 export default function RegionalPricingForm() {
@@ -93,8 +97,16 @@ export default function RegionalPricingForm() {
     sameDayWeightRanges: [{ from: "1", to: "3", price: 0 }],
     overnightWeightRanges: [{ from: "1", to: "3", price: 0 }],
     driverCommission: [],
+    remark:"Standard"
+
   };
 
+  const remarkOptions = [
+    { value: "Standard", label: "Standard" },
+    { value: "Weekend", label: "Weekend" },
+    { value: "Holiday", label: "Holiday" },
+    { value: "Event", label: "Event" },
+  ];
   const fetchVehicleTypes = async () => {
     try {
       const res = await api.get(`/fleet/type?search=&page=1&limit=1000`);
@@ -147,6 +159,7 @@ export default function RegionalPricingForm() {
     base.sameDay = expressST?.baseFee ?? 0;
     base.overnight = overnightST?.baseFee ?? 0;
     base.profitMargin = parsedPrice.profitMargin?.percentage ?? parsedPrice.profit ?? 0;
+    base.remark = parsedPrice.remark || "Standard"; // Get remarkType from parsed data or default to "Standard"
 
     // Apply airport fees to all services if present
     [standardST, expressST, overnightST].forEach((st, index) => {
@@ -230,6 +243,8 @@ export default function RegionalPricingForm() {
         name: "Regional Delivery Tariff",
         shippingScope: "REGIONAL",
         currency: "ETB",
+        remark: values.remark, // Include remarkType in payload
+
         serviceTypes: [
           { serviceType: "STANDARD", baseFee: values.standard },
           { serviceType: "EXPRESS", baseFee: values.sameDay },
@@ -306,7 +321,7 @@ export default function RegionalPricingForm() {
         validationSchema={RegionalPricingSchema}
         onSubmit={handleSubmit}
       >
-        {({ values, setFieldValue, errors, touched }) => (
+        {({ values, setFieldValue, errors, touched ,handleChange, handleBlur}) => (
           <Form className={loading ? "pointer-events-none opacity-50" : ""}>
             <PricingFormHeader
               title={
@@ -453,7 +468,40 @@ export default function RegionalPricingForm() {
               driverCommission={values.driverCommission}
               showAirportFee={true}
             />
-
+   <div className="mb-8">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Remark Type
+                </h3>
+                <div className="max-w-xs">
+                  <label
+                    htmlFor="remarkType"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Select Remark Type
+                  </label>
+                  <select
+                    id="remark"
+                    name="remark"
+                    value={values.remark}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    {remarkOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.remark && touched.remark && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.remark}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
             <ActionButtons isEditing={isEditing} loading={loading} />
           </Form>
         )}

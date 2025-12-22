@@ -22,6 +22,8 @@ const TownPricingSchema = Yup.object().shape({
     .min(0)
     .max(100)
     .required("Profit margin is required"),
+    remark: Yup.string().required("Remark type is required"),
+
 });
 
 type DriverCommission = {
@@ -40,6 +42,8 @@ type InitialValues = {
   costPerKm: number;
   profitMargin: number;
   driverCommission: DriverCommission[];
+  remark: string;
+
 };
 
 export default function TownPricingForm() {
@@ -59,7 +63,15 @@ export default function TownPricingForm() {
     costPerKm: 0,
     profitMargin: 0,
     driverCommission: [],
+    remark:"Standard"
   };
+  const remarkOptions = [
+    { value: "Standard", label: "Standard" },
+    { value: "Weekend", label: "Weekend" },
+    { value: "Holiday", label: "Holiday" },
+    { value: "Event", label: "Event" },
+  ];
+
   useEffect(() => {
     const fetchVehicleTypes = async () => {
       try {
@@ -113,6 +125,7 @@ export default function TownPricingForm() {
     base.sameDay = expressST?.baseFee ?? 0;
     base.overnight = overnightST?.baseFee ?? 0;
     base.profitMargin = parsedPrice.profitMargin?.percentage ?? parsedPrice.profit ?? 0;
+    base.remark = parsedPrice.remark || "Standard"; // Get remarkType from parsed data or default to "Standard"
 
     // map driver commissions
     const backendDCs: any[] = parsedPrice.driverCommissions || [];
@@ -137,6 +150,8 @@ export default function TownPricingForm() {
         name: "Town Delivery Tariff",
         shippingScope: "TOWN",
         currency: "ETB",
+        remark: values.remark, // Include remarkType in payload
+
         serviceTypes: [
           { serviceType: "STANDARD", baseFee: values.standard },
           { serviceType: "EXPRESS", baseFee: values.sameDay },
@@ -207,12 +222,13 @@ export default function TownPricingForm() {
         validationSchema={TownPricingSchema}
         onSubmit={handleSubmit}
       >
-        {({ values, errors, touched }) => (
+        {({ values, errors, touched,handleChange, handleBlur }) => (
           <Form className={loading ? "pointer-events-none opacity-50" : ""}>
             <PricingFormHeader 
               title={isEditing ? "Edit Town Pricing Configuration" : "Town Pricing Configuration"} 
             />
 
+         
             {/* Services without weight ranges */}
             <ServiceTypeSection
               serviceName="Standard Service"
@@ -279,6 +295,41 @@ export default function TownPricingForm() {
               driverCommission={values.driverCommission}
               showAirportFee={false}
             />
+               {/* Remark Type Select Field */}
+               <div className="mb-8">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Remark Type
+                </h3>
+                <div className="max-w-xs">
+                  <label
+                    htmlFor="remarkType"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Select Remark Type
+                  </label>
+                  <select
+                    id="remark"
+                    name="remark"
+                    value={values.remark}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    {remarkOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.remark && touched.remark && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.remark}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
 
             <ActionButtons isEditing={isEditing} loading={loading} />
           </Form>

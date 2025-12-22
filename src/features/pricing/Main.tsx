@@ -283,7 +283,7 @@ export default function PricingMain() {
                   <CardTitle className="text-xl font-bold text-gray-800">
                     {param.title}
                   </CardTitle>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm h-[50px] text-gray-500 mt-2">
                     {param.description}
                   </p>
                 </CardHeader>
