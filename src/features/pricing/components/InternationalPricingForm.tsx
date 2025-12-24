@@ -325,6 +325,40 @@ export default function InternationalPricingForm() {
             <PricingFormHeader
               title={isEditing ? "Edit International Pricing Configuration" : "International Pricing Configuration"}
             />
+   <div className="mb-8">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Remark Type
+                </h3>
+                <div className="max-w-xs">
+                  <label
+                    htmlFor="remarkType"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Select Remark Type
+                  </label>
+                  <select
+                    id="remark"
+                    name="remark"
+                    value={values.remark}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    {remarkOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.remark && touched.remark && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.remark}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Service Type Sections */}
             <ServiceTypeSection
@@ -410,41 +444,7 @@ export default function InternationalPricingForm() {
               driverCommission={values.driverCommission}
               showAirportFee={true}
             />
-              <div className="mb-8">
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Remark Type
-                </h3>
-                <div className="max-w-xs">
-                  <label
-                    htmlFor="remarkType"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Select Remark Type
-                  </label>
-                  <select
-                    id="remark"
-                    name="remark"
-                    value={values.remark}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                  >
-                    {remarkOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.remark && touched.remark && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.remark}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
+           
             <ActionButtons isEditing={isEditing} loading={loading} />
           </Form>
         )}

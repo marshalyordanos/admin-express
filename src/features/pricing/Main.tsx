@@ -426,20 +426,17 @@ export default function PricingMain() {
                         <div className="flex flex-col gap-1 max-w-[220px]">
                           {(() => {
                             // DEMO: fake random remark for display - always assign a label
-                            const demoRemarks = [
-                              { label: "Holiday", color: "bg-red-100 text-red-700" },
-                              { label: "Special Event", color: "bg-purple-100 text-purple-700" },
-                              { label: "Normal Day", color: "bg-blue-100 text-blue-800" },
-                              { label: "Weekend", color: "bg-yellow-100 text-yellow-700" },
-                              { label: "Urgent", color: "bg-orange-100 text-orange-700" },
-                              { label: "Maintenance", color: "bg-gray-100 text-gray-700" },
-                            ];
-                            // Randomly pick a remark; always choose a valid one
-                            const idx = Math.floor(Math.random() * demoRemarks.length);
-                            const remark = demoRemarks[idx];
+                            const demoRemarks = {
+                              "Holiday":"bg-red-100 text-red-700",
+                              "Event":"bg-purple-100 text-purple-700",
+                              "Standard":"bg-blue-100 text-blue-800",
+                              "Weekend":"bg-yellow-100 text-yellow-700",
+                              "Urgent":"bg-orange-100 text-orange-700",
+                              "Maintenance":"bg-gray-100 text-gray-700",
+                            }
                             return (
-                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${remark.color}`}>
-                                {remark.label}
+                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${demoRemarks[log?.remark as keyof typeof demoRemarks] || "bg-gray-100 text-gray-700"}`}>
+                                {log?.remark}
                               </span>
                             );
                           })()}

@@ -12,19 +12,19 @@ import {
   IoCall,
   IoCar,
   IoAdd,
-
-  IoClose
+  IoClose,
+  IoChevronBack,
+  IoChevronForward,
+  IoEllipsisHorizontal,
 } from "react-icons/io5";
 
 import "leaflet/dist/leaflet.css";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
-import type { Pagination } from "@/types/types";
-
+// import type { Pagination } from "@/types/types";
 
 // Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })
-  ._getIconUrl;
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
@@ -36,9 +36,7 @@ L.Icon.Default.mergeOptions({
 
 // Custom driver icon - different colors for INTERNAL and EXTERNAL drivers
 const createDriverIcon = (type: string) => {
-  // Use different colors based on driver type
-  const color = type === "INTERNAL" ? "#3b82f6" : "#10b981"; // Blue for INTERNAL, Green for EXTERNAL
-  
+  const color = type === "INTERNAL" ? "#3b82f6" : "#10b981";
   return L.divIcon({
     className: "custom-driver-icon",
     html: `<div style="
@@ -67,8 +65,8 @@ interface Driver {
   frontImageUrl?: string | null;
   backImageUrl?: string | null;
   verifiedByOCR?: boolean;
-  currentLat?: number;
-  currentLon?: number;
+  currentLat?: number | null;
+  currentLon?: number | null;
   updatedAt: string;
   createdBy?: string | null;
   user?: {
@@ -90,6 +88,13 @@ interface Driver {
     failedOrders: number;
     completionRate: string;
   };
+}
+
+interface PaginationType {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 interface DriversMapViewProps {
@@ -114,89 +119,93 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export default function DriversMapView({
-  onCreateDriver,
-}: DriversMapViewProps) {
+function range(start: number, end: number) {
+  return Array.from({ length: end - start + 1 }, (_, k) => k + start);
+}
+const MAX_PAGE_BUTTONS = 5;
+
+export default function DriversMapView({ onCreateDriver }: DriversMapViewProps) {
+  // State for drivers, loading, pagination, etc
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [dispatchProgress] = useState(75);
 
-  const [currentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [driverLoading, setDriverLoading] = useState(false);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [pagination, setPagination] = useState<PaginationType | null>(null);
   const [driverSearch] = useState("");
 
-  
-  // const handlePageChange = (page: number) => {
-  //   setCurrentPage(page);
-  // };
-
-  // const handlePageSizeChange = (size: number) => {
-  //   setPageSize(size);
-  //   setCurrentPage(1); // Reset to first page when changing page size
-  // };
-
- 
-  const featchOrders = async () => {
+  // Fetch drivers with pagination, using the format in your real response
+  const fetchDrivers = async () => {
     try {
       setDriverLoading(true);
 
-      const staffs = await api.get<{
-        data: { drivers: Driver[] };
-        pagination: Pagination;
-      }>(`/staff/driver`);
+      const res = await api.get<{
+        data: {
+          drivers: Driver[];
+          pagination: PaginationType;
+        };
+        // success: boolean;
+        // message: string;
+      }>(
+        `/staff/driver?page=${currentPage}&pageSize=${pageSize}`
+      );
 
-      setDrivers(staffs.data.data?.drivers || []);
-      setPagination(staffs.data.pagination);
+      setDrivers(res.data.data?.drivers || []);
+      setPagination(res.data.data?.pagination || null);
       setDriverLoading(false);
     } catch (error: unknown) {
       setDriverLoading(false);
-
       const message =
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        "Something went wrong. Please try again.";
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message || "Something went wrong. Please try again.";
       toast.error(message);
       console.error(error);
     }
   };
 
   useEffect(() => {
-    featchOrders();
-  }, [driverSearch,currentPage,pageSize]);
- 
+    fetchDrivers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [driverSearch, currentPage, pageSize]);
 
+  const handleSelectDriver = (driver: Driver) => setSelectedDriver(driver);
 
-  const handleSelectDriver = (driver: Driver) => {
-    setSelectedDriver(driver);
-  };
+  // Work directly from pagination object if present.
+  const totalDrivers = pagination?.total ?? drivers.length ?? 0;
+  const page = pagination?.page ?? currentPage;
+  const size = pagination?.pageSize ?? pageSize;
+  const totalPages = pagination?.totalPages ?? 1;
 
-  // const handleSelectAll = () => {
-  //   if (selectedDrivers.length === filteredDrivers.length) {
-  //     setSelectedDrivers([]);
-  //   } else {
-  //     setSelectedDrivers(filteredDrivers.map((d) => d.id));
-  //   }
-  // };
+  function getVisiblePageNumbers() {
+    if (totalPages <= MAX_PAGE_BUTTONS) {
+      return range(1, totalPages);
+    }
+    const half = Math.floor(MAX_PAGE_BUTTONS / 2);
+    let start = Math.max(1, page - half);
+    let end = Math.min(totalPages, page + half);
+    if (page - half < 1) end = Math.min(totalPages, end + (1 - (page - half)));
+    if (page + half > totalPages) start = Math.max(1, start - ((page + half) - totalPages));
+    return range(start, end);
+  }
 
-  // const handleDriverSelection = (driverId: string) => {
-  //   setSelectedDrivers((prev) =>
-  //     prev.includes(driverId)
-  //       ? prev.filter((id) => id !== driverId)
-  //       : [...prev, driverId]
-  //   );
-  // };
   const date = new Date();
 
   return (
     <div className="flex h-[calc(100vh-200px)] bg-gray-50">
       {/* Left Panel - Driver List */}
-      <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-2/5 bg-white border-r border-gray-200 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
-              Drivers ({driverLoading ? "..." : drivers?.length || 0})
+              Drivers{" "}
+              {driverLoading
+                ? "..."
+                : pagination
+                ? `(${pagination.total})`
+                : drivers?.length || 0}
             </h2>
             <Button
               onClick={onCreateDriver}
@@ -206,33 +215,6 @@ export default function DriversMapView({
               Add Driver
             </Button>
           </div>
-
-          {/* Search and Filter */}
-          {/* <div className="space-y-3">
-            <div className="relative">
-              <IoSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by Driver, city or des.."
-                className="pl-10 py-7"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <IoFilter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-              <Checkbox
-                checked={
-                  selectedDrivers.length === filteredDrivers.length &&
-                  filteredDrivers.length > 0
-                }
-                onCheckedChange={handleSelectAll}
-              />
-              <span className="text-sm text-gray-600">SELECT ALL</span>
-            </div>
-          </div> */}
         </div>
 
         {/* Driver List */}
@@ -298,7 +280,8 @@ export default function DriversMapView({
                       <div className="flex items-center gap-4 mt-2">
                         <div className="flex items-center gap-1">
                           <span className="text-sm text-gray-600">
-                            {driver?.performance?.completedOrders || 0}/{driver?.performance?.totalOrders || 0}
+                            {driver?.performance?.completedOrders || 0}/
+                            {driver?.performance?.totalOrders || 0}
                           </span>
                           <div className="w-16 bg-gray-200 rounded-full h-1">
                             <div
@@ -306,8 +289,9 @@ export default function DriversMapView({
                               style={{
                                 width: `${
                                   (driver?.performance?.totalOrders ?? 0) > 0
-                                    ? (((driver.performance?.completedOrders ?? 0) / (driver.performance?.totalOrders ?? 1)) *
-                                      100)
+                                    ? ((driver.performance?.completedOrders ?? 0) /
+                                        (driver.performance?.totalOrders ?? 1)) *
+                                      100
                                     : 0
                                 }%`,
                               }}
@@ -364,15 +348,105 @@ export default function DriversMapView({
 
         {/* Pagination */}
         <div className="p-4 border-t border-gray-200">
-          {driverLoading ? (
-            <div className="h-5 bg-gray-200 rounded animate-pulse w-32"></div>
-          ) : (
+          <div className="flex items-center justify-between">
+            {/* Info */}
             <p className="text-sm text-gray-500">
-              {drivers && drivers.length > 0
-                ? `1-${drivers.length} of ${pagination?.total || drivers.length} results`
+              {driverLoading
+                ? "Loading..."
+                : totalDrivers > 0
+                ? `${(page - 1) * size + 1}-${Math.min(page * size, totalDrivers)} of ${totalDrivers} results`
                 : "0 results"}
             </p>
-          )}
+
+            {/* Page Size Select */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Rows:</span>
+              <select
+                className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none"
+                value={size}
+                onChange={e => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                disabled={driverLoading}
+              >
+                {[2, 10, 20, 30, 50].map(sizeOption => (
+                  <option key={sizeOption} value={sizeOption}>
+                    {sizeOption}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Pagination Bar */}
+            <div className="flex items-center gap-1">
+              <Button
+                onClick={() => setCurrentPage(_val => Math.max(1, page - 1))}
+                disabled={driverLoading || page <= 1}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+              >
+                <IoChevronBack />
+              </Button>
+              {totalPages > MAX_PAGE_BUTTONS && getVisiblePageNumbers()[0] > 1 && (
+                <button
+                  className="h-8 w-8 text-gray-500 text-xs bg-gray-100 rounded"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={driverLoading}
+                >
+                  1
+                </button>
+              )}
+              {totalPages > MAX_PAGE_BUTTONS && getVisiblePageNumbers()[0] > 2 && (
+                <span className="px-1 text-gray-400">
+                  <IoEllipsisHorizontal />
+                </span>
+              )}
+              {getVisiblePageNumbers().map(pageNum => (
+                <button
+                  key={pageNum}
+                  className={`h-8 w-8 text-xs rounded ${
+                    page === pageNum
+                      ? "bg-blue-600 text-white font-bold"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                  onClick={() => setCurrentPage(pageNum)}
+                  disabled={driverLoading}
+                  style={{
+                    fontWeight: page === pageNum ? 700 : 400,
+                  }}
+                >
+                  {pageNum}
+                </button>
+              ))}
+              {totalPages > MAX_PAGE_BUTTONS &&
+                getVisiblePageNumbers()[getVisiblePageNumbers().length - 1] < totalPages - 1 && (
+                  <span className="px-1 text-gray-400">
+                    <IoEllipsisHorizontal />
+                  </span>
+                )}
+              {totalPages > MAX_PAGE_BUTTONS &&
+                getVisiblePageNumbers()[getVisiblePageNumbers().length - 1] < totalPages && (
+                  <button
+                    className="h-8 w-8 text-gray-500 text-xs bg-gray-100 rounded"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={driverLoading}
+                  >
+                    {totalPages}
+                  </button>
+                )}
+              <Button
+                onClick={() => setCurrentPage(_val => Math.min(totalPages, page + 1))}
+                disabled={driverLoading || page >= totalPages}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+              >
+                <IoChevronForward />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -441,18 +515,21 @@ export default function DriversMapView({
               drivers
                 .filter(
                   (driver) =>
-                    driver.currentLat !== undefined &&
-                    driver.currentLon !== undefined &&
+                    typeof driver?.currentLat === "number" &&
+                    typeof driver?.currentLon === "number" &&
+                    driver.currentLat !== null &&
+                    driver.currentLon !== null &&
                     !isNaN(driver.currentLat) &&
                     !isNaN(driver.currentLon)
                 )
                 .map((driver) => (
                   <Marker
                     key={driver.id}
-                    position={[driver.currentLat as number, driver.currentLon as number]}
-                    icon={createDriverIcon(
-                      driver.type || "EXTERNAL"
-                    )}
+                    position={[
+                      Number(driver.currentLat),
+                      Number(driver.currentLon),
+                    ]}
+                    icon={createDriverIcon(driver.type || "EXTERNAL")}
                     eventHandlers={{
                       click: () => handleSelectDriver(driver),
                     }}
@@ -483,9 +560,14 @@ export default function DriversMapView({
         {selectedDriver && (
           <div className="p-4 bg-white border-t border-gray-200">
             <div className=" flex flex-row justify-end">
-            <Button variant="outline" className="my-2" onClick={()=>setSelectedDriver(null)} size="sm">
-            <IoClose className="my-2" />
-            </Button>
+              <Button
+                variant="outline"
+                className="my-2"
+                onClick={() => setSelectedDriver(null)}
+                size="sm"
+              >
+                <IoClose className="my-2" />
+              </Button>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {/* Driver Details */}
