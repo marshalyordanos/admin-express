@@ -34,7 +34,7 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom driver icon - different colors for INTERNAL and EXTERNAL drivers
+// Custom driver icon - different colors for INTERNAL and EXTERNAL driverskjnnlk
 const createDriverIcon = (type: string) => {
   const color = type === "INTERNAL" ? "#3b82f6" : "#10b981";
   return L.divIcon({
