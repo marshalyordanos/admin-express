@@ -137,6 +137,7 @@ export interface Branch {
   staffCount: number;
   revenue: number;
   efficiency: number;
+  customId: string;
 }
 
 export interface Staff {
@@ -151,6 +152,8 @@ export interface Staff {
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
 }
 
 export interface FleetDriver {
@@ -185,6 +188,8 @@ export interface FleetVehicle {
   updatedAt: string;
   createdBy: string | null;
   driver: FleetDriver;
+  vehicleTypeId: any;
+  vehicleType: any;
 }
 
 /** ───── Vehicle ───── */

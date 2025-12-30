@@ -402,7 +402,7 @@ interface BranchDashboardStats {
                     <Checkbox />
                   </TableCell>
                   <TableCell className="font-medium text-blue-500">
-                    {branch.id}
+                    {branch?.customId}
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
                     <Button

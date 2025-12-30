@@ -38,9 +38,9 @@ const CreateVehicle = () => {
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initialValues,setInitialValues] = useState({
+  const [initialValues, setInitialValues] = useState({
     plateNumber: "",
-    type: "",
+    vehicleTypeId: "",
     // brand: "",
     model: "",
     // year: new Date().getFullYear(),
@@ -58,7 +58,11 @@ const CreateVehicle = () => {
     // color: "",
     // notes: "",
   });
-  const [fleet,setFleet] = useState(null)
+  const [fleet, setFleet] = useState(null);
+
+  // New states for vehicle types
+  const [vehicleTypes, setVehicleTypes] = useState<{ value: string; label: string }[]>([]);
+  const [vehicleTypeLoading, setVehicleTypeLoading] = useState<boolean>(false);
 
   const navigate = useNavigate();
   const { id } = useParams();
@@ -69,42 +73,74 @@ const CreateVehicle = () => {
   const fleetDetail = query.get("fleet")
     ? JSON.parse(query.get("fleet")!)
     : null;
-console.log(fleetDetail,"fleetDetail",fleet)
+  console.log(fleetDetail, "fleetDetail", fleet);
+
+  // Fetch vehicle types from /fleet/type
+  useEffect(() => {
+    const fetchVehicleTypes = async () => {
+      setVehicleTypeLoading(true);
+      try {
+        const res = await api.get("/fleet/type");
+        // Expecting: res.data?.data?.vehicleTypes
+        const typeList = Array.isArray(res.data?.data?.vehicleTypes)
+          ? res.data.data.vehicleTypes
+          : [];
+        setVehicleTypes(
+          typeList.map((t: any) => ({
+            value: t.name, // or t.id, but the form is using the name
+            label: t.name,
+            description: t.description,
+          }))
+        );
+      } catch (e) {
+        // fallback in case of error
+        setVehicleTypes([
+          { value: "Bicycle", label: "Bicycle" },
+          { value: "Motorcycle", label: "Motorcycle" },
+          { value: "Bajaj", label: "Bajaj" },
+          { value: "Scooter", label: "Scooter" },
+          { value: "Automobile", label: "Automobile" },
+        ]);
+      } finally {
+        setVehicleTypeLoading(false);
+      }
+    };
+    fetchVehicleTypes();
+  }, []);
+
   // Fetch vehicle data if in edit mode
   useEffect(() => {
     const fetchVehicleData = async () => {
       if (!isEditMode) return;
-   
+
       // setLoading(true);
-      setFleet(fleetDetail)
+      setFleet(fleetDetail);
       setInitialValues({
         plateNumber: fleetDetail.plateNumber,
-    type: fleetDetail.type,
-    // brand: "",
-    model: fleetDetail.model,
+        vehicleTypeId: fleetDetail.type,
+        // brand: "",
+        model: fleetDetail.model,
       });
-
-    
     };
 
     fetchVehicleData();
   }, [id, isEditMode]);
 
-  const handleSubmit = async (values:any) => {
+  const handleSubmit = async (values: any) => {
     try {
-      console.log("values",values)
+      console.log("values", values);
       try {
         setLoading(true);
-        
-       let res 
-       
-       if(isEditMode){
-         res = await api.patch("/fleet/"+id,values);
-       }else{
-         res = await api.post("/fleet",values);
-       }
+
+        let res;
+
+        if (isEditMode) {
+          res = await api.patch("/fleet/" + id, values);
+        } else {
+          res = await api.post("/fleet", values);
+        }
         toast.success(res.data?.message);
-  navigate("/fleet")
+        navigate("/fleet");
       } catch (error: any) {
         toast.error(error?.response?.data?.message || "Somethign went wrong!");
       } finally {
@@ -207,26 +243,33 @@ console.log(fleetDetail,"fleetDetail",fleet)
                 <div>
                   <Label className="mb-1">Vehicle Type *</Label>
                   <Select
-                    value={values.type}
+                    value={values.vehicleTypeId}
                     onValueChange={(val) => setFieldValue("type", val)}
+                    disabled={vehicleTypeLoading}
                   >
                     <SelectTrigger
                       className={`py-7 !w-full ${
-                        errors.type && touched.type ? "border-red-500" : ""
+                        errors.vehicleTypeId && touched.vehicleTypeId ? "border-red-500" : ""
                       }`}
                     >
-                      <SelectValue placeholder="Select vehicle type" />
+                      <SelectValue placeholder={vehicleTypeLoading ? "Loading types..." : "Select vehicle type"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Motorcycle">Motorcycle</SelectItem>
-                      <SelectItem value="Pickup">Pickup Truck</SelectItem>
-                      <SelectItem value="Van">Van</SelectItem>
-                      <SelectItem value="Truck">Truck</SelectItem>
-                      <SelectItem value="Trailer">Trailer</SelectItem>
+                      {vehicleTypeLoading ? (
+                        <div className="py-2 px-4 text-gray-500">Loading types...</div>
+                      ) : vehicleTypes.length === 0 ? (
+                        <div className="py-2 px-4 text-gray-500">No vehicle types available</div>
+                      ) : (
+                        vehicleTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
-                  {errors.type && touched.type && (
-                    <p className="text-red-500 text-sm mt-1">{errors.type}</p>
+                  {errors.vehicleTypeId && touched.vehicleTypeId && (
+                    <p className="text-red-500 text-sm mt-1">{errors.vehicleTypeId}</p>
                   )}
                 </div>
                 {/* <div>

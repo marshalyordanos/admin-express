@@ -486,7 +486,7 @@ console.log(staffs.data)
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="bg-gray-100">
-                          {vehicle.type}
+                          {vehicle?.vehicleTypeId?.name}
                         </Badge>
                       </TableCell>
                       <TableCell>

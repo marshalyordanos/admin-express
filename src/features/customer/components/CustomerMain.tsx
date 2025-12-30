@@ -434,7 +434,7 @@ export default function CustomerMain() {
                       variant="ghost"
                       className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
                     >
-                      {customer.id}
+                      {customer.customId}
                     </Button>
                   </TableCell>
                   <TableCell>
@@ -448,11 +448,11 @@ export default function CustomerMain() {
                       </div>
                       <div>
                         <span className="font-medium text-gray-900">
-                          {customer.name}
+                          {decodeURIComponent(customer.name)}
                         </span>
                         {customer?.companyName && (
                           <div className="text-sm text-gray-500">
-                            {customer?.companyName}
+                            {(customer?.companyName)}
                           </div>
                         )}
                       </div>

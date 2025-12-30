@@ -9,7 +9,6 @@ import {
   TrendingDown,
   Users,
   UserCheck,
-  UserX,
   Building2,
 } from "lucide-react";
 
@@ -168,14 +167,14 @@ function StaffPage() {
           color: "green",
           icon: <UserCheck className="h-5 w-5" />,
         },
-        {
-          title: "On Leave",
-          value: summary.onLeave.value,
-          change: `${summary.onLeave.changeFromLastWeek} from last week`,
-          trend: summary.onLeave.changeFromLastWeek > 0 ? "up" : "down",
-          color: "orange",
-          icon: <UserX className="h-5 w-5" />,
-        },
+        // {
+        //   title: "On Leave",
+        //   value: summary.onLeave.value,
+        //   change: `${summary.onLeave.changeFromLastWeek} from last week`,
+        //   trend: summary.onLeave.changeFromLastWeek > 0 ? "up" : "down",
+        //   color: "orange",
+        //   icon: <UserX className="h-5 w-5" />,
+        // },
         {
           title: "Branches Covered",
           value: summary.branchesCovered.value,
@@ -252,8 +251,8 @@ function StaffPage() {
         </div>
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {loadingSummary?   Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {loadingSummary?   Array.from({ length: 3 }).map((_, i) => (
         <Card key={i} className="bg-white p-4">
           <Skeleton
             active
@@ -392,7 +391,7 @@ function StaffPage() {
                       variant="ghost"
                       className="p-0 text-blue-600 hover:text-blue-800 cursor-pointer"
                     >
-                      {member.id}
+                      {member?.customId}
                     </Button>
                   </TableCell>
                   <TableCell>

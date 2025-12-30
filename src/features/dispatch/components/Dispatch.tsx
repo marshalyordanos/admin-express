@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -282,6 +282,27 @@ export interface DashboardStats {
 
   utilizationChange: number;
 }
+
+// Helper to reverse-geocode lat/long to place name using MapAddressSelector.tsx nominatim endpoint
+const reverseGeocode = async (lat: string, lng: string) => {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+    const response = await fetch(url, {
+      headers: { "Accept": "application/json" },
+    });
+    if (!response.ok) return "Unknown";
+    const data = await response.json();
+    // prefer display_name if exists, fallback to address fields or coordinates
+    if (data?.display_name) return data.display_name;
+    if (data?.address) {
+      return Object.values(data.address).filter(Boolean).join(", ");
+    }
+    return `(${lat}, ${lng})`;
+  } catch (err) {
+    return "Unknown";
+  }
+};
+
 export default function Dispatch() {
   const navigate = useNavigate();
   // const [selectedDriver, setSelectedDriver] = useState("");
@@ -355,6 +376,115 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
       console.error(error); // optional: log the full error
     }
   };
+  const geoCacheRef = useRef<Record<
+  string, 
+  { [purpose: string]: string }
+>>({});
+const [loading] = useState<boolean>(true);
+
+
+  useEffect(() => {
+    let cancelled = false;
+    // Helper to check and decode missing labels for pickup/delivery
+    const decodeMissingAddresses = async () => {
+      let changed = false;
+      const newOrders = await Promise.all(
+        orders.map(async (order) => {
+          let pickupDisplay = order?.pickupAddress?.landMark || "";
+          let deliveryDisplay = order?.deliveryAddress?.landMark || "";
+          console.log(pickupDisplay,"order?.pickupAddress",deliveryDisplay)
+          const newPickup =
+            order?.pickupAddress &&
+            (order?.pickupAddress.addressLine === "Unknown" ||
+              order?.pickupAddress.landMark === "Unknown" ||
+              !order?.pickupAddress.addressLine ||
+              order?.pickupAddress.addressLine.trim() === "") &&
+            order?.pickupAddress.lat &&
+            order?.pickupAddress.long;
+
+          const newDelivery =
+            order?.deliveryAddress &&
+            (order?.deliveryAddress.addressLine === "Unknown" ||
+              order?.deliveryAddress.landMark === "Unknown" ||
+              !order?.deliveryAddress.addressLine ||
+              order?.deliveryAddress.addressLine.trim() === "") &&
+            order?.deliveryAddress.lat &&
+            order?.deliveryAddress.long;
+
+          const cacheKey = order.id;
+
+          // Use cache if available (avoid repeated queries)
+          if (!geoCacheRef.current[cacheKey]) geoCacheRef.current[cacheKey] = {};
+
+          if (newPickup && !geoCacheRef.current[cacheKey].pickup) {
+            pickupDisplay = "Loading...";
+            geoCacheRef.current[cacheKey].pickup = "Loading...";
+            // Fetch and update
+            reverseGeocode(order.pickupAddress.lat, order.pickupAddress.long).then(label => {
+              geoCacheRef.current[cacheKey].pickup = label;
+              // Update this order in the list
+              setOrders(prevOrders => prevOrders.map(o => {
+                if (o.id === order.id) {
+                  return {
+                    ...o,
+                    pickupAddress: {
+                      ...o.pickupAddress,
+                      landMark: label,
+                      addressLine: label
+                    }
+                  }
+                }
+                return o;
+              }));
+            });
+            changed = true;
+          } else if (geoCacheRef.current[cacheKey]?.pickup) {
+            pickupDisplay = geoCacheRef.current[cacheKey].pickup;
+          }
+
+          if (newDelivery && !geoCacheRef.current[cacheKey].delivery) {
+            deliveryDisplay = "Loading...";
+            geoCacheRef.current[cacheKey].delivery = "Loading...";
+            // Fetch and update
+            reverseGeocode(order.deliveryAddress.lat, order.deliveryAddress.long).then(label => {
+              geoCacheRef.current[cacheKey].delivery = label;
+              setOrders(prevOrders => prevOrders.map(o => {
+                if (o.id === order.id) {
+                  return {
+                    ...o,
+                    deliveryAddress: {
+                      ...o.deliveryAddress,
+                      landMark: label,
+                      addressLine: label
+                    }
+                  }
+                }
+                return o;
+              }));
+            });
+            changed = true;
+          } else if (geoCacheRef.current[cacheKey]?.delivery) {
+            deliveryDisplay = geoCacheRef.current[cacheKey].delivery;
+          }
+
+          return order;
+        })
+      );
+      console.log(cancelled,"cancelled",newOrders,changed)
+      // update only if order array changed (to trigger re-render for Loading...) 
+      // (not required, as setOrders is called above once label loads)
+    };
+
+    // Only decode when not loading and there are orders
+    if (!loading && orders.length > 0) {
+      decodeMissingAddresses();
+    }
+    return () => {
+      cancelled = true;
+    }
+    // eslint-disable-next-line
+  }, [orders, loading]);
+
 
   useEffect(() => {
     featchOrders(currentPage, pageSize);
@@ -797,15 +927,47 @@ const [cargoOfficerSearch,setCargoOfficerSearch] = useState("")
                           <TableCell className="font-medium text-gray-900">
                             {order.finalPrice?.toFixed(2)} ETB
                           </TableCell>
+                        
+
                           <TableCell className="text-gray-600">
-                            {order?.pickupAddress?.landMark}
-                          </TableCell>
+                    {
+                      (order?.pickupAddress?.addressLine === "Unknown" ||
+                        order?.pickupAddress?.landMark === "Unknown" ||
+                        !order?.pickupAddress?.addressLine ||
+                        order?.pickupAddress?.addressLine?.trim() === "")
+                      ?
+                        // Use decoded in-memory label if available, otherwise loading text, otherwise initial
+                        (order?.pickupAddress?.landMark && order?.pickupAddress?.landMark !== "Unknown"
+                          ? order?.pickupAddress?.landMark
+                          : (order?.pickupAddress?.lat && order?.pickupAddress?.long
+                              ? "Loading..."
+                              : "Unknown"
+                            )
+                        )
+                      : order?.pickupAddress?.landMark
+                    }
+                  </TableCell>
+
                           <TableCell className="text-gray-600">
                             {(order as any).quantity ?? 0}
                           </TableCell>
                           <TableCell className="text-gray-600">
-                            {order?.deliveryAddress?.landMark}
-                          </TableCell>
+                    {
+                      (order?.deliveryAddress?.addressLine === "Unknown" ||
+                        order?.deliveryAddress?.landMark === "Unknown" ||
+                        !order?.deliveryAddress?.addressLine ||
+                        order?.deliveryAddress?.addressLine?.trim() === "")
+                      ?
+                        (order?.deliveryAddress?.landMark && order?.deliveryAddress?.landMark !== "Unknown"
+                          ? order?.deliveryAddress?.landMark
+                          : (order?.deliveryAddress?.lat && order?.deliveryAddress?.long
+                              ? "Loading..."
+                              : "Unknown"
+                            )
+                        )
+                      : order?.deliveryAddress?.landMark
+                    }
+                  </TableCell>
                           <TableCell className="text-gray-600">
                             {order?.shippingScope}
                           </TableCell>

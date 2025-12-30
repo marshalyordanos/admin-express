@@ -38,6 +38,8 @@ const CreateStaffPage = () => {
     branchId: "",
     phone: "",
     role: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
   });
 
   const navigate = useNavigate();
@@ -385,6 +387,42 @@ navigate("/staff")
                   )}
                 </div>
               </div>
+              </div>
+              {/* Emergency Contact Information */}
+              <div className="bg-gray-50 p-6 rounded-lg space-y-4">
+                <h2 className="text-lg font-medium mb-4">Emergency Contact Information</h2>
+                <div>
+                  <Label className="mb-1">Emergency Contact Name *</Label>
+                  <Field
+                    as={Input}
+                    name="emergencyContactName"
+                    placeholder="Enter emergency contact full name"
+                    className={`py-7 ${
+                      errors.emergencyContactName && touched.emergencyContactName
+                        ? "border-red-500"
+                        : ""
+                    }`}
+                  />
+                  {errors.emergencyContactName && touched.emergencyContactName && (
+                    <p className="text-red-500 text-sm mt-1">{errors.emergencyContactName}</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="mb-1">Emergency Contact Phone *</Label>
+                  <Field
+                    as={Input}
+                    name="emergencyContactPhone"
+                    placeholder="Enter emergency contact phone"
+                    className={`py-7 ${
+                      errors.emergencyContactPhone && touched.emergencyContactPhone
+                        ? "border-red-500"
+                        : ""
+                    }`}
+                  />
+                  {errors.emergencyContactPhone && touched.emergencyContactPhone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.emergencyContactPhone}</p>
+                  )}
+                </div>
               </div>
             </div>
 

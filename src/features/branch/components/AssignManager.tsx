@@ -15,6 +15,7 @@ import type {
   Staff,
   Pagination,
   StaffListResponse,
+  RoleWithPermissionsListResponse,
 } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 
@@ -66,9 +67,16 @@ const AssignManager = () => {
   const featchStaffs = async () => {
     try {
       setLoadingStaff(true);
+      
+      const roles = await api.get<RoleWithPermissionsListResponse>(
+        "/access-control/roles?page=1&pageSize=100"
+      );
+      const managerRoleId = roles.data.data.find((role) => role.name=="HR_MANAGER");
+
+      console.log(" ::::::::::",managerRoleId)
 
       const staffs = await api.get<StaffListResponse>(
-        `/staff?search=all:${managerSearch}&page=${1}&pageSize=${20}`
+        `/staff?search=all:${managerSearch}&page=${1}&pageSize=${20}&filter=roleId:${managerRoleId?.id}`
       );
       setStaffs(staffs.data.data);
       setPagination(staffs.data.pagination);

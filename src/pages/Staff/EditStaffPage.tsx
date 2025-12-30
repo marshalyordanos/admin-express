@@ -5,8 +5,8 @@ import { Label } from "@/components/ui/label";
 
 import Button from "@/components/common/Button";
 // import api from "../../../lib/api/api";
-import {  UpdateStaffSchema } from "@/features/staff/schemas/CreateStaffSchema";
-import { IoArrowBack, IoPersonAdd,} from "react-icons/io5";
+import { UpdateStaffSchema } from "@/features/staff/schemas/CreateStaffSchema";
+import { IoArrowBack, IoPersonAdd } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "@/lib/api/api";
@@ -20,23 +20,21 @@ import type {
 } from "@/types/types";
 import { Spinner } from "@/utils/spinner";
 
-
-
 const EditStaffPage = () => {
-
-
   const [status] = useState<"idle" | "submitting" | "success" | "error">(
     "idle"
   );
   const [message] = useState<string | null>(null);
   // const [loading] = useState(false);
-  const [initialValues,setInitialValues] = useState({
+  const [initialValues, setInitialValues] = useState({
     name: "",
     email: "",
     // password: "",
     branchId: "",
     phone: "",
     // role: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
   });
 
   const navigate = useNavigate();
@@ -45,26 +43,25 @@ const EditStaffPage = () => {
   const [loading, setLoading] = useState(false);
   const [loadingRole, setLoadingRole] = useState(false);
   const [loadingBrand, setLoadingBrand] = useState(false);
-  const [ branches,setBranches] = useState<Branch[]>([])
+  const [branches, setBranches] = useState<Branch[]>([]);
 
   const [branchSearch, setBranchSearch] = useState("");
   const [showBranchDropdown, setShowBranchDropdown] = useState(false);
 
-
   const [roles, setRoles] = useState<RoleWithPermissions[]>([]);
 
-  const [staff,setStaff] =useState<Staff|null>(null);
+  const [staff, setStaff] = useState<Staff | null>(null);
 
-  console.log("stff detail: ",staff,loadingRole,roles)
+  console.log("stff detail: ", staff, loadingRole, roles);
 
-  const featchStaff = async()=>{
+  const featchStaff = async () => {
     try {
-      setLoading(true)
-      
-      const staffs  =await api.get<StaffDetailResponse>("/staff/"+id)
+      setLoading(true);
+
+      const staffs = await api.get<StaffDetailResponse>("/staff/" + id);
       const staffData = staffs.data.data;
 
-      setStaff(staffs.data.data)
+      setStaff(staffs.data.data);
       setInitialValues({
         name: staffData.name || "",
         email: staffData.email || "",
@@ -72,30 +69,29 @@ const EditStaffPage = () => {
         phone: staffData.phone || "",
         // role: staffData.role?.id || "",
         branchId: staffData.branch?.id || "",
+        emergencyContactName: staffData.emergencyContactName || "",
+        emergencyContactPhone: staffData.emergencyContactPhone || "",
       });
-        // Pre-fill branch search input
-        if (staffData.branch) {
-          setBranchSearch(`${staffData.branch.name} (${staffData.branch.id})`);
-        }
+      // Pre-fill branch search input
+      if (staffData.branch) {
+        setBranchSearch(`${staffData.branch.name} (${staffData.branch.id})`);
+      }
       toast.success(staffs.data.message);
-      setLoading(false)
-
-    } catch (error:any) {
-      setLoading(false)
+      setLoading(false);
+    } catch (error: any) {
+      setLoading(false);
 
       const message =
-      error?.response?.data?.message || "Something went wrong. Please try again.";
-    toast.error(message);
-    console.error(error); // optional: log the full error
-
-      
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+      console.error(error); // optional: log the full error
     }
-  }
+  };
 
-  useEffect(()=>{
-    featchStaff()
-  },[])
-
+  useEffect(() => {
+    featchStaff();
+  }, []);
 
   const featchRole = async () => {
     try {
@@ -105,7 +101,7 @@ const EditStaffPage = () => {
         "/access-control/roles?page=1&pageSize=100"
       );
       setRoles(staffs.data.data);
-      
+
       // toast.success(staffs.data.message);
       setLoadingRole(false);
     } catch (error: any) {
@@ -123,14 +119,11 @@ const EditStaffPage = () => {
     featchRole();
   }, []);
 
-  
   const featchBranch = async () => {
     try {
       setLoadingBrand(true);
 
-      const branch = await api.get<BranchListResponse>(
-        "/branch"
-      );
+      const branch = await api.get<BranchListResponse>("/branch");
       setBranches(branch.data.data);
       // toast.success(staffs.data.message);
       setLoadingBrand(false);
@@ -153,13 +146,13 @@ const EditStaffPage = () => {
     console.log(initialValues, value);
     try {
       setLoading(true);
-      const data = {...value}
-      if(data?.branchName){
-        delete data.branchName
+      const data = { ...value };
+      if (data?.branchName) {
+        delete data.branchName;
       }
-      const res = await api.patch("/staff/"+id,data);
+      const res = await api.patch("/staff/" + id, data);
       toast.success(res.data?.message);
-navigate("/staff")
+      navigate("/staff");
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Somethign went wrong!");
     } finally {
@@ -191,7 +184,6 @@ navigate("/staff")
     setShowBranchDropdown(false);
   };
 
-
   const clearBranch = (
     setFieldValue: (field: string, value: string) => void
   ) => {
@@ -199,7 +191,6 @@ navigate("/staff")
     setFieldValue("branchName", "");
     setBranchSearch("");
   };
-
 
   return (
     <div className="max-w-4xl p-6 bg-white">
@@ -295,6 +286,50 @@ navigate("/staff")
                     <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
                   )}
                 </div>
+
+                {/* Emergency Contact Information Section */}
+                <div>
+                  <h2 className="text-lg font-medium mt-8 mb-4">
+                    Emergency Contact
+                  </h2>
+                  <div>
+                    <Label className="mb-1">Emergency Contact Name *</Label>
+                    <Field
+                      as={Input}
+                      name="emergencyContactName"
+                      placeholder="Enter emergency contact name"
+                      className={`py-7 ${
+                        errors.emergencyContactName && touched.emergencyContactName
+                          ? "border-red-500"
+                          : ""
+                      }`}
+                    />
+                    {errors.emergencyContactName && touched.emergencyContactName && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.emergencyContactName}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label className="mb-1">Emergency Contact Phone *</Label>
+                    <Field
+                      as={Input}
+                      name="emergencyContactPhone"
+                      placeholder="+251 9xx xxx xxx"
+                      className={`py-7 ${
+                        errors.emergencyContactPhone && touched.emergencyContactPhone
+                          ? "border-red-500"
+                          : ""
+                      }`}
+                    />
+                    {errors.emergencyContactPhone && touched.emergencyContactPhone && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.emergencyContactPhone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {/* End Emergency Contact */}
                 {/* <div className="relative">
                   <Label className="mb-1">Password *</Label>
                   <Field
@@ -361,74 +396,76 @@ navigate("/staff")
                   )}
                 </div> */}
                 <div className="bg-gray-50  rounded-lg space-y-4">
-                <div className="relative">
-                  <Label className="mb-2">Branch *</Label>
                   <div className="relative">
-                    <Input
-                      type="text"
-                      placeholder="Search branches by name, ID, or location..."
-                      value={branchSearch}
-                      onChange={(e) => {
-                        setBranchSearch(e.target.value);
-                        setShowBranchDropdown(true);
-                        if (!e.target.value) {
-                          clearBranch(setFieldValue);
+                    <Label className="mb-2">Branch *</Label>
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        placeholder="Search branches by name, ID, or location..."
+                        value={branchSearch}
+                        onChange={(e) => {
+                          setBranchSearch(e.target.value);
+                          setShowBranchDropdown(true);
+                          if (!e.target.value) {
+                            clearBranch(setFieldValue);
+                          }
+                        }}
+                        onFocus={() => setShowBranchDropdown(true)}
+                        onBlur={() =>
+                          setTimeout(() => setShowBranchDropdown(false), 200)
                         }
-                      }}
-                      onFocus={() => setShowBranchDropdown(true)}
-                      onBlur={() =>
-                        setTimeout(() => setShowBranchDropdown(false), 200)
-                      }
-                      className="py-7"
-                    />
-                    {values.branchId && (
-                      <button
-                        type="button"
-                        onClick={() => clearBranch(setFieldValue)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                 
-                  {showBranchDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                       {loadingBrand&&   <div className="flex justify-center items-center py-8">
-                        <Spinner className="h-6 w-6 text-blue-600 mr-2" />
-                      </div>}
-                      {branches.length > 0 ? (
-                        branches.map((branch) => (
-                          <div
-                            key={branch.id}
-                            onClick={() => selectBranch(branch, setFieldValue)}
-                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                          >
-                            <div className="font-medium text-gray-900">
-                              {branch.name}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              ID: {branch.id}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {branch.location}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="px-4 py-3 text-gray-500 text-center">
-                          No branches found
-                        </div>
+                        className="py-7"
+                      />
+                      {values.branchId && (
+                        <button
+                          type="button"
+                          onClick={() => clearBranch(setFieldValue)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
                       )}
                     </div>
-                  )}
-                  {errors.branchId && touched.branchId && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.branchId}
-                    </div>
-                  )}
+
+                    {showBranchDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {loadingBrand && (
+                          <div className="flex justify-center items-center py-8">
+                            <Spinner className="h-6 w-6 text-blue-600 mr-2" />
+                          </div>
+                        )}
+                        {branches.length > 0 ? (
+                          branches.map((branch) => (
+                            <div
+                              key={branch.id}
+                              onClick={() => selectBranch(branch, setFieldValue)}
+                              className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">
+                                {branch.name}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                ID: {branch.id}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {branch.location}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-gray-500 text-center">
+                            No branches found
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {errors.branchId && touched.branchId && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.branchId}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
               </div>
             </div>
 
@@ -460,12 +497,11 @@ navigate("/staff")
                   {status === "submitting" ? (
                     <span className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>
-                        { "Updating Staff..." }
-                      </span>
+                      <span>{"Updating Staff..."}</span>
                     </span>
-                  ) : "Update Staff"
-                 }
+                  ) : (
+                    "Update Staff"
+                  )}
                 </Button>
               </div>
             </div>
