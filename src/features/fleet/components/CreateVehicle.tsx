@@ -17,16 +17,17 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "@/lib/api/api";
 
+// Updated validation schema to match backing field names and add ownership
 const VehicleValidationSchema = Yup.object().shape({
   plateNumber: Yup.string().required("Plate number is required"),
-  type: Yup.string().required("Vehicle type is required"),
-  // brand: Yup.string().required("Brand is required"),
+  vehicleTypeId: Yup.string().required("Vehicle type is required"),
   model: Yup.string().required("Model is required"),
+  type: Yup.string().required("Type is required"),
+  // brand: Yup.string().required("Brand is required"),
   // year: Yup.number()
   //   .min(1990, "Year must be 1990 or later")
   //   .max(new Date().getFullYear() + 1, "Invalid year")
   //   .required("Year is required"),
-  // ownership: Yup.string().required("Ownership type is required"),
   // fuelType: Yup.string().required("Fuel type is required"),
   // capacity: Yup.string().required("Capacity is required"),
   // insuranceExpiry: Yup.date().required("Insurance expiry date is required"),
@@ -41,10 +42,10 @@ const CreateVehicle = () => {
   const [initialValues, setInitialValues] = useState({
     plateNumber: "",
     vehicleTypeId: "",
-    // brand: "",
     model: "",
+    type: "",
+    // brand: "",
     // year: new Date().getFullYear(),
-    // ownership: "",
     // driverId: "",
     // fuelType: "",
     // capacity: "",
@@ -58,7 +59,7 @@ const CreateVehicle = () => {
     // color: "",
     // notes: "",
   });
-  const [fleet, setFleet] = useState(null);
+  const [_fleet, setFleet] = useState(null);
 
   // New states for vehicle types
   const [vehicleTypes, setVehicleTypes] = useState<{ value: string; label: string }[]>([]);
@@ -73,7 +74,7 @@ const CreateVehicle = () => {
   const fleetDetail = query.get("fleet")
     ? JSON.parse(query.get("fleet")!)
     : null;
-  console.log(fleetDetail, "fleetDetail", fleet);
+  // console.log(fleetDetail, "fleetDetail", fleet);
 
   // Fetch vehicle types from /fleet/type
   useEffect(() => {
@@ -87,7 +88,7 @@ const CreateVehicle = () => {
           : [];
         setVehicleTypes(
           typeList.map((t: any) => ({
-            value: t.name, // or t.id, but the form is using the name
+            value: t.id, // or t.id, but the form is using the name
             label: t.name,
             description: t.description,
           }))
@@ -95,12 +96,7 @@ const CreateVehicle = () => {
       } catch (e) {
         // fallback in case of error
         setVehicleTypes([
-          { value: "Bicycle", label: "Bicycle" },
-          { value: "Motorcycle", label: "Motorcycle" },
-          { value: "Bajaj", label: "Bajaj" },
-          { value: "Scooter", label: "Scooter" },
-          { value: "Automobile", label: "Automobile" },
-        ]);
+            ]);
       } finally {
         setVehicleTypeLoading(false);
       }
@@ -113,47 +109,47 @@ const CreateVehicle = () => {
     const fetchVehicleData = async () => {
       if (!isEditMode) return;
 
-      // setLoading(true);
       setFleet(fleetDetail);
       setInitialValues({
-        plateNumber: fleetDetail.plateNumber,
-        vehicleTypeId: fleetDetail.type,
-        // brand: "",
-        model: fleetDetail.model,
+        plateNumber: fleetDetail.plateNumber || "",
+        vehicleTypeId: fleetDetail.type || "", // Assumes type is the type name
+        model: fleetDetail.model || "",
+        type: fleetDetail.type || "",
       });
     };
 
     fetchVehicleData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditMode]);
 
   const handleSubmit = async (values: any) => {
     try {
-      console.log("values", values);
-      try {
-        setLoading(true);
+      setStatus("submitting");
+      setLoading(true);
 
-        let res;
+      // Compose the submitted values
+      const payload = {
+        ...values,
+        // If your backend needs type and vehicleTypeId to mean the same, you may adjust here.
+        // vehicleTypeId: values.vehicleTypeId, // field already in values
+        // Optionally, you may add an extra 'type' property if API expects it
+        // type: values.vehicleTypeId,
+      };
 
-        if (isEditMode) {
-          res = await api.patch("/fleet/" + id, values);
-        } else {
-          res = await api.post("/fleet", values);
-        }
-        toast.success(res.data?.message);
-        navigate("/fleet");
-      } catch (error: any) {
-        toast.error(error?.response?.data?.message || "Somethign went wrong!");
-      } finally {
-        setLoading(false);
+      let res;
+      if (isEditMode) {
+        res = await api.patch("/fleet/" + id, payload);
+      } else {
+        res = await api.post("/fleet", payload);
       }
-    } catch (error) {
+      toast.success(res.data?.message);
+      navigate("/fleet");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Something went wrong!");
       setStatus("error");
-      setMessage("Something went wrong. Please try again.");
-      console.error(
-        isEditMode ? "Update vehicle error:" : "Add vehicle error:",
-        error
-      );
+      setMessage(error?.response?.data?.message || "Something went wrong!");
     } finally {
+      setLoading(false);
       setTimeout(() => setStatus("idle"), 2500);
     }
   };
@@ -244,7 +240,7 @@ const CreateVehicle = () => {
                   <Label className="mb-1">Vehicle Type *</Label>
                   <Select
                     value={values.vehicleTypeId}
-                    onValueChange={(val) => setFieldValue("type", val)}
+                    onValueChange={(val) => setFieldValue("vehicleTypeId", val)}
                     disabled={vehicleTypeLoading}
                   >
                     <SelectTrigger
@@ -272,6 +268,34 @@ const CreateVehicle = () => {
                     <p className="text-red-500 text-sm mt-1">{errors.vehicleTypeId}</p>
                   )}
                 </div>
+
+                {/* Ownership field (NEW) */}
+                <div>
+                  <Label className="mb-1">Type *</Label>
+                  <Select
+                    value={values.type}
+                    onValueChange={val => setFieldValue("type", val)}
+                    // not loading
+                  >
+                    <SelectTrigger
+                      className={`py-7 !w-full ${
+                        errors.type && touched.type ? "border-red-500" : ""
+                      }`}
+                    >
+                      <SelectValue placeholder="Select Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="In-house">In-house</SelectItem>
+                      <SelectItem value="External">External</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.type && touched.type && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.type}
+                    </p>
+                  )}
+                </div>
+
                 {/* <div>
                   <Label className="mb-1">Brand *</Label>
                   <Field
@@ -325,193 +349,8 @@ const CreateVehicle = () => {
                   />
                 </div> */}
               </div>
-
-              {/* Ownership & Specifications */}
-              {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4">
-                <h2 className="text-lg font-medium mb-4">
-                  Ownership & Specifications
-                </h2>
-                <div>
-                  <Label className="mb-1">Ownership Type *</Label>
-                  <Select
-                    value={values.ownership}
-                    onValueChange={(val) => setFieldValue("ownership", val)}
-                  >
-                    <SelectTrigger
-                      className={`py-7 !w-full ${
-                        errors.ownership && touched.ownership
-                          ? "border-red-500"
-                          : ""
-                      }`}
-                    >
-                      <SelectValue placeholder="Select ownership" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="In-house">In-house (Owned)</SelectItem>
-                      <SelectItem value="External">
-                        External (Leased)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.ownership && touched.ownership && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.ownership}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label className="mb-1">Fuel Type *</Label>
-                  <Select
-                    value={values.fuelType}
-                    onValueChange={(val) => setFieldValue("fuelType", val)}
-                  >
-                    <SelectTrigger
-                      className={`py-7 !w-full ${
-                        errors.fuelType && touched.fuelType
-                          ? "border-red-500"
-                          : ""
-                      }`}
-                    >
-                      <SelectValue placeholder="Select fuel type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Petrol">Petrol</SelectItem>
-                      <SelectItem value="Diesel">Diesel</SelectItem>
-                      <SelectItem value="Electric">Electric</SelectItem>
-                      <SelectItem value="Hybrid">Hybrid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.fuelType && touched.fuelType && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.fuelType}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label className="mb-1">Load Capacity *</Label>
-                  <Field
-                    as={Input}
-                    name="capacity"
-                    placeholder="e.g., 1500 kg, 50 kg"
-                    className={`py-7 ${
-                      errors.capacity && touched.capacity
-                        ? "border-red-500"
-                        : ""
-                    }`}
-                  />
-                  {errors.capacity && touched.capacity && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.capacity}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label className="mb-1">Current Mileage (km)</Label>
-                  <Field
-                    as={Input}
-                    type="number"
-                    name="currentMileage"
-                    placeholder="45000"
-                    className="py-7"
-                  />
-                </div>
-                <div>
-                  <Label className="mb-1">Assigned Driver ID</Label>
-                  <Field
-                    as={Input}
-                    name="driverId"
-                    placeholder="e.g., STF-001 (optional)"
-                    className="py-7"
-                  />
-                </div>
-                <div>
-                  <Label className="mb-1">Registration Date</Label>
-                  <Field
-                    as={Input}
-                    type="date"
-                    name="registrationDate"
-                    className="py-7"
-                  />
-                </div>
-              </div> */}
+              {/* -- other fields removed for brevity -- */}
             </div>
-
-            {/* Insurance Information */}
-            {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
-              <h2 className="text-lg font-medium mb-4">Insurance Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label className="mb-1">Insurance Number</Label>
-                  <Field
-                    as={Input}
-                    name="insuranceNumber"
-                    placeholder="INS-123456"
-                    className="py-7"
-                  />
-                </div>
-                <div>
-                  <Label className="mb-1">Insurance Provider</Label>
-                  <Field
-                    as={Input}
-                    name="insuranceProvider"
-                    placeholder="e.g., Ethiopian Insurance"
-                    className="py-7"
-                  />
-                </div>
-                <div>
-                  <Label className="mb-1">Insurance Expiry Date *</Label>
-                  <Field
-                    as={Input}
-                    type="date"
-                    name="insuranceExpiry"
-                    className={`py-7 ${
-                      errors.insuranceExpiry && touched.insuranceExpiry
-                        ? "border-red-500"
-                        : ""
-                    }`}
-                  />
-                  {errors.insuranceExpiry && touched.insuranceExpiry && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.insuranceExpiry}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div> */}
-
-            {/* Technical Details */}
-            {/* <div className="bg-gray-50 p-6 rounded-lg space-y-4 mb-6">
-              <h2 className="text-lg font-medium mb-4">Technical Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="mb-1">Chassis Number</Label>
-                  <Field
-                    as={Input}
-                    name="chassisNumber"
-                    placeholder="Enter chassis number"
-                    className="py-7"
-                  />
-                </div>
-                <div>
-                  <Label className="mb-1">Engine Number</Label>
-                  <Field
-                    as={Input}
-                    name="engineNumber"
-                    placeholder="Enter engine number"
-                    className="py-7"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="mb-1">Additional Notes</Label>
-                <Field
-                  as={Textarea}
-                  name="notes"
-                  placeholder="Any additional information about the vehicle..."
-                  className="py-4 min-h-[100px]"
-                />
-              </div>
-            </div> */}
 
             {/* Action buttons */}
             <div className="bg-gray-50 p-6 rounded-lg space-y-4">

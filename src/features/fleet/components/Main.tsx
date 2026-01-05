@@ -420,7 +420,13 @@ console.log(staffs.data)
                       className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort("type")}
                     >
-                      Type
+                       Vehicle Type
+                    </TableHead>
+                    <TableHead
+                      className="text-gray-600 font-medium cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("type")}
+                    >
+                       Type
                     </TableHead>
                     <TableHead className="text-gray-600 font-medium">
                       Vehicle
@@ -486,7 +492,24 @@ console.log(staffs.data)
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="bg-gray-100">
-                          {vehicle?.vehicleTypeId?.name}
+                          {vehicle?.vehicleType?.name}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            vehicle?.type === "inhouse"
+                              ? "bg-green-100 text-green-700"
+                              : vehicle?.type === "external"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-100 text-gray-500"
+                          }
+                        >
+                          {vehicle?.type === "inhouse"
+                            ? "In-house"
+                            : vehicle?.type === "external"
+                            ? "External"
+                            : "-"}
                         </Badge>
                       </TableCell>
                       <TableCell>

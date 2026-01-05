@@ -24,7 +24,7 @@ const CreateMaintenanceLog = () => {
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [vehicles, setVehicles] = useState<
+  const [vehicles, _setVehicles] = useState<
     Array<{ id: string; plateNumber: string }>
   >([]);
   const [initialValues] = useState({
@@ -57,7 +57,7 @@ const CreateMaintenanceLog = () => {
     try {
       setLoadingStaff(true);
 
-      const staffs = await api.get<FleetListResponse>(`/fleet`);
+      const staffs = await api.get<FleetListResponse>(`/fleet?search=type:${"inhouse"}`);
       setSetFleet(staffs.data.data);
       setPagination(staffs.data.pagination);
       // toast.success(staffs.data.message);
@@ -78,25 +78,25 @@ const CreateMaintenanceLog = () => {
   }, [searchText]);
 
   // Fetch vehicles for dropdown
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      try {
-        // Simulate API call - replace with actual API call
-        const mockVehicles = [
-          { id: "VH-001", plateNumber: "AA-12345" },
-          { id: "VH-002", plateNumber: "AA-67890" },
-          { id: "VH-003", plateNumber: "AA-24680" },
-          { id: "VH-004", plateNumber: "AA-11223" },
-          { id: "VH-005", plateNumber: "AA-99887" },
-        ];
-        setVehicles(mockVehicles);
-      } catch (error) {
-        console.error("Error fetching vehicles:", error);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchVehicles = async () => {
+  //     try {
+  //       // Simulate API call - replace with actual API call
+  //       const mockVehicles = [
+  //         { id: "VH-001", plateNumber: "AA-12345" },
+  //         { id: "VH-002", plateNumber: "AA-67890" },
+  //         { id: "VH-003", plateNumber: "AA-24680" },
+  //         { id: "VH-004", plateNumber: "AA-11223" },
+  //         { id: "VH-005", plateNumber: "AA-99887" },
+  //       ];
+  //       setVehicles(mockVehicles);
+  //     } catch (error) {
+  //       console.error("Error fetching vehicles:", error);
+  //     }
+  //   };
 
-    fetchVehicles();
-  }, []);
+  //   fetchVehicles();
+  // }, []);
 
   // Fetch maintenance log data if in edit mode
   useEffect(() => {
