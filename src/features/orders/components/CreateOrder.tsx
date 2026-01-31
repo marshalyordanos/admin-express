@@ -42,6 +42,8 @@ const OrderValidationSchema = Yup.object().shape({
     .min(0.1, "Weight must be greater than 0")
     .required("Weight is required"),
   destination: Yup.string().required("Destination is required"),
+  // Not required for towns and not globally always required
+  // We will do frontend check for these
 });
 
 interface ConvertedShipment {
@@ -78,8 +80,11 @@ interface ConvertedShipment {
   width?: any;
   height?: any;
   length?: any;
-}
 
+  // NEW FIELDS FOR INTERNATIONAL OR REGIONAL ORDERS ONLY
+  originCity?: any;
+  destinationCity?: any;
+}
 
 export default function OrderForm() {
   //   const { createOrder, isCreatingOrder } = useOrders();
@@ -118,6 +123,9 @@ export default function OrderForm() {
     pickupDate: "",
     deliveryDate: "",
     branchId: "",
+    // Add new initial fields
+    originCity: "",
+    destinationCity: "",
   };
   const navigate = useNavigate();
   const [estimatePrice, setEstimatePrice] = useState(""); // sample estimate
@@ -134,14 +142,14 @@ export default function OrderForm() {
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [custoemr, setCustomer] = useState<Customer[]>([]);
   const [priceLoading, setPriceLoading] = useState(false);
-  
+
   // Branch selection state (for DROPOFF)
   const [branchSearch, setBranchSearch] = useState("");
   const [showBranchDropdown, setShowBranchDropdown] = useState(false);
   const [loadingBranch, setLoadingBranch] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
-  
-console.log(pagination)
+
+  console.log(pagination)
 
   const featchStaffs = async () => {
     try {
@@ -246,11 +254,16 @@ console.log(pagination)
       pickupDate: _values.pickupDate ? new Date(_values.pickupDate).toISOString() : undefined,
       deliveryDate: _values.deliveryDate ? new Date(_values.deliveryDate).toISOString() : undefined,
     };
-    
+
+    if ((_values.destination === "REGIONAL" || _values.destination === "INTERNATIONAL")) {
+      converted.originCity = _values.originCity;
+      converted.destinationCity = _values.destinationCity;
+    }
+
     if (_values.fulfillmentType === "DROPOFF" && _values.branchId) {
       converted.branchId = _values.branchId;
     }
-    
+
     if(_values.shipmentType=="PARCEL"){
       converted.width= _values?.width
       converted.height= _values?.height
@@ -282,11 +295,11 @@ console.log(pagination)
     } finally {
       setPriceLoading(false)
     }
-   
+
   };
 
   // const generateTrackingNumber = () => {
-    
+
   //   const prefix = "ETB";
   //   const timestamp = Date.now().toString().slice(-6);
   //   const random = Math.floor(Math.random() * 1000)
@@ -355,11 +368,16 @@ console.log(pagination)
       pickupDate: _values.pickupDate ? new Date(_values.pickupDate).toISOString() : undefined,
       deliveryDate: _values.deliveryDate ? new Date(_values.deliveryDate).toISOString() : undefined,
     };
-    
+
+    if ((_values.destination === "REGIONAL" || _values.destination === "INTERNATIONAL")) {
+      converted.originCity = _values.originCity;
+      converted.destinationCity = _values.destinationCity;
+    }
+
     if (_values.fulfillmentType === "DROPOFF" && _values.branchId) {
       converted.branchId = _values.branchId;
     }
-    
+
     console.log("values: ", converted);
     if(_values.shipmentType=="PARCEL"){
       converted.width= _values?.width
@@ -378,10 +396,10 @@ console.log(pagination)
       setIsSuccessModalOpen(true);
       resetForm();
       setEstimatePrice("");
-      
+
       setManagerSearch("");
       setBranchSearch("");
-      
+
     } catch (error: any) {
       console.log(error.response?.data);
       toast.error(error?.response?.data?.message || "Somethign went wrong!");
@@ -1060,6 +1078,29 @@ console.log(pagination)
                     </p>
                   )}
                 </div>
+                {/* Origin and Destination City - only for REGIONAL/INTERNATIONAL */}
+                {(values.destination === "REGIONAL" || values.destination === "INTERNATIONAL") && (
+                  <>
+                    <div>
+                      <Label className="mb-1">Origin City</Label>
+                      <Field
+                        as={Input}
+                        name="originCity"
+                        placeholder="Origin city (ex: Addis Ababa)"
+                        className="py-7"
+                      />
+                    </div>
+                    <div>
+                      <Label className="mb-1">Destination City</Label>
+                      <Field
+                        as={Input}
+                        name="destinationCity"
+                        placeholder="Destination city (ex: Mekelle)"
+                        className="py-7"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             {/* Action buttons */}

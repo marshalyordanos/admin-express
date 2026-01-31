@@ -534,6 +534,8 @@ export interface Batch {
   officerId?: string;
   createdAt: string;
   updatedAt?: string;
+  sendingManifestId?:string
+  receivingManifestId?:string
 }
 
 export interface CreateBatchRequest {

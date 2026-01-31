@@ -7,6 +7,8 @@ import {
   Package,
   TrendingUp,
   TrendingDown,
+  FileText,
+  FileDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +68,37 @@ function BatchPage() {
   const [selectedCargoOfficer, setSelectedCargoOfficer] = useState<any>(null);
   const [loadingCargoOfficer, setLoadingCargoOfficer] = useState(false);
 
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [approveLoading, setApproveLoading] = useState(false);
+  const [approveReason, setApproveReason] = useState("");
+
+  // 1. Helper: Download manifest by ID
+  const downloadManifest = async (manifestId: string | null | undefined, type: "sending" | "receiving") => {
+    if (!manifestId) {
+      toast.error(`No ${type === "sending" ? "sending" : "receiving"} manifestId`);
+      return;
+    }
+    try {
+      const response = await api.get(`/order/manifest/download/pdf/${manifestId}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${type}-manifest-${manifestId}.pdf`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Manifest downloaded.");
+    } catch (err) {
+      toast.error("Failed to download manifest.");
+    }
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -83,7 +116,7 @@ function BatchPage() {
         search: searchText || undefined,
       });
 
-      console.log("Batches API Response:", response);
+      //console.log("Batches API Response:", response);
 
       // Backend shape:
       // { success, message, data: { batches: Batch[], pagination: Pagination } }
@@ -106,6 +139,7 @@ function BatchPage() {
 
   useEffect(() => {
     fetchBatches(currentPage, pageSize);
+    // eslint-disable-next-line
   }, [searchText, currentPage, pageSize]);
 
   // Calculate metrics from batches
@@ -165,7 +199,14 @@ function BatchPage() {
     }));
   };
 
+  // Task 2: Only allow selection if status==="PENDING"
+  const isBatchSelectable = (batch: Batch) => batch.status === "PENDING";
+
+  // When toggling, only allow toggle if selectable
   const handleBatchToggle = (batchId: string) => {
+    const batch = batches.find((b) => b.id === batchId);
+    if (!batch || !isBatchSelectable(batch)) return;
+
     setSelectedBatches((prev) =>
       prev.includes(batchId)
         ? prev.filter((id) => id !== batchId)
@@ -173,9 +214,12 @@ function BatchPage() {
     );
   };
 
+  // Handle select all only those that are selectable (i.e. status===PENDING)
   const handleSelectAll = () => {
     if (Array.isArray(batches)) {
-      setSelectedBatches(batches.map((b) => b.id));
+      setSelectedBatches(
+        batches.filter((b) => isBatchSelectable(b)).map((b) => b.id)
+      );
     }
   };
 
@@ -219,12 +263,14 @@ function BatchPage() {
     if (isAssignModalOpen) {
       fetchCargoOfficers();
     }
+    // eslint-disable-next-line
   }, [isAssignModalOpen, officerSearch]);
 
   useEffect(() => {
     if (isAssignCargoOfficerModal) {
       featchCargoOfficer();
     }
+    // eslint-disable-next-line
   }, [cargoOfficerSearch, isAssignCargoOfficerModal]);
 
   const handleAssignOfficer = async () => {
@@ -291,6 +337,37 @@ function BatchPage() {
     }
   };
 
+  // 2: Approve batches endpoint
+  const handleApproveBatches = async () => {
+    if (!selectedBatches.length) {
+      toast.error("No batch selected");
+      return;
+    }
+    if (!approveReason.trim()) {
+      toast.error("Please enter a reason for approval.");
+      return;
+    }
+    setApproveLoading(true);
+    try {
+      const response = await api.post("/order/approve/batches", {
+        batchIds: selectedBatches,
+        reason: approveReason,
+      });
+      toast.success(response.data?.message || "Batch(es) approved!");
+      setIsApproveModalOpen(false);
+      setSelectedBatches([]);
+      setApproveReason("");
+      fetchBatches(currentPage, pageSize);
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          "Error approving selected batches"
+      );
+    } finally {
+      setApproveLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
@@ -338,15 +415,27 @@ function BatchPage() {
           </p>
         </div>
         <div className="flex gap-3">
+          {/* Approve button (if at least 1 batch is selected) */}
           {selectedBatches.length > 0 && (
-            <Button
-              variant="outline"
-              onClick={() => setIsAssignModalOpen(true)}
-              className="text-gray-600 bg-white border-gray-300 flex items-center gap-2"
-            >
-              <IoPersonAdd className="h-4 w-4" />
-              Assign Officer ({selectedBatches.length})
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setIsAssignModalOpen(true)}
+                className="text-gray-600 bg-white border-gray-300 flex items-center gap-2"
+              >
+                <IoPersonAdd className="h-4 w-4" />
+                Assign Officer ({selectedBatches.length})
+              </Button>
+              {/* Approve action */}
+              <Button
+                variant="default"
+                onClick={() => setIsApproveModalOpen(true)}
+                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+              >
+                <TrendingUp className="h-5 w-5" />
+                Approve
+              </Button>
+            </>
           )}
           <Button
             onClick={() => navigate("/batch/create")}
@@ -452,9 +541,12 @@ function BatchPage() {
                         <Checkbox
                           checked={
                             Array.isArray(batches) &&
-                            batches.length > 0 &&
-                            selectedBatches.length === batches.length
+                            batches.filter(b => isBatchSelectable(b)).length > 0 &&
+                            selectedBatches.length === batches.filter(b => isBatchSelectable(b)).length
                           }
+                          // Checkbox component does not accept 'indeterminate' directly.
+                          // If you want to show indeterminate state visually, you need a ref and set the 'indeterminate' property on the HTMLInputElement.
+                          // For now, we omit the indeterminate prop and only use checked/onCheckedChange.
                           onCheckedChange={(checked) => {
                             if (checked) {
                               handleSelectAll();
@@ -475,72 +567,106 @@ function BatchPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Array.isArray(batches) && batches.map((batch) => (
-                      <TableRow key={batch.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedBatches.includes(batch.id)}
-                            onCheckedChange={() => handleBatchToggle(batch.id)}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {batch.batchCode}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getScopeColor(batch.scope)}>
-                            {batch.scope}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{batch.serviceType}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(batch.status)}>
-                            {batch.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{batch.orders?.length || 0}</TableCell>
-                        <TableCell>
-                          {batch.weight ? `${batch.weight} kg` : "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          {batch.createdAt
-                            ? new Date(batch.createdAt).toLocaleDateString()
-                            : "N/A"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {!batch.officerId && (
+                    {Array.isArray(batches) &&
+                      batches.map((batch) => (
+                        <TableRow key={batch.id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedBatches.includes(batch.id)}
+                              onCheckedChange={() => handleBatchToggle(batch.id)}
+                              disabled={!isBatchSelectable(batch)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {batch.batchCode}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getScopeColor(batch.scope)}>
+                              {batch.scope}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{batch.serviceType}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(batch.status)}>
+                              {batch.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{batch.orders?.length || 0}</TableCell>
+                          <TableCell>
+                            {batch.weight ? `${batch.weight} kg` : "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {batch.createdAt
+                              ? new Date(batch.createdAt).toLocaleDateString()
+                              : "N/A"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex flex-row flex-wrap items-center justify-end gap-1 sm:gap-2">
+                              {/* Two manifest download buttons */}
+                              {batch.sendingManifestId && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Download Sending Manifest"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadManifest(batch.sendingManifestId, "sending");
+                                  }}
+                                  className="flex items-center gap-1 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  Manifest Out
+                                </Button>
+                              )}
+                              {batch.receivingManifestId && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Download Receiving Manifest"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadManifest(batch.receivingManifestId, "receiving");
+                                  }}
+                                  className="flex items-center gap-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                >
+                                  <FileDown className="h-4 w-4" />
+                                  Manifest In
+                                </Button>
+                              )}
+                              {/* Assign Officer (only if officerId is not set) */}
+                              {!batch.officerId && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedBatchForOfficer(batch);
+                                    setisAssignCargoOfficerModal(true);
+                                  }}
+                                  className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                >
+                                  <IoPersonAdd className="h-4 w-4" />
+                                  Assign Officer
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedBatchForOfficer(batch);
-                                  setisAssignCargoOfficerModal(true);
+                                  navigate(`/batch/details/${batch.id}`, {
+                                    state: { batch },
+                                  });
                                 }}
-                                className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                className="flex items-center gap-1"
                               >
-                                <IoPersonAdd className="h-4 w-4" />
-                                Assign Officer
+                                <IoEye className="h-4 w-4" />
+                                View
                               </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/batch/details/${batch.id}`, {
-                                  state: { batch },
-                                });
-                              }}
-                              className="flex items-center gap-1"
-                            >
-                              <IoEye className="h-4 w-4" />
-                              View
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -559,6 +685,34 @@ function BatchPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Approve Modal */}
+      <ConfirmationModal
+        isOpen={isApproveModalOpen}
+        onClose={() => {
+          setIsApproveModalOpen(false);
+          setApproveReason("");
+        }}
+        onConfirm={handleApproveBatches}
+        title="Approve Selected Batches"
+        description={`You are about to approve ${selectedBatches.length} batch(es).`}
+        confirmText="Approve"
+        cancelText="Cancel"
+        variant="info"
+        isLoading={approveLoading}
+      >
+        <div className="space-y-3 py-3">
+          <label className="block text-sm font-medium">
+            Approval Reason
+            <Input
+              value={approveReason}
+              onChange={e => setApproveReason(e.target.value)}
+              placeholder="Enter a reason for approving..."
+              className="mt-1"
+            />
+          </label>
+        </div>
+      </ConfirmationModal>
 
       {/* Assign Officer Modal */}
       <ConfirmationModal
