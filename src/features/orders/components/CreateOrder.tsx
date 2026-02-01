@@ -72,7 +72,7 @@ interface ConvertedShipment {
   isUnusual: any;
   unusualReason: any;
   quantity: any;
-  cost: any;
+  // cost: any;
   pickupDate?: any;
   deliveryDate?: any;
   branchId?: any;
@@ -250,7 +250,7 @@ export default function OrderForm() {
       // senderPhone: _values.phone,
       // senderEntity: _values.senderEntity,
       // shippingScope: _values.destination,
-      cost: _values.cost,
+      // cost: _values.cost,
       pickupDate: _values.pickupDate ? new Date(_values.pickupDate).toISOString() : undefined,
       deliveryDate: _values.deliveryDate ? new Date(_values.deliveryDate).toISOString() : undefined,
     };
@@ -364,7 +364,7 @@ export default function OrderForm() {
       // senderPhone: _values.phone,
       // senderEntity: _values.senderEntity,
       // shippingScope: _values.destination,
-      cost: _values.cost,
+      // cost: _values.cost,
       pickupDate: _values.pickupDate ? new Date(_values.pickupDate).toISOString() : undefined,
       deliveryDate: _values.deliveryDate ? new Date(_values.deliveryDate).toISOString() : undefined,
     };

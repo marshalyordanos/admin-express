@@ -418,14 +418,14 @@ function BatchPage() {
           {/* Approve button (if at least 1 batch is selected) */}
           {selectedBatches.length > 0 && (
             <>
-              <Button
+              {/* <Button
                 variant="outline"
                 onClick={() => setIsAssignModalOpen(true)}
                 className="text-gray-600 bg-white border-gray-300 flex items-center gap-2"
               >
                 <IoPersonAdd className="h-4 w-4" />
                 Assign Officer ({selectedBatches.length})
-              </Button>
+              </Button> */}
               {/* Approve action */}
               <Button
                 variant="default"
