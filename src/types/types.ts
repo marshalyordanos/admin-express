@@ -568,33 +568,65 @@ export interface AcceptBatchRequest {
   officerId: string;
 }
 
+// export interface CategorizedOrdersResponse {
+//   grouped: {
+//     IN_TOWN?: {
+//       SAME_DAY: Order[];
+//       EXPRESS: Order[];
+//       STANDARD: Order[];
+//       OVERNIGHT: Order[];
+//     };
+//     TOWN?: {
+//       SAME_DAY: Order[];
+//       EXPRESS: Order[];
+//       STANDARD: Order[];
+//       OVERNIGHT: Order[];
+//     };
+//     REGIONAL: {
+//       SAME_DAY: Order[];
+//       EXPRESS: Order[];
+//       STANDARD: Order[];
+//       OVERNIGHT: Order[];
+//     };
+//     INTERNATIONAL: {
+//       SAME_DAY: Order[];
+//       EXPRESS: Order[];
+//       STANDARD: Order[];
+//       OVERNIGHT: Order[];
+//     };
+//   };
+//   pagination: Pagination;
+// }
+
+export type ServiceType2 =
+  | "SAME_DAY"
+  | "EXPRESS"
+  | "STANDARD"
+  | "OVERNIGHT";
+
+export type ShippingScope2 =
+  | "TOWN"
+  | "IN_TOWN"
+  | "REGIONAL"
+  | "INTERNATIONAL";
+
+/**
+ * Example dynamic key:
+ * "Unknown → Unknown"
+ * "Addis Ababa → Dire Dawa"
+ */
+export type RouteKey = string;
+
 export interface CategorizedOrdersResponse {
-  grouped: {
-    IN_TOWN?: {
-      SAME_DAY: Order[];
-      EXPRESS: Order[];
-      STANDARD: Order[];
-      OVERNIGHT: Order[];
-    };
-    TOWN?: {
-      SAME_DAY: Order[];
-      EXPRESS: Order[];
-      STANDARD: Order[];
-      OVERNIGHT: Order[];
-    };
-    REGIONAL: {
-      SAME_DAY: Order[];
-      EXPRESS: Order[];
-      STANDARD: Order[];
-      OVERNIGHT: Order[];
-    };
-    INTERNATIONAL: {
-      SAME_DAY: Order[];
-      EXPRESS: Order[];
-      STANDARD: Order[];
-      OVERNIGHT: Order[];
-    };
-  };
+  grouped: Partial<
+    Record<
+      ShippingScope2,
+      Record<
+        RouteKey,
+        Partial<Record<ServiceType2, Order[]>>
+      >
+    >
+  >;
   pagination: Pagination;
 }
 

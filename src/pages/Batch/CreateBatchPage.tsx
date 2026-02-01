@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ import { Skeleton } from "antd";
 import { Spinner } from "@/utils/spinner";
 import SuccessModal from "@/components/common/SuccessModal";
 
+// Scopes and service types for UI select
 const SCOPES = ["TOWN", "REGIONAL", "INTERNATIONAL"] as const;
 const SERVICE_TYPES = ["SAME_DAY", "EXPRESS", "STANDARD", "OVERNIGHT"] as const;
 
@@ -76,7 +77,7 @@ function CreateBatchPage() {
     try {
       setLoadingBranches(true);
       const response = await api.get<BranchListResponse>(
-        `/branch?page=${1}&pageSize=${50}`
+        `/branch?page=1&pageSize=50`
       );
       setBranches(response.data.data);
     } catch (error: any) {
@@ -126,54 +127,99 @@ function CreateBatchPage() {
     setCategory(category.filter((c) => c !== cat));
   };
 
+  // Utility: Get all routes for a scope
+  const getRouteKeysForScope = (scopeKey: string): string[] => {
+    if (!categorizedOrders) return [];
+    const grouped = categorizedOrders.grouped as any;
+    const scopeData = grouped[scopeKey];
+    return scopeData ? Object.keys(scopeData) : [];
+  };
+
+  // Aggregates all orders for current selection
   const getOrdersForSelection = (): Order[] => {
     if (!categorizedOrders || !selectedScope || !selectedServiceType) {
       return [];
     }
-    // API returns "TOWN" for in-town orders
-    const scopeKey = selectedScope === "TOWN" ? "TOWN" : selectedScope;
-    const scopeData = categorizedOrders.grouped[scopeKey as keyof typeof categorizedOrders.grouped];
-    return scopeData?.[selectedServiceType] || [];
+    // API returns "TOWN" for in-town orders. For logic, we want "TOWN", "REGIONAL" or "INTERNATIONAL".
+    const scopeKey = selectedScope;
+    const grouped = categorizedOrders.grouped as any;
+    const scopeData = grouped[scopeKey];
+    if (!scopeData) return [];
+
+    let result: Order[] = [];
+
+    Object.values(scopeData).forEach((routeObj:any) => {
+      // routeObj: Record<ServiceType, Order[]>
+      const ordersForServiceType = routeObj[selectedServiceType];
+      if (Array.isArray(ordersForServiceType) && ordersForServiceType.length > 0) {
+        result = result.concat(ordersForServiceType);
+      }
+    });
+    return result;
   };
 
-  // Get available scopes from the API response
+  // Returns all available shipping scope keys based on response
   const getAvailableScopes = (): string[] => {
     if (!categorizedOrders) return [];
     const available: string[] = [];
-    if (categorizedOrders.grouped.TOWN || categorizedOrders.grouped.IN_TOWN) {
+    const grouped = categorizedOrders.grouped as any;
+    if (grouped.TOWN && Object.keys(grouped.TOWN).length > 0) {
+      available.push("TOWN");
+    } else if (grouped.IN_TOWN && Object.keys(grouped.IN_TOWN).length > 0) {
       available.push("TOWN");
     }
-    if (categorizedOrders.grouped.REGIONAL) {
+    if (grouped.REGIONAL && Object.keys(grouped.REGIONAL).length > 0) {
       available.push("REGIONAL");
     }
-    if (categorizedOrders.grouped.INTERNATIONAL) {
+    if (grouped.INTERNATIONAL && Object.keys(grouped.INTERNATIONAL).length > 0) {
       available.push("INTERNATIONAL");
     }
     return available;
   };
 
-  // Get order count for a specific scope (across all service types)
+  // For a given scope, count orders across all routes, all service types
   const getScopeOrderCount = (scope: string): number => {
     if (!categorizedOrders) return 0;
-    const scopeKey = scope === "TOWN" ? "TOWN" : scope;
-    const scopeData = categorizedOrders.grouped[scopeKey as keyof typeof categorizedOrders.grouped];
+    const grouped = categorizedOrders.grouped as any;
+    const scopeKey = scope;
+    const scopeData = grouped[scopeKey];
     if (!scopeData) return 0;
-    
     let total = 0;
-    SERVICE_TYPES.forEach((serviceType) => {
-      total += (scopeData[serviceType]?.length || 0);
+    Object.values(scopeData).forEach((routeObj: any) => {
+      SERVICE_TYPES.forEach((serviceType) => {
+        const arr: Order[] = routeObj[serviceType] || [];
+        total += arr.length;
+      });
     });
     return total;
   };
 
-  // Get order count for a specific service type within selected scope
+  // For a given serviceType within currently-selected scope, count orders
   const getServiceTypeOrderCount = (serviceType: string): number => {
     if (!categorizedOrders || !selectedScope) return 0;
-    const scopeKey = selectedScope === "TOWN" ? "TOWN" : selectedScope;
-    const scopeData = categorizedOrders.grouped[scopeKey as keyof typeof categorizedOrders.grouped];
+    const grouped = categorizedOrders.grouped as any;
+    const scopeData = grouped[selectedScope];
     if (!scopeData) return 0;
-    return scopeData[serviceType as keyof typeof scopeData]?.length || 0;
+    let total = 0;
+    Object.values(scopeData).forEach((routeObj: any) => {
+      const arr: Order[] = routeObj[serviceType] || [];
+      total += arr.length;
+    });
+    return total;
   };
+
+  // ====== Advanced logic for Batch creation based on selected orders =======
+  // Helper, used to quickly lookup all order objects by id for first order info
+  const orderIdToOrderMap = useMemo(() => {
+    const orders = getOrdersForSelection();
+    const map: Record<string, Order> = {};
+    orders.forEach(order => {
+      map[order.id] = order;
+    });
+    return map;
+    // Only recalc when categorizedOrders or selection changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categorizedOrders, selectedScope, selectedServiceType]);
 
   const handleSubmit = async () => {
     if (!selectedScope || !selectedServiceType) {
@@ -191,44 +237,50 @@ function CreateBatchPage() {
       return;
     }
 
-    // Resolve origin and destination automatically from the first selected order
-    const ordersForSelection = getOrdersForSelection();
-    const firstSelectedOrder = ordersForSelection.find(
-      (o) => o.id === selectedOrders[0]
-    );
+    // Get all orders for the current selection and selected orders
+    const allSelectedOrdersData: Order[] = selectedOrders
+      .map(orderId => orderIdToOrderMap[orderId])
+      .filter(Boolean);
+
+    // For batch creation, first order is used for category/origin logic
+    const firstSelectedOrder = allSelectedOrdersData[0];
 
     if (!firstSelectedOrder) {
       toast.error("Unable to resolve addresses from selected order");
       return;
     }
-    // Use the branch of the first selected order as origin
-    const originId =
-      // Prefer explicit branchId if present on the order
+
+    // Try to use branchId if exists, fallback to branch property if exists
+    let originId =
       (firstSelectedOrder as any).branchId ||
-      // Fallback to nested branch object if available
       (firstSelectedOrder as any).branch?.id;
 
+    // If originId is missing, fall back to destinationBranchId selected by user
     if (!originId) {
-      toast.error("Unable to resolve origin branch from selected order");
-      return;
+      if (destinationBranchId) {
+        originId = destinationBranchId;
+      } else {
+        toast.error("Unable to resolve origin branch from selected order");
+        return;
+      }
     }
-
-    const destinationId = destinationBranchId;
-
-    // Calculate total weight from selected orders
-    const selectedOrdersList = ordersForSelection.filter((o) =>
-      selectedOrders.includes(o.id)
-    );
-    const totalWeight = selectedOrdersList.reduce(
-      (sum, o) => sum + (o.weight || 0),
-      0
-    );
-    // Batch is fragile if any selected order is fragile
-    const hasFragileItem = selectedOrdersList.some((o) => o.isFragile);
 
     if (!shipmentDate) {
       toast.error("Please select a shipment date");
       return;
+    }
+
+    // Calculate total weight
+    const totalWeight = allSelectedOrdersData.reduce((sum, o) => sum + (o.weight || 0), 0);
+    // Fragile flag
+    const hasFragileItem = allSelectedOrdersData.some((o) => o.isFragile);
+
+    // Collect categories from input or derive from first order
+    let batchCategories: string[] | undefined;
+    if (category.length > 0) {
+      batchCategories = category;
+    } else if(Array.isArray(firstSelectedOrder.category)) {
+      batchCategories = [...firstSelectedOrder.category];
     }
 
     try {
@@ -236,17 +288,10 @@ function CreateBatchPage() {
       const batchData = {
         scope: selectedScope,
         serviceType: selectedServiceType,
-        // If user didn't manually add category, derive from first order if available
-        category:
-          category.length > 0
-            ? category
-            : Array.isArray(firstSelectedOrder.category) &&
-              firstSelectedOrder.category.length > 0
-            ? firstSelectedOrder.category
-            : undefined,
+        category: batchCategories,
         isFragile: hasFragileItem,
         originId,
-        destinationId,
+        destinationId: destinationBranchId,
         notes: notes || undefined,
         weight: totalWeight || undefined,
         orders: selectedOrders,
@@ -255,11 +300,8 @@ function CreateBatchPage() {
 
       const response: any = await createBatch(batchData);
       toast.success(response.message || "Batch created successfully");
-      // Show success modal with batch code
-      // Response structure: { success, message, data: { batch: { batchCode, ... }, orderLogs: {...} } }
-      // createBatch returns response.data, so response is { success, message, data: { batch, orderLogs } }
-      const batchCode = response?.data?.batch?.batchCode || response?.batch?.batchCode || "";
-      setBatchCode(batchCode);
+      const code = response?.data?.batch?.batchCode || response?.batch?.batchCode || "";
+      setBatchCode(code);
       setIsSuccessModalOpen(true);
     } catch (error: any) {
       const message =
@@ -276,7 +318,10 @@ function CreateBatchPage() {
     navigate("/batch");
   };
 
+  // This gets *all* orders for the current selection
   const ordersForSelection = getOrdersForSelection();
+
+  // Only display selectedOrders based on available data in selection
   const selectedOrdersData = ordersForSelection.filter((o) =>
     selectedOrders.includes(o.id)
   );
