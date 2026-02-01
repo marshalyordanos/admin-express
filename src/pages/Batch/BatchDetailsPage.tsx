@@ -24,7 +24,7 @@ function BatchDetailsPage() {
   const [batch, setBatch] = useState<Batch | null>(null);
   const [showAddOrders, setShowAddOrders] = useState(false);
   const [categorizedOrders, setCategorizedOrders] =
-    useState<CategorizedOrdersResponse | null>(null);
+    useState<CategorizedOrdersResponse | any>(null);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
@@ -88,7 +88,7 @@ function BatchDetailsPage() {
     const scopeKey = batch.scope === "IN_TOWN" ? "TOWN" : batch.scope;
     const scopeData = categorizedOrders.grouped[scopeKey as keyof typeof categorizedOrders.grouped];
     const orders = scopeData?.[batch.serviceType] || [];
-    return orders.filter((order) => !batch.orders.some((bo) => bo.id === order.id));
+    return orders.filter((order:any) => !batch.orders.some((bo:any) => bo.id === order.id));
   };
 
   const handleAddOrders = async () => {

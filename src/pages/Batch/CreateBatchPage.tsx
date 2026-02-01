@@ -128,12 +128,12 @@ function CreateBatchPage() {
   };
 
   // Utility: Get all routes for a scope
-  const getRouteKeysForScope = (scopeKey: string): string[] => {
-    if (!categorizedOrders) return [];
-    const grouped = categorizedOrders.grouped as any;
-    const scopeData = grouped[scopeKey];
-    return scopeData ? Object.keys(scopeData) : [];
-  };
+  // const getRouteKeysForScope = (scopeKey: string): string[] => {
+  //   if (!categorizedOrders) return [];
+  //   const grouped = categorizedOrders.grouped as any;
+  //   const scopeData = grouped[scopeKey];
+  //   return scopeData ? Object.keys(scopeData) : [];
+  // };
 
   // Aggregates all orders for current selection
   const getOrdersForSelection = (): Order[] => {
