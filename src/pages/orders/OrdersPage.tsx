@@ -398,9 +398,7 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the ite
   const handleRequestTwo = async () => {
     try {
       setIsActionLoading(true);
-      const payload = {
-        orderIds:[selectedOrder?.id]
-      };
+      const payload = [selectedOrder?.id] ;
       const res = await api.post("/order/request/approval", payload);
       toast.success(res.data.message);
       fetchOrders(currentPage, pageSize);
