@@ -835,77 +835,191 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the ite
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    {/* -- ACTION BUTTON LOGIC -- */}
+                    {(() => {
+                      // Extract values for readability
+                      const status = order?.status;
+                      const scope = (order?.shippingScope || "").toUpperCase();
+                      const fulfillmentType = (order?.fulfillmentType || "").toUpperCase();
 
-                    {(order.fulfillmentType == "PICKUP"&&order.status == "CREATED" && order?.shippingScope=="TOWN" ) ||
-                    (order.fulfillmentType == "DROPOFF"&&order.status == "CREATED"  )?
-                    
-                    <div className="flex flex-row gap-2">
+                      // 1. Status-based batch logic [not implemented here, just order logic]
+                      // 2. Order logic
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // navigate(`/staff/edit/${member.id}`);
-                          setIsDialogOpen(true); //
-                          setSelectedOrder(order);
-                        }}
-                      >
-                        Request Approval
-                      </Button>
-                    </div>
-                    :
-                    
-                    (order.fulfillmentType == "PICKUP"&&order.status == "CREATED" && order?.shippingScope!="TOWN" )?<Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsAcceptDropoffModal(true);
-                          setSelectedOrder(order);
-                        }}
-                      >
-                        Accept Dropoff
-                      </Button>  : <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                        disabled
-                      >
-                        No Action
-                      </Button>}
-                    {/* {order.fulfillmentType == "PICKUP" &&
-                    order.status == "CREATED" ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // navigate(`/staff/edit/${member.id}`);
-                          setIsAssignDriverDialogOpen(true); //
-                          setSelectedOrder(order);
-                        }}
-                      >
-                        Assign Driver
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // navigate(`/staff/edit/${member.id}`);
-                          setIsDialogOpen(true); //
-                          setSelectedOrder(order);
-                        }}
-                      >
-                        Approve
-                      </Button>
-                    )} */}
+                      // 1. STATUS: CREATED
+                      if (status === "CREATED") {
+                        if (scope === "TOWN" && fulfillmentType === "PICKUP") {
+                          // 1. Status: CREATED, ShippingScope: TOWN, fulfillmentType: PICKUP => Action Request Approval
+                          return (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setIsDialogOpen(true);
+                                setSelectedOrder(order);
+                              }}
+                            >
+                              Request Approval
+                            </Button>
+                          );
+                        }
+                        if (scope === "TOWN" && fulfillmentType === "DROPOFF") {
+                          // 2. Status: CREATED, ShippingScope: TOWN, fulfillmentType: DROPOFF => Action Request Approval/ Validate
+                          return (
+                            <div className="flex flex-row gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setIsDialogOpen(true);
+                                  setSelectedOrder(order);
+                                }}
+                              >
+                                Request Approval
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 text-green-600 bg-green-50 hover:bg-green-100 hover:text-green-700 cursor-pointer"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setIsDialogOpen(true);
+                                  setSelectedOrder(order);
+                                }}
+                              >
+                                Validate
+                              </Button>
+                            </div>
+                          );
+                        }
+                        if (
+                          (scope === "REGIONAL" || scope === "INTERNATIONAL") &&
+                          fulfillmentType === "PICKUP"
+                        ) {
+                          // 3. Status: CREATED, ShippingScope: REGIONAL/INTERNATIONAL, fulfillmentType: PICKUP => Action Request Approval
+                          return (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setIsDialogOpen(true);
+                                setSelectedOrder(order);
+                              }}
+                            >
+                              Request Approval
+                            </Button>
+                          );
+                        }
+                        if (
+                          (scope === "REGIONAL" || scope === "INTERNATIONAL") &&
+                          fulfillmentType === "DROPOFF"
+                        ) {
+                          // 4. Status: CREATED, ShippingScope: REGIONAL/INTERNATIONAL, fulfillmentType: DROPOFF => Action Request Approval/Validate
+                          return (
+                            <div className="flex flex-row gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setIsDialogOpen(true);
+                                  setSelectedOrder(order);
+                                }}
+                              >
+                                Request Approval
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2 text-green-600 bg-green-50 hover:bg-green-100 hover:text-green-700 cursor-pointer"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setIsDialogOpen(true);
+                                  setSelectedOrder(order);
+                                }}
+                              >
+                                Validate
+                              </Button>
+                            </div>
+                          );
+                        }
+                      }
+                      // 2. STATUS: PICKED_UP
+                      if (
+                        status === "PICKED_UP" &&
+                        (scope === "TOWN" || scope === "REGIONAL" || scope === "INTERNATIONAL") &&
+                        fulfillmentType === "PICKUP"
+                      ) {
+                        // 5/6. Status: PICKED_UP, any scope, fulfillmentType: PICKUP => Action Accept Dropoff
+                        return (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-2 text-yellow-600 bg-yellow-50 hover:bg-yellow-100 hover:text-yellow-700 cursor-pointer"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setIsAcceptDropoffModal(true);
+                              setSelectedOrder(order);
+                            }}
+                          >
+                            Accept Dropoff
+                          </Button>
+                        );
+                      }
+                      // 3. STATUS: DROPPED_OFF, fulfillmentType: PICKUP
+                      if (
+                        status === "DROPPED_OFF" &&
+                        (scope === "TOWN" || scope === "REGIONAL" || scope === "INTERNATIONAL") &&
+                        fulfillmentType === "PICKUP"
+                      ) {
+                        // 7/8. Status: DROPPED_OFF, all scopes, fulfillmentType: PICKUP => Action Validate/request approval
+                        return (
+                          <div className="flex flex-row gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 text-green-600 bg-green-50 hover:bg-green-100 hover:text-green-700 cursor-pointer"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setIsDialogOpen(true);
+                                setSelectedOrder(order);
+                              }}
+                            >
+                              Validate
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setIsDialogOpen(true);
+                                setSelectedOrder(order);
+                              }}
+                            >
+                              Request Approval
+                            </Button>
+                          </div>
+                        );
+                      }
+                      // If no logic matched:
+                      return (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-2 text-gray-400 bg-gray-50 cursor-not-allowed"
+                          disabled
+                        >
+                          No Action
+                        </Button>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
                 ))

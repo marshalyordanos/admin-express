@@ -634,7 +634,7 @@ function BatchPage() {
                                 </Button>
                               )}
                               {/* Assign Officer (only if officerId is not set) */}
-                              {!batch.officerId && (
+                              {batch.status == "APPROVED" && (
                                 <Button
                                   variant="ghost"
                                   size="sm"

@@ -110,7 +110,7 @@ export type DispatchStatus =
   | "COMPLETED"
   | "CANCELLED"
   | "ACCEPTED"
-  | "CLOSED";
+  | "CLOSED"|"APPROVED";
 
 /** ───── Core Models ───── */
 export interface Role {

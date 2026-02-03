@@ -45,6 +45,7 @@ function CreateBatchPage() {
 
   // Form state
   const [selectedScope, setSelectedScope] = useState<typeof SCOPES[number] | "">("");
+  const [selectedRoute, setSelectedRoute] = useState<string>(""); // Add selected route (country/city-pair)
   const [selectedServiceType, setSelectedServiceType] =
     useState<typeof SERVICE_TYPES[number] | "">("");
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
@@ -127,35 +128,48 @@ function CreateBatchPage() {
     setCategory(category.filter((c) => c !== cat));
   };
 
-  // Utility: Get all routes for a scope
-  // const getRouteKeysForScope = (scopeKey: string): string[] => {
-  //   if (!categorizedOrders) return [];
-  //   const grouped = categorizedOrders.grouped as any;
-  //   const scopeData = grouped[scopeKey];
-  //   return scopeData ? Object.keys(scopeData) : [];
-  // };
-
-  // Aggregates all orders for current selection
-  const getOrdersForSelection = (): Order[] => {
-    if (!categorizedOrders || !selectedScope || !selectedServiceType) {
-      return [];
-    }
-    // API returns "TOWN" for in-town orders. For logic, we want "TOWN", "REGIONAL" or "INTERNATIONAL".
-    const scopeKey = selectedScope;
+  // Utility: Get all country-route keys for a selected scope
+  const getRouteKeysForScope = (scopeKey: string): string[] => {
+    if (!categorizedOrders) return [];
     const grouped = categorizedOrders.grouped as any;
     const scopeData = grouped[scopeKey];
     if (!scopeData) return [];
+    return Object.keys(scopeData);
+  };
 
-    let result: Order[] = [];
-
-    Object.values(scopeData).forEach((routeObj:any) => {
-      // routeObj: Record<ServiceType, Order[]>
-      const ordersForServiceType = routeObj[selectedServiceType];
-      if (Array.isArray(ordersForServiceType) && ordersForServiceType.length > 0) {
-        result = result.concat(ordersForServiceType);
-      }
+  // Helper to get all possible ServiceTypes for a scope+route
+  const getServiceTypesForRoute = (scopeKey: string, routeKey: string): string[] => {
+    if (!categorizedOrders) return [];
+    const grouped = categorizedOrders.grouped as any;
+    const scopeData = grouped[scopeKey];
+    if (!scopeData) return [];
+    const routeObj = scopeData[routeKey];
+    if (!routeObj) return [];
+    // Only include ServiceTypes that have at least one order
+    return SERVICE_TYPES.filter((type) => {
+      const ordersForType = routeObj[type];
+      return Array.isArray(ordersForType) && ordersForType.length > 0;
     });
-    return result;
+  };
+
+  // Aggregates all orders for current selection of scope, route, and service type
+  const getOrdersForSelection = (): Order[] => {
+    if (
+      !categorizedOrders ||
+      !selectedScope ||
+      !selectedRoute ||
+      !selectedServiceType
+    ) {
+      return [];
+    }
+    const grouped = categorizedOrders.grouped as any;
+    const scopeData = grouped[selectedScope];
+    if (!scopeData) return [];
+    const routeObj = scopeData[selectedRoute];
+    if (!routeObj) return [];
+    const ordersForServiceType = routeObj[selectedServiceType];
+    if (!Array.isArray(ordersForServiceType)) return [];
+    return ordersForServiceType;
   };
 
   // Returns all available shipping scope keys based on response
@@ -177,7 +191,7 @@ function CreateBatchPage() {
     return available;
   };
 
-  // For a given scope, count orders across all routes, all service types
+  // For a given scope, count orders across all routes and service types
   const getScopeOrderCount = (scope: string): number => {
     if (!categorizedOrders) return 0;
     const grouped = categorizedOrders.grouped as any;
@@ -194,18 +208,32 @@ function CreateBatchPage() {
     return total;
   };
 
-  // For a given serviceType within currently-selected scope, count orders
-  const getServiceTypeOrderCount = (serviceType: string): number => {
+  // For a given route within the currently-selected scope, count orders across its serviceTypes
+  const getRouteOrderCount = (routeKey: string): number => {
     if (!categorizedOrders || !selectedScope) return 0;
     const grouped = categorizedOrders.grouped as any;
     const scopeData = grouped[selectedScope];
     if (!scopeData) return 0;
+    const routeObj = scopeData[routeKey];
+    if (!routeObj) return 0;
     let total = 0;
-    Object.values(scopeData).forEach((routeObj: any) => {
+    SERVICE_TYPES.forEach((serviceType) => {
       const arr: Order[] = routeObj[serviceType] || [];
       total += arr.length;
     });
     return total;
+  };
+
+  // For a given serviceType within currently-selected scope+route, count orders
+  const getServiceTypeOrderCount = (type: string): number => {
+    if (!categorizedOrders || !selectedScope || !selectedRoute) return 0;
+    const grouped = categorizedOrders.grouped as any;
+    const scopeData = grouped[selectedScope];
+    if (!scopeData) return 0;
+    const routeObj = scopeData[selectedRoute];
+    if (!routeObj) return 0;
+    const arr: Order[] = routeObj[type] || [];
+    return arr.length;
   };
 
   // ====== Advanced logic for Batch creation based on selected orders =======
@@ -219,11 +247,41 @@ function CreateBatchPage() {
     return map;
     // Only recalc when categorizedOrders or selection changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorizedOrders, selectedScope, selectedServiceType]);
+  }, [categorizedOrders, selectedScope, selectedRoute, selectedServiceType]);
+
+  // Utility: Parse a route string like "Addis Ababa - Bahir Dar"
+  // function parseCitiesFromRoute(route: string): { originCity?: string, destinationCity?: string } {
+  //   if (!route) return {};
+  //   // Remove trailing/leading whitespace and periods
+  //   route = route.trim();
+  //   // Try splitting by '-', then by 'to', then just return route as origin
+  //   let match;
+  //   // Most formats: "Origin - Destination" or "Origin–Destination"
+  //   match = route.match(/^(.+?)[-\u2013\u2014]\s*(.+)$/); // Also accept –, —
+  //   if (match) {
+  //     return {
+  //       originCity: match[1].trim().replace(/\.$/, ""),
+  //       destinationCity: match[2].trim().replace(/\.$/, ""),
+  //     };
+  //   }
+  //   // Try "Origin to Destination"
+  //   match = route.match(/^(.+?)\s+to\s+(.+)$/i);
+  //   if (match) {
+  //     return {
+  //       originCity: match[1].trim().replace(/\.$/, ""),
+  //       destinationCity: match[2].trim().replace(/\.$/, ""),
+  //     };
+  //   }
+  //   // If just one city, use as both
+  //   if (route) {
+  //     return { originCity: route.replace(/\.$/, "") };
+  //   }
+  //   return {};
+  // }
 
   const handleSubmit = async () => {
-    if (!selectedScope || !selectedServiceType) {
-      toast.error("Please select scope and service type");
+    if (!selectedScope || !selectedRoute || !selectedServiceType) {
+      toast.error("Please select scope, route and service type");
       return;
     }
 
@@ -283,10 +341,26 @@ function CreateBatchPage() {
       batchCategories = [...firstSelectedOrder.category];
     }
 
+    // ====== Get originCity and destinationCity from route string, fallback to "" if can't parse ======
+    let originCity = "";
+    let destinationCity = "";
+    if (selectedRoute) {
+      // Example: "Unknown → hawassa"
+      const arrowIndex = selectedRoute.indexOf("→");
+      if (arrowIndex !== -1) {
+        originCity = "Unknown";
+        destinationCity = selectedRoute.slice(arrowIndex + 1).trim();
+      } else {
+        originCity = "";
+        destinationCity = "";
+      }
+    }
+
     try {
       setSubmitting(true);
       const batchData = {
         scope: selectedScope,
+        // route: selectedRoute,
         serviceType: selectedServiceType,
         category: batchCategories,
         isFragile: hasFragileItem,
@@ -296,6 +370,8 @@ function CreateBatchPage() {
         weight: totalWeight || undefined,
         orders: selectedOrders,
         shipmentDate,
+        originCity: originCity,
+        destinationCity: destinationCity,
       };
 
       const response: any = await createBatch(batchData);
@@ -354,18 +430,20 @@ function CreateBatchPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Order Selection */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Scope and Service Type Selection */}
+            {/* Scope, Route, and Service Type Selection */}
             <Card>
               <CardHeader>
                 <CardTitle>Select Category</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Step 1: Select Scope */}
                 <div className="space-y-2">
                   <Label>Shipping Scope</Label>
                   <Select
                     value={selectedScope}
                     onValueChange={(value) => {
                       setSelectedScope(value as typeof SCOPES[number]);
+                      setSelectedRoute("");
                       setSelectedServiceType("");
                       setSelectedOrders([]);
                     }}
@@ -422,8 +500,54 @@ function CreateBatchPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
+                {/* Step 2: Select Country-Route after Scope */}
                 {selectedScope && (
+                  <div className="space-y-2">
+                    <Label>Route (Country/City Pair)</Label>
+                    <Select
+                      value={selectedRoute}
+                      onValueChange={(value) => {
+                        setSelectedRoute(value);
+                        setSelectedServiceType("");
+                        setSelectedOrders([]);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select route" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getRouteKeysForScope(selectedScope).length === 0 ? (
+                          <SelectItem value="" disabled>
+                            No routes available
+                          </SelectItem>
+                        ) : (
+                          getRouteKeysForScope(selectedScope).map((route) => {
+                            const count = getRouteOrderCount(route);
+                            return (
+                              <SelectItem
+                                key={route}
+                                value={route}
+                                disabled={count === 0}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{route}</span>
+                                  <Badge
+                                    variant={count > 0 ? "default" : "secondary"}
+                                    className="ml-2"
+                                  >
+                                    {count} {count === 1 ? "order" : "orders"}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            )
+                          })
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {/* Step 3: Select Service Type for chosen route */}
+                {selectedScope && selectedRoute && (
                   <div className="space-y-2">
                     <Label>Service Type</Label>
                     <Select
@@ -437,32 +561,36 @@ function CreateBatchPage() {
                         <SelectValue placeholder="Select service type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {SERVICE_TYPES.map((type) => {
-                          const count = getServiceTypeOrderCount(type);
-                          return (
-                            <SelectItem
-                              key={type}
-                              value={type}
-                              disabled={count === 0}
-                            >
-                              <div className="flex items-center justify-between w-full">
-                                <span>{type.replace("_", " ")}</span>
-                                <Badge
-                                  variant={count > 0 ? "default" : "secondary"}
-                                  className="ml-2"
-                                >
-                                  {count} {count === 1 ? "order" : "orders"}
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
+                        {getServiceTypesForRoute(selectedScope, selectedRoute).length === 0 ? (
+                          <SelectItem value="" disabled>No service types available</SelectItem>
+                        ) : (
+                          getServiceTypesForRoute(selectedScope, selectedRoute).map((type) => {
+                            const count = getServiceTypeOrderCount(type);
+                            return (
+                              <SelectItem
+                                key={type}
+                                value={type}
+                                disabled={count === 0}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{type.replace("_", " ")}</span>
+                                  <Badge
+                                    variant={count > 0 ? "default" : "secondary"}
+                                    className="ml-2"
+                                  >
+                                    {count} {count === 1 ? "order" : "orders"}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            )
+                          })
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                 )}
-
-                {selectedScope && selectedServiceType && (
+                {/* Info: Orders count for final selection */}
+                {selectedScope && selectedRoute && selectedServiceType && (
                   <div className="pt-2">
                     <p className="text-sm text-gray-600">
                       Available orders:{" "}
@@ -476,7 +604,7 @@ function CreateBatchPage() {
             </Card>
 
             {/* Order Selection */}
-            {selectedScope && selectedServiceType && (
+            {selectedScope && selectedRoute && selectedServiceType && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Select Orders</CardTitle>
