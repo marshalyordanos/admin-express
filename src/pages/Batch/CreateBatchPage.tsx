@@ -347,8 +347,9 @@ function CreateBatchPage() {
     if (selectedRoute) {
       // Example: "Unknown → hawassa"
       const arrowIndex = selectedRoute.indexOf("→");
+
       if (arrowIndex !== -1) {
-        originCity = "Unknown";
+        originCity = selectedRoute.slice(0,arrowIndex ).trim();
         destinationCity = selectedRoute.slice(arrowIndex + 1).trim();
       } else {
         originCity = "";
