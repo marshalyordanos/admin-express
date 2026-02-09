@@ -631,7 +631,7 @@ const [loading] = useState<boolean>(true);
     try {
       setIsApproveLoading(true);
       const res = await api.post("/order/approve", {
-        orderId: selectedOrder?.id,
+        orderId:[ selectedOrder?.id],
         reason: reason,
       });
       toast.success(res.data.message);
