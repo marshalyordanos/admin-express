@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IoArrowBack, IoAdd, IoRemove } from "react-icons/io5";
+import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { getCategorizedOrders, createBatch } from "@/lib/api/batch";
 import api from "@/lib/api/api";
@@ -49,14 +49,16 @@ function CreateBatchPage() {
   const [selectedServiceType, setSelectedServiceType] =
     useState<typeof SERVICE_TYPES[number] | "">("");
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
-  const [category, setCategory] = useState<string[]>([]);
-  const [categoryInput, setCategoryInput] = useState("");
+  // Remove all category input state and logic
   const [notes, setNotes] = useState("");
   const [shipmentDate, setShipmentDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
+
+  // New: Origin branch state
+  const [originBranchId, setOriginBranchId] = useState("");
   const [destinationBranchId, setDestinationBranchId] = useState("");
 
   const fetchCategorizedOrders = async () => {
@@ -115,17 +117,6 @@ function CreateBatchPage() {
   const handleDeselectAll = (orders: Order[]) => {
     const orderIds = orders.map((o) => o.id);
     setSelectedOrders((prev) => prev.filter((id) => !orderIds.includes(id)));
-  };
-
-  const handleAddCategory = () => {
-    if (categoryInput.trim() && !category.includes(categoryInput.trim())) {
-      setCategory([...category, categoryInput.trim()]);
-      setCategoryInput("");
-    }
-  };
-
-  const handleRemoveCategory = (cat: string) => {
-    setCategory(category.filter((c) => c !== cat));
   };
 
   // Utility: Get all country-route keys for a selected scope
@@ -249,35 +240,22 @@ function CreateBatchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorizedOrders, selectedScope, selectedRoute, selectedServiceType]);
 
-  // Utility: Parse a route string like "Addis Ababa - Bahir Dar"
-  // function parseCitiesFromRoute(route: string): { originCity?: string, destinationCity?: string } {
-  //   if (!route) return {};
-  //   // Remove trailing/leading whitespace and periods
-  //   route = route.trim();
-  //   // Try splitting by '-', then by 'to', then just return route as origin
-  //   let match;
-  //   // Most formats: "Origin - Destination" or "Origin–Destination"
-  //   match = route.match(/^(.+?)[-\u2013\u2014]\s*(.+)$/); // Also accept –, —
-  //   if (match) {
-  //     return {
-  //       originCity: match[1].trim().replace(/\.$/, ""),
-  //       destinationCity: match[2].trim().replace(/\.$/, ""),
-  //     };
-  //   }
-  //   // Try "Origin to Destination"
-  //   match = route.match(/^(.+?)\s+to\s+(.+)$/i);
-  //   if (match) {
-  //     return {
-  //       originCity: match[1].trim().replace(/\.$/, ""),
-  //       destinationCity: match[2].trim().replace(/\.$/, ""),
-  //     };
-  //   }
-  //   // If just one city, use as both
-  //   if (route) {
-  //     return { originCity: route.replace(/\.$/, "") };
-  //   }
-  //   return {};
-  // }
+  // In place of the old category state, derive unique categories from selected orders
+  const ordersForSelection = getOrdersForSelection();
+  const selectedOrdersData = ordersForSelection.filter((o) =>
+    selectedOrders.includes(o.id)
+  );
+  // Get unique category values from selected orders
+  const selectedCategories = Array.from(
+    new Set(
+      selectedOrdersData
+        .flatMap((o) =>
+          Array.isArray(o.category) ? o.category : typeof o.category === "string" ? [o.category] : []
+        )
+        .filter(Boolean)
+    )
+  );
+  const batchIsFragile = selectedOrdersData.some((o) => o.isFragile);
 
   const handleSubmit = async () => {
     if (!selectedScope || !selectedRoute || !selectedServiceType) {
@@ -292,6 +270,11 @@ function CreateBatchPage() {
 
     if (!destinationBranchId) {
       toast.error("Please select destination branch");
+      return;
+    }
+
+    if (!originBranchId) {
+      toast.error("Please select origin branch");
       return;
     }
 
@@ -313,13 +296,20 @@ function CreateBatchPage() {
       (firstSelectedOrder as any).branchId ||
       (firstSelectedOrder as any).branch?.id;
 
-    // If originId is missing, fall back to destinationBranchId selected by user
+    // If originId is missing, fall back to originBranchId selected by user, otherwise use destinationBranchId
     if (!originId) {
-      if (destinationBranchId) {
+      if (originBranchId) {
+        originId = originBranchId;
+      } else if (destinationBranchId) {
         originId = destinationBranchId;
       } else {
         toast.error("Unable to resolve origin branch from selected order");
         return;
+      }
+    } else {
+      // If both a default-origin (from order) and a manually selected origin exist, prefer the selected origin
+      if (originBranchId) {
+        originId = originBranchId;
       }
     }
 
@@ -333,10 +323,10 @@ function CreateBatchPage() {
     // Fragile flag
     const hasFragileItem = allSelectedOrdersData.some((o) => o.isFragile);
 
-    // Collect categories from input or derive from first order
+    // Collect categories directly from selected orders for batch
     let batchCategories: string[] | undefined;
-    if (category.length > 0) {
-      batchCategories = category;
+    if (selectedCategories.length > 0) {
+      batchCategories = selectedCategories;
     } else if(Array.isArray(firstSelectedOrder.category)) {
       batchCategories = [...firstSelectedOrder.category];
     }
@@ -365,7 +355,7 @@ function CreateBatchPage() {
         serviceType: selectedServiceType,
         category: batchCategories,
         isFragile: hasFragileItem,
-        originId,
+        originId: originBranchId || originId, // Always prefer UI-selected originBranchId
         destinationId: destinationBranchId,
         notes: notes || undefined,
         weight: totalWeight || undefined,
@@ -394,15 +384,6 @@ function CreateBatchPage() {
     setBatchCode("");
     navigate("/batch");
   };
-
-  // This gets *all* orders for the current selection
-  const ordersForSelection = getOrdersForSelection();
-
-  // Only display selectedOrders based on available data in selection
-  const selectedOrdersData = ordersForSelection.filter((o) =>
-    selectedOrders.includes(o.id)
-  );
-  const batchIsFragile = selectedOrdersData.some((o) => o.isFragile);
 
   return (
     <div className="space-y-6">
@@ -689,6 +670,37 @@ function CreateBatchPage() {
                   />
                 </div>
 
+                {/* Origin Branch just below Destination Branch */}
+                <div className="space-y-2">
+                  <Label>Origin Branch *</Label>
+                  <Select
+                    value={originBranchId}
+                    onValueChange={(value) => setOriginBranchId(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select origin branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.id}>
+                          {branch.name}{" "}
+                          {branch.location
+                            ? `- ${branch.location}`
+                            : `(${branch.id})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {loadingBranches && (
+                    <p className="text-xs text-gray-500">Loading branches...</p>
+                  )}
+                  {!loadingBranches && branches.length === 0 && (
+                    <p className="text-xs text-red-500">
+                      No branches available. Please create a branch first.
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label>Destination Branch *</Label>
                   <Select
@@ -719,46 +731,23 @@ function CreateBatchPage() {
                   )}
                 </div>
 
+                {/* Show combined (unique) categories from selected orders */}
                 <div className="space-y-2">
                   <Label>Categories</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={categoryInput}
-                      onChange={(e) => setCategoryInput(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddCategory();
-                        }
-                      }}
-                      placeholder="Add category"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleAddCategory}
-                      size="sm"
-                    >
-                      <IoAdd className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {category.length > 0 && (
+                  {selectedCategories.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {category.map((cat) => (
+                      {selectedCategories.map((cat) => (
                         <Badge
                           key={cat}
                           variant="secondary"
                           className="flex items-center gap-1"
                         >
                           {cat}
-                          <button
-                            onClick={() => handleRemoveCategory(cat)}
-                            className="ml-1 hover:text-red-500"
-                          >
-                            <IoRemove className="h-3 w-3" />
-                          </button>
                         </Badge>
                       ))}
                     </div>
+                  ) : (
+                    <div className="text-xs text-gray-500">No categories found for selected orders</div>
                   )}
                 </div>
 

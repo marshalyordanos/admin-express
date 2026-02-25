@@ -33,6 +33,7 @@ interface DriverFormData {
   vehicleName: string;
   type: string;
   notes: string;
+  faydaNumber?: string; // Added Fayda Number field (optional to not break code)
 }
 
 export default function CreateDriverModal({
@@ -53,6 +54,7 @@ export default function CreateDriverModal({
     vehicleName: "",
     type: "INTERNAL",
     notes: "",
+    faydaNumber: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -194,6 +196,8 @@ export default function CreateDriverModal({
       formDataToSend.append("vehicleId", formData.vehicleId);
       formDataToSend.append("roleId", driverRoleId);
       formDataToSend.append("type", formData.type);
+      // Add Fayda Number as faydaFAN
+      formDataToSend.append("faydaFAN", formData.faydaNumber || "");
 
       // License images (max 2 files - front and back)
       licenseFiles.forEach((file) => {
@@ -223,6 +227,7 @@ export default function CreateDriverModal({
         vehicleName: "",
         type: "INTERNAL",
         notes: "",
+        faydaNumber: "",
       });
       setLicenseFiles([]);
       setVehicleSearch("");
@@ -330,6 +335,17 @@ export default function CreateDriverModal({
                       handleInputChange("licenseExpiry", e.target.value)
                     }
                     required
+                  />
+                </div>
+                {/* Fayda Number Field */}
+                <div>
+                  <Label className="mb-2">Fayda Number</Label>
+                  <Input
+                    value={formData.faydaNumber}
+                    onChange={(e) =>
+                      handleInputChange("faydaNumber", e.target.value)
+                    }
+                    placeholder="Enter Fayda Number"
                   />
                 </div>
                 <div className="md:col-span-2">

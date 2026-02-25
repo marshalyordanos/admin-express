@@ -840,6 +840,28 @@ const [unusualReason, setUnusualReason] = useState("i did not understand the ite
                       const scope = (order?.shippingScope || "").toUpperCase();
                       const fulfillmentType = (order?.fulfillmentType || "").toUpperCase();
 
+                      // Region: if reginal and pickup and approved make the action assign driver
+                      if (
+                        status === "APPROVED" &&
+                        scope === "REGIONAL" &&
+                        fulfillmentType === "PICKUP"
+                      ) {
+                        return (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-2 text-purple-600 bg-purple-50 hover:bg-purple-100 hover:text-purple-700 cursor-pointer"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setIsAssignDriverDialogOpen(true);
+                              setSelectedOrder(order);
+                            }}
+                          >
+                            Assign Driver
+                          </Button>
+                        );
+                      }
+
                       // 1. Status-based batch logic [not implemented here, just order logic]
                       // 2. Order logic
 
