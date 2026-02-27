@@ -16,7 +16,7 @@ export interface ListBatchesParams {
   page?: number;
   pageSize?: number;
   search?: string;
-  filter?: string | Record<string, any>;
+  filter?: string | Record<string, string | number | boolean | null | undefined>;
   sort?: string;
 }
 
