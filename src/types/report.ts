@@ -1,12 +1,14 @@
-export enum ReportPreset {
-  TODAY = "TODAY",
-  YESTERDAY = "YESTERDAY",
-  THIS_WEEK = "THIS_WEEK",
-  LAST_WEEK = "LAST_WEEK",
-  THIS_MONTH = "THIS_MONTH",
-  LAST_MONTH = "LAST_MONTH",
-  CUSTOM = "CUSTOM",
-}
+export const ReportPreset = {
+  TODAY: "TODAY",
+  YESTERDAY: "YESTERDAY",
+  THIS_WEEK: "THIS_WEEK",
+  LAST_WEEK: "LAST_WEEK",
+  THIS_MONTH: "THIS_MONTH",
+  LAST_MONTH: "LAST_MONTH",
+  CUSTOM: "CUSTOM",
+} as const;
+
+export type ReportPreset = (typeof ReportPreset)[keyof typeof ReportPreset];
 
 export interface ReportFilters {
   preset: ReportPreset;
