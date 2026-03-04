@@ -75,7 +75,7 @@ const menuItems = [
     permission: Permission.REPORT, // Can be seen by all
     subItems: [
       {
-        name: "General",
+        name: "Analytics",
         path: "/report",
         icon: <IoDocumentText />,
       },
