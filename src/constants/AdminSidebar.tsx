@@ -73,6 +73,28 @@ const menuItems = [
     path: "/report",
     icon: <IoDocumentText />,
     permission: Permission.REPORT, // Can be seen by all
+    subItems: [
+      {
+        name: "General",
+        path: "/report",
+        icon: <IoDocumentText />,
+      },
+      {
+        name: "Order",
+        path: "/report/orders",
+        icon: <FaTruckLoading />,
+      },
+      {
+        name: "Revenue",
+        path: "/report/revenue",
+        icon: <IoPricetags />,
+      },
+      {
+        name: "Customer",
+        path: "/report/customers",
+        icon: <FaUsersCog />,
+      },
+    ],
   },
   {
     name: "Roles",

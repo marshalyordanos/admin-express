@@ -68,8 +68,8 @@ export default function Sidebar() {
               sub.subsubItems.some(
                 (ss: SubSubItem) =>
                   location.pathname === ss.path ||
-                  location.pathname.startsWith(ss.path + "/")
-              ))
+                  location.pathname.startsWith(ss.path + "/"),
+              )),
         );
 
         if (hasActiveSubItem) {
@@ -81,7 +81,7 @@ export default function Sidebar() {
               const hasActiveSubSubItem = sub.subsubItems.some(
                 (ss: SubSubItem) =>
                   location.pathname === ss.path ||
-                  location.pathname.startsWith(ss.path + "/")
+                  location.pathname.startsWith(ss.path + "/"),
               );
 
               if (hasActiveSubSubItem) {
@@ -119,8 +119,8 @@ export default function Sidebar() {
         s.subsubItems?.some(
           (ss) =>
             location.pathname === ss.path ||
-            location.pathname.startsWith(ss.path + "/")
-        )
+            location.pathname.startsWith(ss.path + "/"),
+        ),
     );
   };
 
@@ -246,7 +246,7 @@ export default function Sidebar() {
                           sub.subsubItems?.some(
                             (ss) =>
                               location.pathname === ss.path ||
-                              location.pathname.startsWith(ss.path + "/")
+                              location.pathname.startsWith(ss.path + "/"),
                           );
 
                         return (
@@ -264,8 +264,17 @@ export default function Sidebar() {
                               <NavLink
                                 to={sub.path}
                                 onClick={(e) => hasSubsub && e.preventDefault()}
-                                className="flex-1 text-xs sm:text-sm h-full w-full p-1 sm:p-2"
+                                className="flex items-center gap-2 sm:gap-3 h-full w-full p-1 sm:p-2 group"
                               >
+                                <span
+                                  className={
+                                    isSubActive
+                                      ? "text-white"
+                                      : "text-black group-hover:text-white"
+                                  }
+                                >
+                                  {sub.icon}
+                                </span>
                                 <span
                                   className={
                                     isSubActive
@@ -299,7 +308,7 @@ export default function Sidebar() {
                                     const isSSActive =
                                       location.pathname === ss.path ||
                                       location.pathname.startsWith(
-                                        ss.path + "/"
+                                        ss.path + "/",
                                       );
                                     return (
                                       <NavLink

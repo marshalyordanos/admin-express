@@ -16,12 +16,97 @@ export interface ReportFilters {
   endDate?: string;
   branchId?: string;
   serviceType?: "STANDARD" | "EXPRESS" | "SAME_DAY" | "OVERNIGHT";
-  shippingScope?: "REGIONAL" | "NATIONAL" | "INTERNATIONAL";
-  fulfillmentType?: "PICKUP" | "DELIVERY";
+  shippingScope?: "REGIONAL" | "TOWN" | "INTERNATIONAL";
+  fulfillmentType?: "PICKUP" | "DROPOFF";
   status?: "CREATED" | "APPROVED" | "DISPATCHED" | "IN_TRANSIT" | "DELIVERED" | "COMPLETED";
   topLimit?: number;
   recentLimit?: number;
   revenueGroupBy?: "day" | "week" | "month";
+}
+
+export interface OrderReportFilters {
+  startDate?: string;
+  endDate?: string;
+  dateField?: "createdAt" | "pickupDate" | "deliveryDate";
+  page?: number;
+  limit?: number;
+  search?: string;
+  groupBy?: "day" | "week" | "month";
+  status?: string;
+  statuses?: string[];
+  serviceType?: "STANDARD" | "EXPRESS" | "SAME_DAY" | "OVERNIGHT";
+  shippingScope?: "REGIONAL" | "TOWN" | "INTERNATIONAL";
+  fulfillmentType?: "PICKUP" | "DROPOFF";
+  shipmentType?: "PARCEL" | "CARRIER";
+  branchId?: string;
+  customerId?: string;
+  receiverId?: string;
+  pickupDriverId?: string;
+  deliveryDriverId?: string;
+  tariffId?: string;
+  batchId?: string;
+  export?: boolean;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minWeight?: number;
+  maxWeight?: number;
+  isFragile?: boolean;
+  isUnusual?: boolean;
+  pickupConfirmed?: boolean;
+  dropoffConfirmed?: boolean;
+  originCityId?: string;
+  destinationCityId?: string;
+  lateDeliveryOnly?: boolean;
+}
+
+export interface OrderReportItem {
+  id: string;
+  trackingCode: string;
+  status: string;
+  serviceType: string;
+  fulfillmentType: string;
+  shippingScope: string;
+  shipmentType: string;
+  weight: number;
+  finalPrice: number;
+  currency: string;
+  originCityRaw: string;
+  destinationCityRaw: string;
+  pickupDate: string;
+  deliveryDate: string;
+  createdAt: string;
+  customer?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  } | null;
+  receiver?: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
+}
+
+export interface OrderReportPagination {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface OrderReportSummary {
+  data: OrderReportItem[];
+  totalRevenue: number;
+  totalOrders?: number;
+}
+
+export interface OrderReportResponse {
+  summary: OrderReportSummary;
+  pagination: OrderReportPagination;
 }
 
 export interface DashboardSummary {
@@ -122,3 +207,47 @@ export interface DashboardMetrics {
   revenueTrend: RevenueTrend[];
   recentOrders: RecentOrder[];
 }
+
+export interface RevenueReportFilters {
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  groupBy?: "day" | "week" | "month";
+  export?: boolean;
+  revenueType?: "gross" | "net";
+  currency?: string;
+  branchId?: string;
+  serviceType?: "STANDARD" | "EXPRESS" | "SAME_DAY" | "OVERNIGHT";
+  fulfillmentType?: "PICKUP" | "DROPOFF";
+  shippingScope?: "REGIONAL" | "TOWN" | "INTERNATIONAL";
+  driverId?: string;
+  customerId?: string;
+  tariffId?: string;
+  deliveredOnly?: boolean;
+  lateOnly?: boolean;
+  onTimeOnly?: boolean;
+}
+
+export interface RevenueReportOrderItem {
+  orderId: string;
+  trackingCode: string;
+  customer: string | null;
+  receiver: string | null;
+  gross: number | null;
+  net: number | null;
+  revenue: number | null;
+  group_key: string;
+  driverEarnings: number | null;
+}
+
+export interface RevenueReportGroup {
+  group_key: string;
+  total_revenue: number;
+  total_orders: number;
+  total_driver_earnings: number;
+  orders: RevenueReportOrderItem[];
+}
+
+export type RevenueReportResponse = RevenueReportGroup[];

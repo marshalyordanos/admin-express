@@ -40,6 +40,7 @@ import {
   FileText,
   Filter,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { useReportMetrics } from "@/hooks/useReportMetrics";
 import { useBranches } from "@/hooks/useBranch";
@@ -247,6 +248,35 @@ export default function ReportPage() {
   };
 
   const hasApiData = !isLoading && !error && data;
+
+  const hasActiveFilters =
+    filters.preset !== ReportPreset.TODAY ||
+    !!filters.serviceType ||
+    !!filters.status ||
+    !!filters.branchId ||
+    (filters.topLimit && filters.topLimit !== 5) ||
+    (filters.recentLimit && filters.recentLimit !== 5);
+
+  const getPresetLabel = (preset: ReportPreset) => {
+    switch (preset) {
+      case ReportPreset.TODAY:
+        return "Today";
+      case ReportPreset.YESTERDAY:
+        return "Yesterday";
+      case ReportPreset.THIS_WEEK:
+        return "This Week";
+      case ReportPreset.LAST_WEEK:
+        return "Last Week";
+      case ReportPreset.THIS_MONTH:
+        return "This Month";
+      case ReportPreset.LAST_MONTH:
+        return "Last Month";
+      case ReportPreset.CUSTOM:
+        return "Custom Range";
+      default:
+        return preset;
+    }
+  };
 
   const metrics = data?.summary
     ? {
@@ -593,6 +623,107 @@ export default function ReportPage() {
           </div>
         </div>
       </div>
+
+      {/* Applied Filters */}
+      {hasActiveFilters && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-gray-500">Applied filters:</span>
+
+          {filters.preset !== ReportPreset.TODAY && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  preset: ReportPreset.TODAY,
+                  startDate: undefined,
+                  endDate: undefined,
+                }))
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-700 hover:bg-gray-100"
+            >
+              <span>Preset: {getPresetLabel(filters.preset)}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.preset === ReportPreset.CUSTOM && startDate && endDate && (
+            <button
+              type="button"
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+                setFilters((prev) => ({
+                  ...prev,
+                  startDate: undefined,
+                  endDate: undefined,
+                }));
+              }}
+              className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
+            >
+              <span>
+                Date: {startDate} → {endDate}
+              </span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.serviceType && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, serviceType: undefined }))}
+              className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 hover:bg-emerald-100"
+            >
+              <span>Service: {filters.serviceType}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.status && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, status: undefined }))}
+              className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs text-indigo-700 hover:bg-indigo-100"
+            >
+              <span>Status: {filters.status}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.branchId && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, branchId: undefined }))}
+              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs text-orange-700 hover:bg-orange-100"
+            >
+              <span>Branch: {filters.branchId}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.topLimit && filters.topLimit !== 5 && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, topLimit: 5 }))}
+              className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs text-teal-700 hover:bg-teal-100"
+            >
+              <span>Top: {filters.topLimit}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.recentLimit && filters.recentLimit !== 5 && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, recentLimit: 5 }))}
+              className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs text-teal-700 hover:bg-teal-100"
+            >
+              <span>Recent: {filters.recentLimit}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
 
 
       {/* Loading State */}
