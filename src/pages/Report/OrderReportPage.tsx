@@ -71,7 +71,7 @@ export default function OrderReportPage() {
           <div className="flex flex-wrap gap-3">
             <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button variant="outline" className="flex items-center gap-2 cursor-pointer">
                   <Filter className="h-4 w-4" />
                   Filter
                 </Button>

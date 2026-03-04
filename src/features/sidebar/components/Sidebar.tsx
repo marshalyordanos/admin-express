@@ -105,23 +105,17 @@ export default function Sidebar() {
   };
 
   const isMenuItemActive = (itemPath: string, subItems?: SubItem[]) => {
-    // Check exact match first
-    if (location.pathname === itemPath) return true;
+    // For items with sub-items: parent is active only on exact path match
+    // (so /report is active on General, but not when on /report/orders or /report/revenue)
+    if (subItems && subItems.length > 0) {
+      return location.pathname === itemPath;
+    }
 
-    // Check if current path starts with the item path (for management modules)
+    // No sub-items: active on exact match or when path starts with item path
+    if (location.pathname === itemPath) return true;
     if (location.pathname.startsWith(itemPath + "/")) return true;
 
-    // Check sub-items
-    return subItems?.some(
-      (s) =>
-        location.pathname === s.path ||
-        location.pathname.startsWith(s.path + "/") ||
-        s.subsubItems?.some(
-          (ss) =>
-            location.pathname === ss.path ||
-            location.pathname.startsWith(ss.path + "/"),
-        ),
-    );
+    return false;
   };
 
   return (

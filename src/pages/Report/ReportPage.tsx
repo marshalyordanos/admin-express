@@ -363,7 +363,7 @@ export default function ReportPage() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 cursor-pointer"
                 >
                   <Filter className="h-4 w-4" />
                   Filter

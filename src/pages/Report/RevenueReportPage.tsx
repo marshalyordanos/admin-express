@@ -85,7 +85,7 @@ export default function RevenueReportPage() {
           <div className="flex flex-wrap gap-3">
             <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button variant="outline" className="flex items-center gap-2 cursor-pointer">
                   <Filter className="h-4 w-4" />
                   Filter
                 </Button>
@@ -308,7 +308,7 @@ export default function RevenueReportPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setFilters({ ...defaultFilters })}
-                      className="flex-1"
+                      className="flex-1 cursor-pointer"
                     >
                       Reset all
                     </Button>
@@ -316,7 +316,7 @@ export default function RevenueReportPage() {
                       size="sm"
                       onClick={handleApplyFilters}
                       disabled={isLoading}
-                      className="flex-1 bg-teal-600 hover:bg-teal-700 text-white"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white"
                     >
                       Apply now
                     </Button>

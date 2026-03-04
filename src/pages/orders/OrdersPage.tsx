@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Search, Download, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,32 @@ import { useNavigate } from "react-router-dom";
 import TablePagination from "@/components/common/TablePagination";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
-import type { Order, OrderListResponse, Pagination } from "@/types/types";
+import type {
+  Order,
+  OrderListResponse,
+  Pagination,
+  Driver,
+} from "@/types/types";
+
+/** Order summary from /report/dashboard/order-summary */
+interface OrderSummaryData {
+  totalOrders?: { value: number; change: number };
+  thisWeekOrders?: { value: number; change: number };
+  thisMonthOrders?: { value: number; change: number };
+  returnOrders?: { value: number; change: number };
+  fulfilledOrders?: { value: number; change: number };
+  onTimeDeliveryRate?: number;
+  avgPickupToDeliveryTime?: number;
+  avgBranchProcessingTime?: number;
+  [key: string]: unknown;
+}
+
+/** Driver with optional user display fields from API */
+interface DriverWithUser extends Driver {
+  name?: string;
+  email?: string;
+  user?: { name?: string; email?: string };
+}
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { Skeleton } from "antd";
 import { Spinner } from "@/utils/spinner";
@@ -41,7 +66,8 @@ const reverseGeocode = async (lat: string, lng: string) => {
       return Object.values(data.address).filter(Boolean).join(", ");
     }
     return `(${lat}, ${lng})`;
-  } catch (err) {
+  } catch (error: unknown) {
+    console.error(error);
     return "Unknown";
   }
 };
@@ -124,11 +150,13 @@ export default function OrdersPage() {
   const navigate = useNavigate();
 
   // Calculate pagination
-  const [orderSummary, setOrderSummary] = useState<any | null>(null);
+  const [orderSummary, setOrderSummary] = useState<OrderSummaryData | null>(
+    null,
+  );
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [searchText, setSearchText] = useState("");
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -155,10 +183,12 @@ export default function OrdersPage() {
 
   const [driverSearch, setDriverSearch] = useState("");
   const [showDriverDropdown, setShowDriverDropdown] = useState(false);
-  const [_, setPaginationDriver] = useState<Pagination | null>(null);
+  const [, setPaginationDriver] = useState<Pagination | null>(null);
   const [loadingDriver, setLoadingDriver] = useState(false);
-  const [driver, setDriver] = useState<any[]>([]);
-  const [selectedDriver, setSelectedDriver] = useState<any>(null);
+  const [driver, setDriver] = useState<DriverWithUser[]>([]);
+  const [selectedDriver, setSelectedDriver] = useState<DriverWithUser | null>(
+    null,
+  );
 
   // Reverse geocode memory for this session (orderId-address purpose)
   const geoCacheRef = useRef<Record<string, { [purpose: string]: string }>>({});
@@ -274,43 +304,50 @@ export default function OrdersPage() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line
   }, [orders, loading]);
 
-  const fetchOrders = async (page = 1, limit = 10) => {
-    try {
-      setLoading(true);
+  const fetchOrders = useCallback(
+    async (page = 1, limit = 10) => {
+      try {
+        setLoading(true);
 
-      const response = await api.get<OrderListResponse>(
-        `/order?search=all:${searchText}&page=${page}&pageSize=${limit}&filter=${activeTab !== "All" ? `status:${activeTab}` : ""}`,
-      );
-      setOrders(response.data.data);
-      setPagination(response.data.pagination);
-      setLoading(false);
-    } catch (error: any) {
-      setLoading(false);
-
-      const message =
-        error?.response?.data?.message ||
-        "Something went wrong. Please try again.";
-      toast.error(message);
-      console.error(error);
-    }
-  };
+        const response = await api.get<OrderListResponse>(
+          `/order?search=all:${searchText}&page=${page}&pageSize=${limit}&filter=${activeTab !== "All" ? `status:${activeTab}` : ""}`,
+        );
+        setOrders(response.data.data);
+        setPagination(response.data.pagination);
+        setLoading(false);
+      } catch (error: unknown) {
+        setLoading(false);
+        const message =
+          (error && typeof error === "object" && "response" in error
+            ? (error as { response?: { data?: { message?: string } } }).response
+                ?.data?.message
+            : null) || "Something went wrong. Please try again.";
+        toast.error(message);
+        console.error(error);
+      }
+    },
+    [searchText, activeTab],
+  );
 
   useEffect(() => {
     fetchOrders(currentPage, pageSize);
-  }, [searchText, currentPage, pageSize, activeTab]);
+  }, [fetchOrders, currentPage, pageSize]);
 
   const fetchOrderSummary = async () => {
     try {
       setLoadingSummary(true);
-      const res = await api.get<any>("/report/dashboard/order-summary");
+      const res = await api.get<{ data: OrderSummaryData }>(
+        "/report/dashboard/order-summary",
+      );
       setOrderSummary(res.data.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error?.response?.data?.message ||
-        "Something went wrong. Please try again.";
+        (error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : null) || "Something went wrong. Please try again.";
       toast.error(message);
     } finally {
       setLoadingSummary(false);
@@ -321,30 +358,32 @@ export default function OrdersPage() {
       const newMetrics: Metric[] = [
         {
           title: "Total Orders",
-          value: orderSummary.totalOrders?.value,
-          change: `${orderSummary.totalOrders?.change}% last week`,
-          trend: orderSummary.totalOrders?.change >= 0 ? "up" : "down",
+          value: orderSummary.totalOrders?.value ?? 0,
+          change: `${orderSummary.totalOrders?.change ?? 0}% last week`,
+          trend: (orderSummary.totalOrders?.change ?? 0) >= 0 ? "up" : "down",
           color: "orange",
         },
         {
           title: "Orders This Week",
-          value: orderSummary.thisWeekOrders?.value,
-          change: `${orderSummary.thisWeekOrders?.change}% last week`,
-          trend: orderSummary.thisWeekOrders?.change >= 0 ? "up" : "down",
+          value: orderSummary.thisWeekOrders?.value ?? 0,
+          change: `${orderSummary.thisWeekOrders?.change ?? 0}% last week`,
+          trend:
+            (orderSummary.thisWeekOrders?.change ?? 0) >= 0 ? "up" : "down",
           color: "green",
         },
         {
           title: "Return Orders",
-          value: orderSummary.returnOrders?.value,
-          change: `${orderSummary.returnOrders?.change}% last week`,
-          trend: orderSummary.returnOrders?.change >= 0 ? "up" : "down",
+          value: orderSummary.returnOrders?.value ?? 0,
+          change: `${orderSummary.returnOrders?.change ?? 0}% last week`,
+          trend: (orderSummary.returnOrders?.change ?? 0) >= 0 ? "up" : "down",
           color: "red",
         },
         {
           title: "Fulfilled Orders",
-          value: orderSummary.fulfilledOrders?.value,
-          change: `${orderSummary.fulfilledOrders?.change}% last week`,
-          trend: orderSummary.fulfilledOrders?.change >= 0 ? "up" : "down",
+          value: orderSummary.fulfilledOrders?.value ?? 0,
+          change: `${orderSummary.fulfilledOrders?.change ?? 0}% last week`,
+          trend:
+            (orderSummary.fulfilledOrders?.change ?? 0) >= 0 ? "up" : "down",
           color: "teal",
         },
       ];
@@ -398,8 +437,13 @@ export default function OrdersPage() {
       fetchOrders(currentPage, pageSize);
       setIsDialogOpen(false);
       setIsActionLoading(false);
-    } catch (error: any) {
-      toast.error(error?.response.data.message || "Something went wrong!");
+    } catch (error: unknown) {
+      const msg =
+        (error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : null) || "Something went wrong!";
+      toast.error(msg);
       setIsActionLoading(false);
     }
   };
@@ -412,8 +456,13 @@ export default function OrdersPage() {
       fetchOrders(currentPage, pageSize);
       setIsDialogOpen(false);
       setIsActionLoading(false);
-    } catch (error: any) {
-      toast.error(error?.response.data.message || "Something went wrong!");
+    } catch (error: unknown) {
+      const msg =
+        (error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : null) || "Something went wrong!";
+      toast.error(msg);
       setIsActionLoading(false);
     }
   };
@@ -428,8 +477,13 @@ export default function OrdersPage() {
       fetchOrders(currentPage, pageSize);
       setIsAcceptDropoffModal(false);
       setIsActionLoading(false);
-    } catch (error: any) {
-      toast.error(error?.response.data.message || "Something went wrong!");
+    } catch (error: unknown) {
+      const msg =
+        (error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : null) || "Something went wrong!";
+      toast.error(msg);
       setIsActionLoading(false);
     }
   };
@@ -444,8 +498,13 @@ export default function OrdersPage() {
       fetchOrders(currentPage, pageSize);
       setIsAssignDriverDialogOpen(false);
       setIsActionLoading(false);
-    } catch (error: any) {
-      toast.error(error?.response.data.message || "Something went wrong!");
+    } catch (error: unknown) {
+      const msg =
+        (error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : null) || "Something went wrong!";
+      toast.error(msg);
       setIsActionLoading(false);
     }
   };
@@ -465,7 +524,7 @@ export default function OrdersPage() {
       }));
       // Small delay to show loading state for better UX
       await new Promise((resolve) => setTimeout(resolve, 500));
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to export orders");
       console.error(error);
     } finally {
@@ -473,30 +532,37 @@ export default function OrdersPage() {
     }
   };
 
-  const fetchDriver = async (page = 1, limit = 10) => {
-    try {
-      setLoadingDriver(true);
+  const fetchDriver = useCallback(
+    async (page = 1, limit = 10) => {
+      try {
+        setLoadingDriver(true);
 
-      const response = await api.get<any>(
-        `/users/driver?search=all:${driverSearch}&page=${page}&pageSize=${limit}`,
-      );
-      setDriver(response.data.data?.drivers);
-      setPaginationDriver(response.data.pagination);
-      setLoadingDriver(false);
-    } catch (error: any) {
-      setLoadingDriver(false);
-
-      const message =
-        error?.response?.data?.message ||
-        "Something went wrong. Please try again.";
-      toast.error(message);
-      console.error(error);
-    }
-  };
+        const response = await api.get<{
+          data?: { drivers?: DriverWithUser[] };
+          pagination?: Pagination;
+        }>(
+          `/users/driver?search=all:${driverSearch}&page=${page}&pageSize=${limit}`,
+        );
+        setDriver(response.data.data?.drivers ?? []);
+        setPaginationDriver(response.data.pagination ?? null);
+        setLoadingDriver(false);
+      } catch (error: unknown) {
+        setLoadingDriver(false);
+        const message =
+          (error && typeof error === "object" && "response" in error
+            ? (error as { response?: { data?: { message?: string } } }).response
+                ?.data?.message
+            : null) || "Something went wrong. Please try again.";
+        toast.error(message);
+        console.error(error);
+      }
+    },
+    [driverSearch],
+  );
 
   useEffect(() => {
     fetchDriver();
-  }, [driverSearch]);
+  }, [fetchDriver]);
 
   return (
     <div className="min-h-screen">
@@ -802,7 +868,8 @@ export default function OrdersPage() {
                           : order?.pickupAddress?.landMark}
                       </TableCell>
                       <TableCell className="text-gray-600">
-                        {order.quantity}
+                        {(order as Order & { quantity?: number }).quantity ??
+                          "—"}
                       </TableCell>
                       <TableCell className="text-gray-600">
                         {order?.deliveryAddress?.addressLine === "Unknown" ||
@@ -1250,19 +1317,19 @@ export default function OrdersPage() {
                     onClick={() => {
                       setSelectedDriver(driverItem);
                       setDriverSearch(
-                        driverItem.name || driverItem.user?.name || "",
+                        driverItem.name ?? driverItem.user?.name ?? "",
                       );
                     }}
                     className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                   >
                     <div className="font-medium text-gray-900">
-                      {driverItem.name || driverItem.user?.name || "Unknown"}
+                      {driverItem.name ?? driverItem.user?.name ?? "Unknown"}
                     </div>
                     <div className="text-sm text-gray-600">
                       ID: {driverItem.id}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {driverItem.email || driverItem.user?.email || ""}
+                      {driverItem.email ?? driverItem.user?.email ?? ""}
                     </div>
                   </div>
                 ))
