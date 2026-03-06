@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -18,24 +26,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Filter, RefreshCw, Package, DollarSign } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  RefreshCw,
+  Package,
+  DollarSign,
+  X,
+} from "lucide-react";
 
 export default function OrderReportPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [filters, setFilters] = useState<OrderReportFilters>({
     startDate: "",
     endDate: "",
     dateField: "createdAt",
-    page: 1,
-    limit: 20,
     groupBy: "month",
-    serviceType: "STANDARD",
-    shippingScope: "REGIONAL",
-    fulfillmentType: "PICKUP",
-    shipmentType: "PARCEL",
-    isFragile: false,
-    isUnusual: false,
-    lateDeliveryOnly: false,
+    serviceType: undefined,
+    shippingScope: undefined,
+    fulfillmentType: undefined,
+    shipmentType: undefined,
+    isFragile: undefined,
+    isUnusual: undefined,
+    lateDeliveryOnly: undefined,
   });
 
   const { data, isLoading, error, refetch } = useOrderReport(filters);
@@ -47,6 +62,17 @@ export default function OrderReportPage() {
     summary?.totalOrders ?? summary?.data.length ?? pagination?.total ?? 0;
   const totalRevenue = summary?.totalRevenue ?? 0;
 
+  const hasActiveFilters =
+    !!filters.startDate ||
+    !!filters.endDate ||
+    !!filters.serviceType ||
+    !!filters.shippingScope ||
+    !!filters.fulfillmentType ||
+    !!filters.shipmentType ||
+    !!filters.status ||
+    !!filters.isFragile ||
+    !!filters.lateDeliveryOnly;
+
   useEffect(() => {
     console.log("Order Detailed Report Data:", data);
   }, [data]);
@@ -56,9 +82,13 @@ export default function OrderReportPage() {
     setIsFilterOpen(false);
   };
 
+  const toggleExpanded = (orderId: string) => {
+    setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+  };
+
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -71,7 +101,10 @@ export default function OrderReportPage() {
           <div className="flex flex-wrap gap-3">
             <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2 cursor-pointer">
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <Filter className="h-4 w-4" />
                   Filter
                 </Button>
@@ -124,7 +157,10 @@ export default function OrderReportPage() {
 
                   {/* Shipping scope */}
                   <div className="space-y-2">
-                    <Label htmlFor="shippingScope" className="text-xs font-medium">
+                    <Label
+                      htmlFor="shippingScope"
+                      className="text-xs font-medium"
+                    >
                       Shipping Scope
                     </Label>
                     <Select
@@ -132,7 +168,9 @@ export default function OrderReportPage() {
                       onValueChange={(v) =>
                         setFilters((prev) => ({
                           ...prev,
-                          shippingScope: (v === "all" ? undefined : v) as OrderReportFilters["shippingScope"],
+                          shippingScope: (v === "all"
+                            ? undefined
+                            : v) as OrderReportFilters["shippingScope"],
                         }))
                       }
                     >
@@ -143,14 +181,19 @@ export default function OrderReportPage() {
                         <SelectItem value="all">All</SelectItem>
                         <SelectItem value="REGIONAL">Regional</SelectItem>
                         <SelectItem value="TOWN">Town</SelectItem>
-                        <SelectItem value="INTERNATIONAL">International</SelectItem>
+                        <SelectItem value="INTERNATIONAL">
+                          International
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Service Type */}
                   <div className="space-y-2">
-                    <Label htmlFor="serviceType" className="text-xs font-medium">
+                    <Label
+                      htmlFor="serviceType"
+                      className="text-xs font-medium"
+                    >
                       Service Type
                     </Label>
                     <Select
@@ -158,7 +201,9 @@ export default function OrderReportPage() {
                       onValueChange={(v) =>
                         setFilters((prev) => ({
                           ...prev,
-                          serviceType: (v === "all" ? undefined : v) as OrderReportFilters["serviceType"],
+                          serviceType: (v === "all"
+                            ? undefined
+                            : v) as OrderReportFilters["serviceType"],
                         }))
                       }
                     >
@@ -177,7 +222,10 @@ export default function OrderReportPage() {
 
                   {/* Fulfillment Type */}
                   <div className="space-y-2">
-                    <Label htmlFor="fulfillmentType" className="text-xs font-medium">
+                    <Label
+                      htmlFor="fulfillmentType"
+                      className="text-xs font-medium"
+                    >
                       Fulfillment Type
                     </Label>
                     <Select
@@ -185,11 +233,16 @@ export default function OrderReportPage() {
                       onValueChange={(v) =>
                         setFilters((prev) => ({
                           ...prev,
-                          fulfillmentType: (v === "all" ? undefined : v) as OrderReportFilters["fulfillmentType"],
+                          fulfillmentType: (v === "all"
+                            ? undefined
+                            : v) as OrderReportFilters["fulfillmentType"],
                         }))
                       }
                     >
-                      <SelectTrigger id="fulfillmentType" className="h-9 w-full">
+                      <SelectTrigger
+                        id="fulfillmentType"
+                        className="h-9 w-full"
+                      >
                         <SelectValue placeholder="All" />
                       </SelectTrigger>
                       <SelectContent>
@@ -316,10 +369,10 @@ export default function OrderReportPage() {
                           page: 1,
                           limit: 20,
                           groupBy: "month",
-                          serviceType: "STANDARD",
-                          shippingScope: "REGIONAL",
-                          fulfillmentType: "PICKUP",
-                          shipmentType: "PARCEL",
+                          serviceType: undefined,
+                          shippingScope: undefined,
+                          fulfillmentType: undefined,
+                          shipmentType: undefined,
                           isFragile: false,
                           isUnusual: false,
                           lateDeliveryOnly: false,
@@ -355,6 +408,130 @@ export default function OrderReportPage() {
           </div>
         </div>
       </div>
+
+      {/* Applied Filters */}
+      {hasActiveFilters && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-gray-500">
+            Applied filters:
+          </span>
+
+          {filters.startDate && filters.endDate && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilters((prev) => ({
+                  ...prev,
+                  startDate: undefined,
+                  endDate: undefined,
+                }));
+              }}
+              className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
+            >
+              <span>
+                Date: {filters.startDate} → {filters.endDate}
+              </span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.serviceType && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  serviceType: undefined,
+                }))
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 hover:bg-emerald-100"
+            >
+              <span>Service: {filters.serviceType}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.fulfillmentType && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  fulfillmentType: undefined,
+                }))
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs text-indigo-700 hover:bg-indigo-100"
+            >
+              <span>Fulfillment: {filters.fulfillmentType}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.shippingScope && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  shippingScope: undefined,
+                }))
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs text-orange-700 hover:bg-orange-100"
+            >
+              <span>Scope: {filters.shippingScope}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.shipmentType && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  shipmentType: undefined,
+                }))
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs text-teal-700 hover:bg-teal-100"
+            >
+              <span>Shipment: {filters.shipmentType}</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.isFragile && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  isFragile: false,
+                }))
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs text-rose-700 hover:bg-rose-100"
+            >
+              <span>Fragile only</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+
+          {filters.lateDeliveryOnly && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  lateDeliveryOnly: false,
+                }))
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs text-red-700 hover:bg-red-100"
+            >
+              <span>Late only</span>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex items-center justify-center py-12">
@@ -417,72 +594,173 @@ export default function OrderReportPage() {
               {summary.data.length === 0 ? (
                 <p className="text-sm text-gray-500">No orders found.</p>
               ) : (
-                <div className="space-y-3">
-                  {summary.data.map((order) => (
-                    <details
-                      key={order.id}
-                      className="group border rounded-lg p-3 hover:bg-gray-50"
-                    >
-                      <summary className="flex items-center justify-between cursor-pointer list-none">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-900">
-                            {order.trackingCode}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {order.customer?.name ?? "Unknown customer"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-0.5">
-                            {order.status ?? "—"}
-                          </span>
-                          <span className="text-sm font-medium text-gray-900">
-                            {(order.finalPrice ?? 0).toLocaleString()} {order.currency ?? "ETB"}
-                          </span>
-                        </div>
-                      </summary>
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs text-gray-700">
-                        <div>
-                          <span className="font-semibold">Service:</span>{" "}
-                          {order.serviceType ?? "—"} · {order.fulfillmentType ?? "—"}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Route:</span>{" "}
-                          {order.originCityRaw ?? "—"} → {order.destinationCityRaw ?? "—"}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Weight:</span>{" "}
-                          {order.weight != null ? `${order.weight} kg` : "—"}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Pickup:</span>{" "}
-                          {order.pickupDate
-                            ? new Date(order.pickupDate).toLocaleString()
-                            : "—"}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Delivery:</span>{" "}
-                          {order.deliveryDate
-                            ? new Date(order.deliveryDate).toLocaleString()
-                            : "—"}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Created At:</span>{" "}
-                          {order.createdAt
-                            ? new Date(order.createdAt).toLocaleString()
-                            : "—"}
-                        </div>
-                        <div className="sm:col-span-2">
-                          <span className="font-semibold">Customer:</span>{" "}
-                          {order.customer?.name} ({order.customer?.phone})
-                        </div>
-                        <div className="sm:col-span-2">
-                          <span className="font-semibold">Receiver:</span>{" "}
-                          {order.receiver?.name} ({order.receiver?.phone})
-                        </div>
-                      </div>
-                    </details>
-                  ))}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tracking Code</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="hidden lg:table-cell">
+                          Service
+                        </TableHead>
+                        <TableHead className="hidden lg:table-cell">
+                          Fulfillment
+                        </TableHead>
+                        <TableHead className="hidden xl:table-cell">
+                          Scope
+                        </TableHead>
+                        <TableHead className="hidden xl:table-cell">
+                          Weight (kg)
+                        </TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          Created At
+                        </TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {summary.data.map((order) => {
+                        const isExpanded = expandedOrderId === order.id;
+                        return (
+                          <>
+                            <TableRow key={order.id}>
+                              <TableCell className="font-medium">
+                                {order.trackingCode ?? order.id}
+                              </TableCell>
+                              <TableCell>
+                                {order.customer?.name ?? "Unknown"}
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-0.5">
+                                  {order.status ?? "—"}
+                                </span>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell">
+                                {order.serviceType ?? "—"}
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell">
+                                {order.fulfillmentType ?? "—"}
+                              </TableCell>
+                              <TableCell className="hidden xl:table-cell">
+                                {order.shippingScope ?? "—"}
+                              </TableCell>
+                              <TableCell className="hidden xl:table-cell">
+                                {order.weight != null ? order.weight : "—"}
+                              </TableCell>
+                              <TableCell>
+                                {(order.finalPrice ?? 0).toLocaleString()}{" "}
+                                {order.currency ?? "ETB"}
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                {order.createdAt
+                                  ? new Date(order.createdAt).toLocaleString()
+                                  : "—"}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => toggleExpanded(order.id)}
+                                  className="gap-2"
+                                >
+                                  {isExpanded ? (
+                                    <>
+                                      <ChevronUp className="h-4 w-4" />
+                                      Hide
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ChevronDown className="h-4 w-4" />
+                                      Details
+                                    </>
+                                  )}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                            {isExpanded && (
+                              <TableRow key={`${order.id}-details`}>
+                                <TableCell colSpan={10} className="bg-gray-50">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs text-gray-700">
+                                    <div>
+                                      <span className="font-semibold">
+                                        Service:
+                                      </span>{" "}
+                                      {order.serviceType ?? "—"} ·{" "}
+                                      {order.fulfillmentType ?? "—"}
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">
+                                        Scope:
+                                      </span>{" "}
+                                      {order.shippingScope ?? "—"} ·{" "}
+                                      {order.shipmentType ?? "—"}
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">
+                                        Route:
+                                      </span>{" "}
+                                      {order.originCityRaw ?? "—"} →{" "}
+                                      {order.destinationCityRaw ?? "—"}
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">
+                                        Pickup:
+                                      </span>{" "}
+                                      {order.pickupDate
+                                        ? new Date(
+                                            order.pickupDate,
+                                          ).toLocaleString()
+                                        : "—"}
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">
+                                        Delivery:
+                                      </span>{" "}
+                                      {order.deliveryDate
+                                        ? new Date(
+                                            order.deliveryDate,
+                                          ).toLocaleString()
+                                        : "—"}
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">
+                                        Created At:
+                                      </span>{" "}
+                                      {order.createdAt
+                                        ? new Date(
+                                            order.createdAt,
+                                          ).toLocaleString()
+                                        : "—"}
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                      <span className="font-semibold">
+                                        Customer:
+                                      </span>{" "}
+                                      {order.customer?.name ?? "—"}{" "}
+                                      {order.customer?.phone
+                                        ? `(${order.customer.phone})`
+                                        : ""}
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                      <span className="font-semibold">
+                                        Receiver:
+                                      </span>{" "}
+                                      {order.receiver?.name ?? "—"}{" "}
+                                      {order.receiver?.phone
+                                        ? `(${order.receiver.phone})`
+                                        : ""}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </CardContent>
@@ -492,4 +770,3 @@ export default function OrderReportPage() {
     </div>
   );
 }
-

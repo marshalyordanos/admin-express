@@ -155,7 +155,7 @@ const mockRevenueTrend = [
 export default function ReportPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<ReportFilters>({
-    preset: ReportPreset.TODAY,
+    preset: ReportPreset.LAST_MONTH,
     serviceType: undefined,
     shippingScope: undefined,
     fulfillmentType: undefined,
@@ -573,7 +573,7 @@ export default function ReportPage() {
                       size="sm"
                       onClick={() => {
                         setFilters({
-                          preset: ReportPreset.TODAY,
+                          preset: ReportPreset.LAST_MONTH,
                           serviceType: undefined,
                           shippingScope: undefined,
                           fulfillmentType: undefined,
@@ -635,7 +635,7 @@ export default function ReportPage() {
               onClick={() =>
                 setFilters((prev) => ({
                   ...prev,
-                  preset: ReportPreset.TODAY,
+              preset: ReportPreset.LAST_MONTH,
                   startDate: undefined,
                   endDate: undefined,
                 }))

@@ -235,8 +235,14 @@ export default function Sidebar() {
                         const subKey = `${name}-${sub.name}`;
                         const isSubExpanded = expandedSub === subKey;
                         const isSubActive =
+                          // Exact match
                           location.pathname === sub.path ||
-                          location.pathname.startsWith(sub.path + "/") ||
+                          // For sub-routes (e.g. /report/orders/123), but avoid
+                          // treating the parent-like subitem (whose path === item.path)
+                          // as active when a deeper sub-route is selected.
+                          (sub.path !== path &&
+                            location.pathname.startsWith(sub.path + "/")) ||
+                          // Sub-sub-items
                           sub.subsubItems?.some(
                             (ss) =>
                               location.pathname === ss.path ||

@@ -44,8 +44,9 @@ export const fetchOrderReportDetailed = async (
   filters: OrderReportFilters,
 ): Promise<OrderReportResponse> => {
   try {
+    const { page, limit, ...rest } = filters;
     const payload: OrderReportFilters = {
-      ...filters,
+      ...rest,
       startDate: filters.startDate
         ? new Date(filters.startDate).toISOString()
         : undefined,
@@ -76,8 +77,9 @@ export const fetchRevenueReport = async (
   filters: RevenueReportFilters,
 ): Promise<RevenueReportResponse> => {
   try {
+    const { page, limit, ...rest } = filters;
     const payload: RevenueReportFilters = {
-      ...filters,
+      ...rest,
       startDate: filters.startDate
         ? new Date(filters.startDate).toISOString()
         : undefined,
