@@ -16,12 +16,41 @@ import {
   IoChevronBack,
   IoChevronForward,
   IoEllipsisHorizontal,
+  IoCheckmarkCircle,
+  IoAlertCircle,
 } from "react-icons/io5";
 
 import "leaflet/dist/leaflet.css";
 import api from "@/lib/api/api";
 import toast from "react-hot-toast";
-// import type { Pagination } from "@/types/types";
+
+// --- Confirmation Modal Component ---
+function ConfirmationModal({ open, onClose, onConfirm, title, description, confirming }:any) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 bg-gray-800/30 z-40 flex items-center justify-center">
+      <div className="bg-white rounded shadow-lg max-w-sm w-full p-6">
+        <div className="flex items-center mb-4">
+          <IoAlertCircle className="text-yellow-500 mr-2 w-6 h-6" />
+          <span className="font-bold text-lg text-gray-900">{title}</span>
+        </div>
+        <div className="mb-4 text-gray-700">{description}</div>
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={onClose} disabled={confirming}>
+            Cancel
+          </Button>
+          <Button
+            className="bg-blue-600 text-white hover:bg-blue-700"
+            onClick={onConfirm}
+            disabled={confirming}
+          >
+            {confirming ? "Approving..." : "Approve"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -34,7 +63,7 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom driver icon - different colors for INTERNAL and EXTERNAL driverskjnnlk
+// Custom driver icon - different colors for INTERNAL and EXTERNAL drivers
 const createDriverIcon = (type: string) => {
   const color = type === "INTERNAL" ? "#3b82f6" : "#10b981";
   return L.divIcon({
@@ -69,6 +98,7 @@ interface Driver {
   currentLon?: number | null;
   updatedAt: string;
   createdBy?: string | null;
+  isApproved?: boolean;
   user?: {
     id: string;
     name: string;
@@ -135,6 +165,9 @@ export default function DriversMapView({ onCreateDriver }: DriversMapViewProps) 
   const [driverLoading, setDriverLoading] = useState(false);
   const [pagination, setPagination] = useState<PaginationType | null>(null);
   const [driverSearch] = useState("");
+  const [approveModalOpen, setApproveModalOpen] = useState<boolean>(false);
+  const [approveDriver, setApproveDriver] = useState<Driver | null>(null);
+  const [isApproving, setIsApproving] = useState<boolean>(false);
 
   // Fetch drivers with pagination, using the format in your real response
   const fetchDrivers = async () => {
@@ -146,8 +179,6 @@ export default function DriversMapView({ onCreateDriver }: DriversMapViewProps) 
           drivers: Driver[];
           pagination: PaginationType;
         };
-        // success: boolean;
-        // message: string;
       }>(
         `/staff/driver?page=${currentPage}&pageSize=${pageSize}`
       );
@@ -171,6 +202,27 @@ export default function DriversMapView({ onCreateDriver }: DriversMapViewProps) 
   }, [driverSearch, currentPage, pageSize]);
 
   const handleSelectDriver = (driver: Driver) => setSelectedDriver(driver);
+
+  const handleApproveDriver = async (driverId: string) => {
+    setIsApproving(true);
+    try {
+      await api.post("/staff/driver/approve", {
+        driverIds: [driverId]
+      });
+      toast.success("Driver approved successfully");
+      setApproveModalOpen(false);
+      setApproveDriver(null);
+      fetchDrivers();
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message ??
+          err?.message ??
+          "Failed to approve driver"
+      );
+    } finally {
+      setIsApproving(false);
+    }
+  };
 
   // Work directly from pagination object if present.
   const totalDrivers = pagination?.total ?? drivers.length ?? 0;
@@ -299,29 +351,65 @@ export default function DriversMapView({ onCreateDriver }: DriversMapViewProps) 
                           </div>
                         </div>
                       </div>
+                     <div className="flex items-center gap-2">
+                       {/* Approval status indicator */}
+                       <div className="flex items-center gap-2 mt-2">
+                        {driver.isApproved ? (
+                          <Badge className="bg-green-100 text-green-700 flex gap-1 items-center">
+                            <IoCheckmarkCircle className="inline-block w-4 h-4" />
+                            Approved
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-yellow-100 text-yellow-700 flex gap-1 items-center">
+                            <IoAlertCircle className="inline-block w-4 h-4" />
+                            Not Approved
+                          </Badge>
+                        )}
+                      </div>
+                      {/* Approve action button */}
+                      {!driver.isApproved && (
+                        <div className="flex items-center justify-start mt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setApproveModalOpen(true);
+                              setApproveDriver(driver);
+                            }}
+                          >
+                            Approve
+                          </Button>
+                        </div>
+                      )}
+                     </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle location tracking
-                      }}
-                    >
-                      <IoLocation className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle calling driver
-                      }}
-                    >
-                      <IoCall className="h-4 w-4" />
-                    </Button>
+                  <div className="flex flex-col gap-2 items-end">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={e => {
+                          e.stopPropagation();
+                          // Handle location tracking
+                        }}
+                      >
+                        <IoLocation className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={e => {
+                          e.stopPropagation();
+                          // Handle calling driver
+                        }}
+                      >
+                        <IoCall className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {/* Approval status and Approve button moved under icons for consistency */}
                   </div>
                 </div>
               </div>
@@ -549,6 +637,20 @@ export default function DriversMapView({ onCreateDriver }: DriversMapViewProps) 
                         >
                           {driver.availablityStatus || driver.status || "OFFLINE"}
                         </Badge>
+                        {/* Approval Status inside Popup */}
+                        <div className="mt-2">
+                          {driver.isApproved ? (
+                            <Badge className="bg-green-100 text-green-700 flex gap-1 items-center">
+                              <IoCheckmarkCircle className="inline-block w-4 h-4" />
+                              Approved
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-yellow-100 text-yellow-700 flex gap-1 items-center">
+                              <IoAlertCircle className="inline-block w-4 h-4" />
+                              Not Approved
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </Popup>
                   </Marker>
@@ -595,6 +697,35 @@ export default function DriversMapView({ onCreateDriver }: DriversMapViewProps) 
                       <IoLocation className="h-4 w-4 mr-2" />
                       LOCATION
                     </Button>
+                  </div>
+                  <div>
+                    {/* Approval Status and Approve button in detail view */}
+                    <div className="flex items-center gap-2 my-2">
+                      {selectedDriver.isApproved ? (
+                        <Badge className="bg-green-100 text-green-700 flex gap-1 items-center">
+                          <IoCheckmarkCircle className="inline-block w-4 h-4" />
+                          Approved
+                        </Badge>
+                      ) : (
+                        <>
+                          <Badge className="bg-yellow-100 text-yellow-700 flex gap-1 items-center">
+                            <IoAlertCircle className="inline-block w-4 h-4" />
+                            Not Approved
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            onClick={() => {
+                              setApproveModalOpen(true);
+                              setApproveDriver(selectedDriver);
+                            }}
+                          >
+                            Approve
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-2">
@@ -650,6 +781,27 @@ export default function DriversMapView({ onCreateDriver }: DriversMapViewProps) 
           </div>
         )}
       </div>
+
+      {/* Approval Confirmation Modal */}
+      <ConfirmationModal
+        open={approveModalOpen}
+        onClose={() => {
+          setApproveModalOpen(false);
+          setApproveDriver(null);
+        }}
+        onConfirm={() => {
+          if (approveDriver?.id) handleApproveDriver(approveDriver.id);
+        }}
+        title="Approve Driver"
+        description={
+          `Are you sure you want to approve this driver${
+            approveDriver && approveDriver.user?.name
+              ? ` (${approveDriver.user.name})`
+              : ""
+          }?`
+        }
+        confirming={isApproving}
+      />
     </div>
   );
 }

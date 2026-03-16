@@ -9,6 +9,7 @@ const Shipment = () => {
     completed: number;
     pending: number;
     failed: number;
+    pendingDrivers: number;
   }
   
   interface DashboardResponse {
@@ -95,6 +96,15 @@ const Shipment = () => {
           icon: <FaUserTie className="text-purple-600" />,
         },
         {
+          title: "Pending Drivers",
+          value: summary.pendingDrivers.toLocaleString(),
+          change: "+0%",
+          changeColor: "text-orange-600",
+          changeBg: "bg-orange-100",
+          extra: "Pending drivers",
+          icon: <FaUserTie className="text-orange-600" />,
+        },
+        {
           title: "Total Vehicles",
           value: logistics.totalVehicles.toLocaleString(),
           change: "+0%",
@@ -111,7 +121,8 @@ const Shipment = () => {
           changeBg: "bg-orange-100",
           extra: "Active branches",
           icon: <FaBuilding className="text-orange-600" />,
-        }
+        },
+       
       ]);
     }
   }, [dashboard]);

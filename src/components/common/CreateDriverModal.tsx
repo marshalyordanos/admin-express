@@ -196,6 +196,7 @@ export default function CreateDriverModal({
       formDataToSend.append("vehicleId", formData.vehicleId);
       formDataToSend.append("roleId", driverRoleId);
       formDataToSend.append("type", formData.type);
+      formDataToSend.append("isApproved", "true");
       // Add Fayda Number as faydaFAN
       formDataToSend.append("faydaFAN", formData.faydaNumber || "");
 
