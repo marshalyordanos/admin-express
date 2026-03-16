@@ -54,7 +54,9 @@ const Performance = () => {
       setLoading(true);
       const res = await api.get("/report/dashboard/branch-performance");
 
-      const apiData: BranchPerformanceApi[] = res.data.data.data;
+      // Updated for the new API response:
+      // response.data.data is an array of BranchPerformanceApi
+      const apiData: BranchPerformanceApi[] = res.data.data;
 
       // Map API → UI compatible format
       const mapped: BranchData[] = apiData.map((item) => ({
@@ -63,7 +65,11 @@ const Performance = () => {
         delayed: item.delayedOrders,
         revenue: item.revenue,
         efficiency: item.efficiency,
-        trend: item.trend.toLowerCase() === "improving" ? "up" : "down",
+        // Normalizing trend string: anything that's "improving" (case-insensitive) becomes "up", else "down"
+        trend:
+          typeof item.trend === "string" && item.trend.toLowerCase() === "improving"
+            ? "up"
+            : "down",
       }));
 
       setData(mapped);
