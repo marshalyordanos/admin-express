@@ -925,7 +925,7 @@ const [loading] = useState<boolean>(true);
                             })()}
                           </TableCell>
                           <TableCell className="font-medium text-gray-900">
-                            {order.finalPrice?.toFixed(2)} ETB
+                            {order.estimatedPrice?.toFixed(2)} ETB
                           </TableCell>
                         
 

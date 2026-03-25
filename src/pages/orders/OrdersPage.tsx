@@ -516,7 +516,7 @@ export default function OrdersPage() {
         "Tracking Code": order.trackingCode ?? "",
         Customer: order.customer.name ?? "",
         Payment: order?.payment ?? "N/A",
-        Total: order?.finalPrice,
+        Total: order?.estimatedPrice,
         "Pickup address": Number(order?.pickupAddress?.city),
         "Delivery Address": Number(order?.deliveryAddress?.city),
         "Fulfillment Type": order?.fulfillmentType,
@@ -850,7 +850,7 @@ export default function OrdersPage() {
                         })()}
                       </TableCell>
                       <TableCell className="font-medium text-gray-900">
-                        {order.finalPrice?.toFixed(2)} ETB
+                        {order.estimatedPrice?.toFixed(2)} ETB
                       </TableCell>
                       <TableCell className="text-gray-600">
                         {order?.pickupAddress?.addressLine === "Unknown" ||

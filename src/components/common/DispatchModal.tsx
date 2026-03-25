@@ -293,7 +293,7 @@ function DispatchModal({
       setLoadingExternalDriver(true);
 
       const res = await api.get<any>(
-        `maps/external/nearby-drivers?lat=9.0079232&lon=38.7678208&radius=232`
+        `maps/external/nearby-drivers?lat=${order?.pickupAddress?.latitude}&lon=${order?.pickupAddress?.longitude}&radius=1000`
       );
       setExternalDriver(res.data.data);
       setLoadingExternalDriver(false);

@@ -498,16 +498,16 @@ console.log(staffs.data)
                       <TableCell>
                         <Badge
                           className={
-                            vehicle?.type === "inhouse"
+                           vehicle?.driver?.type && vehicle?.driver?.type === "INTERNAL"
                               ? "bg-green-100 text-green-700"
-                              : vehicle?.type === "external"
+                              : vehicle?.driver?.type && vehicle?.driver?.type === "EXTERNAL"
                               ? "bg-blue-100 text-blue-700"
                               : "bg-gray-100 text-gray-500"
-                          }
+                          } 
                         >
-                          {vehicle?.type === "inhouse"
+                          {vehicle?.driver?.type && vehicle?.driver?.type === "INTERNAL"
                             ? "In-house"
-                            : vehicle?.type === "external"
+                            : vehicle?.driver?.type && vehicle?.driver?.type === "EXTERNAL"
                             ? "External"
                             : "-"}
                         </Badge>
@@ -521,7 +521,7 @@ console.log(staffs.data)
                      
                       <TableCell>
                         <div className="flex flex-col">
-                          {vehicle.driverId ?(
+                          {vehicle.driver?(
                             <span className="text-sm text-gray-500">
                               {vehicle?.driver?.user?.name}
                             </span>

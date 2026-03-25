@@ -285,8 +285,8 @@ const CreateVehicle = () => {
                       <SelectValue placeholder="Select Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="In-house">In-house</SelectItem>
-                      <SelectItem value="External">External</SelectItem>
+                      <SelectItem value="EXTERNAL">In-house</SelectItem>
+                      <SelectItem value="INTERNAL">External</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.type && touched.type && (

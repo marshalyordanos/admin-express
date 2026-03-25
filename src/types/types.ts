@@ -310,6 +310,7 @@ export interface Order {
   actualDeliveryAt: string | null;
   batchId: string | null;
   finalPrice: number;
+  estimatedPrice: number;
   currency: string;
   customer: Customer;
   receiver: Receiver;
