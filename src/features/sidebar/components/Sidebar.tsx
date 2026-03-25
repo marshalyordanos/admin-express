@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import { FaChevronDown, FaCrown, FaTimes } from "react-icons/fa";
+import { FaChevronDown, FaCrown, FaTimes, FaCodeBranch } from "react-icons/fa";
 import menuItems from "../../../constants/AdminSidebar";
 import { useAppSelector, useAppDispatch } from "../../../store/hooks";
 import { toggleSidebar } from "../sidebarSlice";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Permission } from "@/config/rolePermissions";
+import { useBranches } from "@/hooks/useBranch";
 
 // Types
 interface SubSubItem {
@@ -18,6 +19,8 @@ interface SubItem {
   path: string;
   icon?: React.ReactNode;
   subsubItems?: SubSubItem[];
+  /** Scroll nested links when there are many (e.g. branch list) */
+  subsubScrollable?: boolean;
 }
 
 interface MenuItem {
@@ -47,6 +50,49 @@ export default function Sidebar() {
     });
   }, [hasPermission]);
 
+  const {
+    data: branchesResponse,
+    isLoading: branchesLoading,
+    isError: branchesError,
+  } = useBranches({ page: 1, pageSize: 500 });
+
+  const menuItemsWithReportBranches = useMemo(() => {
+    return filteredMenuItems.map((item) => {
+      if (item.name !== "Report Generation" || !item.subItems) {
+        return item;
+      }
+
+      const branchRows = branchesResponse?.data ?? [];
+      let subsubItems: SubSubItem[];
+
+      if (branchesLoading) {
+        subsubItems = [{ name: "Loading branches…", path: "/branch" }];
+      } else if (branchesError) {
+        subsubItems = [{ name: "Could not load branches", path: "/branch" }];
+      } else if (branchRows.length === 0) {
+        subsubItems = [{ name: "No branches found", path: "/branch" }];
+      } else {
+        subsubItems = branchRows.map((b) => ({
+          name: b.name?.trim() || b.customId || "Branch",
+          path: `/branch/details/${b.id}`,
+        }));
+      }
+
+      const branchesSubItem: SubItem = {
+        name: "Branches",
+        path: "/branch",
+        icon: <FaCodeBranch />,
+        subsubItems,
+        subsubScrollable: branchRows.length > 8,
+      };
+
+      return {
+        ...item,
+        subItems: [...item.subItems, branchesSubItem],
+      };
+    });
+  }, [filteredMenuItems, branchesResponse, branchesLoading, branchesError]);
+
   useEffect(() => {
     if (isCollapsed) {
       setExpandedParent(null);
@@ -58,7 +104,7 @@ export default function Sidebar() {
   useEffect(() => {
     if (isCollapsed) return;
 
-    filteredMenuItems.forEach((item: MenuItem) => {
+    menuItemsWithReportBranches.forEach((item: MenuItem) => {
       if (item.subItems) {
         const hasActiveSubItem = item.subItems.some(
           (sub: SubItem) =>
@@ -92,7 +138,7 @@ export default function Sidebar() {
         }
       }
     });
-  }, [location.pathname, isCollapsed, filteredMenuItems]);
+  }, [location.pathname, isCollapsed, menuItemsWithReportBranches]);
 
   const toggleParent = (name: string) => {
     setExpandedParent((prev) => (prev === name ? null : name));
@@ -106,7 +152,7 @@ export default function Sidebar() {
 
   const isMenuItemActive = (itemPath: string, subItems?: SubItem[]) => {
     // For items with sub-items: parent is active only on exact path match
-    // (so /report is active on General, but not when on /report/orders or /report/revenue)
+    // (so /report is active on General, but not on /report/orders, /report/revenue, /report/customers)
     if (subItems && subItems.length > 0) {
       return location.pathname === itemPath;
     }
@@ -169,7 +215,7 @@ export default function Sidebar() {
             isCollapsed ? "p-1 sm:p-2" : "p-2 sm:p-4"
           }`}
         >
-          {filteredMenuItems.map((item: MenuItem) => {
+          {menuItemsWithReportBranches.map((item: MenuItem) => {
             const { name, path, icon, subItems } = item;
             const isActive = isMenuItemActive(path, subItems);
             const isExpanded = expandedParent === name;
@@ -303,25 +349,43 @@ export default function Sidebar() {
                                     : "max-h-0 opacity-0"
                                 }`}
                               >
-                                <div className="ml-3 sm:ml-4 mt-1 sm:mt-2 flex flex-col gap-1">
-                                  {sub.subsubItems!.map((ss) => {
+                                <div
+                                  className={`ml-3 sm:ml-4 mt-1 sm:mt-2 flex flex-col gap-1 ${
+                                    sub.subsubScrollable
+                                      ? "max-h-52 overflow-y-auto pr-1"
+                                      : ""
+                                  }`}
+                                >
+                                  {sub.subsubItems!.map((ss, index) => {
                                     const isSSActive =
                                       location.pathname === ss.path ||
                                       location.pathname.startsWith(
                                         ss.path + "/",
                                       );
                                     return (
-                                      <NavLink
-                                        key={ss.name}
-                                        to={ss.path}
-                                        className={`text-xs sm:text-sm rounded-lg h-full w-full p-1 sm:p-2 ${
+                                      <div
+                                        key={`${ss.path}-${ss.name}-${index}`}
+                                        className={`w-full rounded-lg cursor-pointer ${
                                           isSSActive
-                                            ? "bg-blue-500 text-white"
-                                            : "hover:bg-blue-500 hover:text-white"
+                                            ? "bg-blue-500"
+                                            : "hover:bg-blue-500 hover:text-white group-hover:text-white"
                                         }`}
                                       >
-                                        {ss.name}
-                                      </NavLink>
+                                        <NavLink
+                                          to={ss.path}
+                                          className="flex items-center gap-2 sm:gap-3 h-full w-full p-1 sm:p-2 group"
+                                        >
+                                          <span
+                                            className={`text-xs sm:text-sm ${
+                                              isSSActive
+                                                ? "text-white"
+                                                : "text-black group-hover:text-white"
+                                            }`}
+                                          >
+                                            {ss.name}
+                                          </span>
+                                        </NavLink>
+                                      </div>
                                     );
                                   })}
                                 </div>
