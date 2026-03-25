@@ -13,6 +13,13 @@ import {
   type OrderReportResponse,
   type RevenueReportFilters,
   type RevenueReportResponse,
+  type BranchOrderReportFilters,
+  type BranchOrderReportResponse,
+  type BranchOrderReportSummary,
+  type BranchOrderReportBranch,
+  type BranchOrderReportAppliedFilter,
+  type BranchOrderReportAddress,
+  type OrderDetailedReportRow,
 } from "@/types/report";
 
 export { ReportPreset };
@@ -32,6 +39,12 @@ export type {
   OrderReportResponse,
   RevenueReportFilters,
   RevenueReportResponse,
+  BranchOrderReportFilters,
+  BranchOrderReportResponse,
+  BranchOrderReportSummary,
+  BranchOrderReportBranch,
+  BranchOrderReportAppliedFilter,
+  BranchOrderReportAddress,
 } from "@/types/report";
 
 function buildDashboardCustomersPayload(
@@ -158,6 +171,36 @@ function buildOrderReportPayload(filters: OrderReportFilters): OrderReportFilter
       ? new Date(filters.endDate).toISOString()
       : undefined,
   };
+}
+
+function buildBranchOrderReportPayload(
+  branchId: string,
+  filters: BranchOrderReportFilters,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    preset: filters.preset ?? ReportPreset.THIS_MONTH,
+    dateField: filters.dateField ?? "createdAt",
+    groupBy: filters.groupBy ?? "month",
+    branchId,
+    statuses:
+      filters.statuses && filters.statuses.length > 0 ? filters.statuses : [],
+  };
+  if (filters.startDate) {
+    body.startDate = new Date(filters.startDate).toISOString();
+  }
+  if (filters.endDate) {
+    body.endDate = new Date(filters.endDate).toISOString();
+  }
+  if (filters.serviceType) {
+    body.serviceType = filters.serviceType;
+  }
+  if (filters.fulfillmentType) {
+    body.fulfillmentType = filters.fulfillmentType;
+  }
+  if (filters.shippingScope) {
+    body.shippingScope = filters.shippingScope;
+  }
+  return body;
 }
 
 function buildRevenueReportPayload(
@@ -297,6 +340,101 @@ export const fetchOrderReportDetailed = async (
     if (error && typeof error === "object" && "response" in error) {
       const ax = error as { response?: { data?: { message?: string } } };
       throw new Error(ax.response?.data?.message ?? "Failed to fetch order report");
+    }
+    throw error;
+  }
+};
+
+function normalizeBranchOrderReportResponse(
+  payload: unknown,
+): BranchOrderReportResponse {
+  const empty: BranchOrderReportResponse = {
+    summary: { totalOrders: 0, grossRevenue: 0 },
+    orders: [],
+    branch: { id: "", name: "" },
+  };
+  if (!payload || typeof payload !== "object") return empty;
+
+  let root = payload as Record<string, unknown>;
+  if (
+    root.data &&
+    typeof root.data === "object" &&
+    root.data !== null &&
+    ("summary" in (root.data as object) || "orders" in (root.data as object))
+  ) {
+    root = root.data as Record<string, unknown>;
+  }
+
+  const summary: BranchOrderReportSummary = { totalOrders: 0, grossRevenue: 0 };
+  const summaryObj = root.summary;
+  if (summaryObj && typeof summaryObj === "object") {
+    const s = summaryObj as Record<string, unknown>;
+    summary.totalOrders = Number(s.totalOrders) || 0;
+    summary.grossRevenue = Number(s.grossRevenue) || 0;
+  }
+
+  const ordersRaw = root.orders;
+  const orders = Array.isArray(ordersRaw)
+    ? (ordersRaw as OrderDetailedReportRow[])
+    : [];
+
+  let branch: BranchOrderReportBranch = { id: "", name: "" };
+  const branchObj = root.branch;
+  if (branchObj && typeof branchObj === "object") {
+    const b = branchObj as Record<string, unknown>;
+    const addr = b.address;
+    branch = {
+      id: String(b.id ?? ""),
+      name: String(b.name ?? ""),
+      location: b.location != null ? String(b.location) : undefined,
+      managerId: (b.managerId as string | null) ?? undefined,
+      createdAt: b.createdAt != null ? String(b.createdAt) : undefined,
+      updatedAt: b.updatedAt != null ? String(b.updatedAt) : undefined,
+      createdBy: b.createdBy != null ? String(b.createdBy) : undefined,
+      branchId: b.branchId != null ? String(b.branchId) : undefined,
+      address:
+        addr && typeof addr === "object"
+          ? (addr as BranchOrderReportAddress)
+          : undefined,
+    };
+  }
+
+  const filterRaw = root.filter;
+  const filter =
+    filterRaw && typeof filterRaw === "object"
+      ? (filterRaw as BranchOrderReportAppliedFilter)
+      : undefined;
+
+  return { summary, orders, branch, filter };
+}
+
+export const fetchBranchOrderReportDetailed = async (
+  branchId: string,
+  filters: BranchOrderReportFilters,
+): Promise<BranchOrderReportResponse> => {
+  try {
+    const payload = buildBranchOrderReportPayload(branchId, filters);
+    console.log(
+      "Branch Order Detailed Report — request payload:",
+      JSON.stringify(payload, null, 2),
+    );
+    const response = await api.post(
+      "/report/branch/order/detailed",
+      payload,
+    );
+    console.log(
+      "Branch Order Detailed Report — full HTTP response body:",
+      JSON.stringify(response.data, null, 2),
+    );
+    const raw = response.data?.data ?? response.data;
+    return normalizeBranchOrderReportResponse(raw);
+  } catch (error: unknown) {
+    console.error("Branch Order Detailed Report Error:", error);
+    if (error && typeof error === "object" && "response" in error) {
+      const ax = error as { response?: { data?: { message?: string } } };
+      throw new Error(
+        ax.response?.data?.message ?? "Failed to fetch branch order report",
+      );
     }
     throw error;
   }

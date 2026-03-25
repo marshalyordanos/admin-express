@@ -62,6 +62,61 @@ export interface OrderReportFilters {
   preset?: ReportPreset;
 }
 
+/** Request body for POST /report/branch/order/detailed (no export / roleId). branchId is sent separately. */
+export interface BranchOrderReportFilters {
+  preset?: ReportPreset;
+  startDate?: string;
+  endDate?: string;
+  dateField?: "createdAt" | "pickupDate" | "deliveryDate";
+  groupBy?: "day" | "week" | "month";
+  serviceType?: "STANDARD" | "EXPRESS" | "SAME_DAY" | "OVERNIGHT";
+  fulfillmentType?: "PICKUP" | "DROPOFF";
+  shippingScope?: "REGIONAL" | "TOWN" | "INTERNATIONAL";
+  statuses?: string[];
+}
+
+/** Response from POST /report/branch/order/detailed */
+export interface BranchOrderReportSummary {
+  totalOrders: number;
+  grossRevenue: number;
+}
+
+export interface BranchOrderReportAddress {
+  id?: string;
+  label?: string | null;
+  landMark?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
+  purpose?: string;
+}
+
+export interface BranchOrderReportBranch {
+  id: string;
+  name: string;
+  location?: string | null;
+  managerId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  branchId?: string;
+  address?: BranchOrderReportAddress | null;
+}
+
+export interface BranchOrderReportAppliedFilter {
+  preset?: string;
+  dateField?: string;
+  groupBy?: string;
+  branchId?: string;
+  statuses?: string[];
+  startDate?: string;
+  endDate?: string;
+  serviceType?: string;
+  fulfillmentType?: string;
+  shippingScope?: string;
+}
+
 /** Single order row inside a grouped order detailed report. */
 export interface OrderDetailedReportRow {
   id: string;
@@ -80,6 +135,13 @@ export interface OrderDetailedReportRow {
   batchCode: string | null;
   finalPrice: number | null;
   group_key: string;
+}
+
+export interface BranchOrderReportResponse {
+  summary: BranchOrderReportSummary;
+  orders: OrderDetailedReportRow[];
+  branch: BranchOrderReportBranch;
+  filter?: BranchOrderReportAppliedFilter;
 }
 
 /** One time bucket from POST /report/orders/detailed (grouped like revenue). */

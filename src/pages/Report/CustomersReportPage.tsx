@@ -174,18 +174,6 @@ export default function CustomersReportPage() {
     setExpandedCustomerId((prev) => (prev === id ? null : id));
   };
 
-  const filterSummaryLine = useMemo(() => {
-    const f = data?.filter;
-    if (!f?.startDate && !f?.endDate) return null;
-    try {
-      const a = f.startDate ? format(new Date(f.startDate), "PP") : "—";
-      const b = f.endDate ? format(new Date(f.endDate), "PP") : "—";
-      return `${a} → ${b}${f.groupBy ? ` · grouped by ${f.groupBy}` : ""}`;
-    } catch {
-      return null;
-    }
-  }, [data?.filter]);
-
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="mb-4">
@@ -704,13 +692,6 @@ export default function CustomersReportPage() {
 
       {hasApiData && (
         <>
-          {filterSummaryLine && (
-            <p className="mb-4 text-sm text-gray-600">
-              <span className="font-medium text-gray-700">Applied range: </span>
-              {filterSummaryLine}
-            </p>
-          )}
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
