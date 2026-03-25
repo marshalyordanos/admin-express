@@ -1,6 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
+import { format } from "date-fns";
 import { useOrderReport } from "@/hooks/useOrderReport";
-import type { OrderReportFilters, OrderReportResponse } from "@/lib/api/report";
+import {
+  ReportPreset,
+  exportOrderReportPdf,
+  type OrderReportFilters,
+  type OrderDetailedReportRow,
+  type OrderReportGroup,
+} from "@/lib/api/report";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,17 +38,117 @@ import {
   ChevronUp,
   Filter,
   RefreshCw,
+  Download,
   Package,
   DollarSign,
   X,
 } from "lucide-react";
 
-export default function OrderReportPage() {
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-  const [filters, setFilters] = useState<OrderReportFilters>({
-    startDate: "",
-    endDate: "",
+function formatOrderGroupLabel(
+  groupKey: string,
+  groupBy: OrderReportFilters["groupBy"],
+): string {
+  if (!groupKey) return "—";
+  const d = new Date(groupKey);
+  if (Number.isNaN(d.getTime())) return groupKey;
+  if (groupBy === "day") return format(d, "MMM d, yyyy");
+  if (groupBy === "week") return `Week of ${format(d, "MMM d, yyyy")}`;
+  return format(d, "MMMM yyyy");
+}
+
+function OrderRowDetails({ order }: { order: OrderDetailedReportRow }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs text-gray-700">
+      <div>
+        <span className="font-semibold">Order ID:</span> {order.id}
+      </div>
+      <div>
+        <span className="font-semibold">Tracking:</span>{" "}
+        {order.trackingCode ?? "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Group:</span>{" "}
+        {order.group_key &&
+        !Number.isNaN(new Date(order.group_key).getTime())
+          ? format(new Date(order.group_key), "PP")
+          : order.group_key || "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Branch:</span>{" "}
+        {order.branchName ?? "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Batch:</span>{" "}
+        {order.batchCode ?? "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Tariff:</span>{" "}
+        {order.tariffName ?? "—"}
+      </div>
+      <div className="sm:col-span-2">
+        <span className="font-semibold">Customer:</span>{" "}
+        {order.customerName ?? "—"}
+      </div>
+      <div className="sm:col-span-2">
+        <span className="font-semibold">Receiver:</span>{" "}
+        {order.receiverName ?? "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Pickup driver:</span>{" "}
+        {order.pickupDriverName ?? "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Delivery driver:</span>{" "}
+        {order.deliveryDriverName ?? "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Service / fulfillment:</span>{" "}
+        {order.serviceType ?? "—"} · {order.fulfillmentType ?? "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Scope:</span>{" "}
+        {order.shippingScope ?? "—"}
+      </div>
+      <div>
+        <span className="font-semibold">Amount (ETB):</span>{" "}
+        {order.finalPrice != null
+          ? order.finalPrice.toLocaleString()
+          : "—"}
+      </div>
+      <div className="sm:col-span-2">
+        <span className="font-semibold">Created:</span>{" "}
+        {order.createdAt
+          ? new Date(order.createdAt).toLocaleString()
+          : "—"}
+      </div>
+    </div>
+  );
+}
+
+const getPresetLabel = (preset: ReportPreset) => {
+  switch (preset) {
+    case ReportPreset.TODAY:
+      return "Today";
+    case ReportPreset.YESTERDAY:
+      return "Yesterday";
+    case ReportPreset.THIS_WEEK:
+      return "This Week";
+    case ReportPreset.LAST_WEEK:
+      return "Last Week";
+    case ReportPreset.THIS_MONTH:
+      return "This Month";
+    case ReportPreset.LAST_MONTH:
+      return "Last Month";
+    case ReportPreset.CUSTOM:
+      return "Custom Range";
+    default:
+      return preset;
+  }
+};
+
+function getDefaultOrderReportFilters(): OrderReportFilters {
+  return {
+    preset: ReportPreset.THIS_MONTH,
     dateField: "createdAt",
     groupBy: "month",
     serviceType: undefined,
@@ -51,25 +158,46 @@ export default function OrderReportPage() {
     isFragile: undefined,
     isUnusual: undefined,
     lateDeliveryOnly: undefined,
-  });
+  };
+}
+
+export default function OrderReportPage() {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<OrderReportFilters>(() =>
+    getDefaultOrderReportFilters(),
+  );
 
   const { data, isLoading, error, refetch } = useOrderReport(filters);
 
-  const summary = (data as OrderReportResponse | undefined)?.summary;
-  const pagination = (data as OrderReportResponse | undefined)?.pagination;
+  const groups = useMemo<OrderReportGroup[]>(
+    () => (Array.isArray(data) ? data : []),
+    [data],
+  );
 
-  const totalOrders =
-    summary?.totalOrders ?? summary?.data.length ?? pagination?.total ?? 0;
-  const totalRevenue = summary?.totalRevenue ?? 0;
+  const totalOrders = useMemo(
+    () => groups.reduce((sum, g) => sum + (g.total_orders ?? 0), 0),
+    [groups],
+  );
+
+  const totalRevenue = useMemo(
+    () => groups.reduce((sum, g) => sum + (g.total_revenue ?? 0), 0),
+    [groups],
+  );
 
   const hasActiveFilters =
+    filters.preset !== ReportPreset.THIS_MONTH ||
     !!filters.startDate ||
     !!filters.endDate ||
     !!filters.serviceType ||
     !!filters.shippingScope ||
     !!filters.fulfillmentType ||
     !!filters.shipmentType ||
-    !!filters.status ||
+    filters.minPrice != null ||
+    filters.maxPrice != null ||
+    filters.minWeight != null ||
+    filters.maxWeight != null ||
     !!filters.isFragile ||
     !!filters.lateDeliveryOnly;
 
@@ -80,6 +208,24 @@ export default function OrderReportPage() {
   const handleApplyFilters = () => {
     refetch();
     setIsFilterOpen(false);
+  };
+
+  const customRangeInvalid =
+    filters.preset === ReportPreset.CUSTOM &&
+    (!filters.startDate || !filters.endDate);
+
+  const handleExportPdf = async () => {
+    if (customRangeInvalid) return;
+    setIsExportingPdf(true);
+    try {
+      await exportOrderReportPdf(filters);
+    } catch (e) {
+      window.alert(
+        e instanceof Error ? e.message : "Failed to export order report PDF",
+      );
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const toggleExpanded = (orderId: string) => {
@@ -115,45 +261,91 @@ export default function OrderReportPage() {
                     <h3 className="font-semibold text-sm">Order Filters</h3>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="startDate"
-                        className="text-xs font-medium"
-                      >
-                        From
-                      </Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={filters.startDate || ""}
-                        onChange={(e) =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            startDate: e.target.value || undefined,
-                          }))
-                        }
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="endDate" className="text-xs font-medium">
-                        To
-                      </Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={filters.endDate || ""}
-                        onChange={(e) =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            endDate: e.target.value || undefined,
-                          }))
-                        }
-                        className="h-9"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="preset" className="text-xs font-medium">
+                      Date Preset
+                    </Label>
+                    <Select
+                      value={filters.preset ?? ReportPreset.THIS_MONTH}
+                      onValueChange={(value) => {
+                        const preset = value as ReportPreset;
+                        setFilters((prev) => ({
+                          ...prev,
+                          preset,
+                          ...(preset === ReportPreset.CUSTOM
+                            ? {}
+                            : { startDate: undefined, endDate: undefined }),
+                        }));
+                      }}
+                    >
+                      <SelectTrigger id="preset" className="h-9 w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ReportPreset.TODAY}>Today</SelectItem>
+                        <SelectItem value={ReportPreset.YESTERDAY}>
+                          Yesterday
+                        </SelectItem>
+                        <SelectItem value={ReportPreset.THIS_WEEK}>
+                          This Week
+                        </SelectItem>
+                        <SelectItem value={ReportPreset.LAST_WEEK}>
+                          Last Week
+                        </SelectItem>
+                        <SelectItem value={ReportPreset.THIS_MONTH}>
+                          This Month
+                        </SelectItem>
+                        <SelectItem value={ReportPreset.LAST_MONTH}>
+                          Last Month
+                        </SelectItem>
+                        <SelectItem value={ReportPreset.CUSTOM}>
+                          Custom Range
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  {filters.preset === ReportPreset.CUSTOM && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="startDate"
+                          className="text-xs font-medium"
+                        >
+                          From
+                        </Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={filters.startDate || ""}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              startDate: e.target.value || undefined,
+                            }))
+                          }
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate" className="text-xs font-medium">
+                          To
+                        </Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={filters.endDate || ""}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              endDate: e.target.value || undefined,
+                            }))
+                          }
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Shipping scope */}
                   <div className="space-y-2">
@@ -348,7 +540,7 @@ export default function OrderReportPage() {
                       onCheckedChange={(checked) =>
                         setFilters((prev) => ({
                           ...prev,
-                          isFragile: Boolean(checked),
+                          isFragile: checked === true ? true : undefined,
                         }))
                       }
                     />
@@ -361,23 +553,7 @@ export default function OrderReportPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        setFilters({
-                          startDate: "",
-                          endDate: "",
-                          dateField: "createdAt",
-                          page: 1,
-                          limit: 20,
-                          groupBy: "month",
-                          serviceType: undefined,
-                          shippingScope: undefined,
-                          fulfillmentType: undefined,
-                          shipmentType: undefined,
-                          isFragile: false,
-                          isUnusual: false,
-                          lateDeliveryOnly: false,
-                        })
-                      }
+                      onClick={() => setFilters(getDefaultOrderReportFilters())}
                       className="flex-1 cursor-pointer"
                     >
                       Reset all
@@ -385,7 +561,7 @@ export default function OrderReportPage() {
                     <Button
                       size="sm"
                       onClick={handleApplyFilters}
-                      disabled={isLoading}
+                      disabled={isLoading || customRangeInvalid}
                       className="flex-1 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white"
                     >
                       Apply now
@@ -405,131 +581,226 @@ export default function OrderReportPage() {
               />
               Refresh Data
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExportPdf}
+              disabled={isLoading || isExportingPdf || customRangeInvalid}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Download
+                className={`h-4 w-4 ${isExportingPdf ? "opacity-50" : ""}`}
+              />
+              {isExportingPdf ? "Exporting…" : "Export PDF"}
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Applied Filters */}
+      {/* Applied filters — same chip pattern as general Report page */}
       {hasActiveFilters && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-gray-500">
-            Applied filters:
-          </span>
+        <div className="mb-4 px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-2">
+            <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Applied filters
+            </span>
 
-          {filters.startDate && filters.endDate && (
-            <button
-              type="button"
-              onClick={() => {
-                setFilters((prev) => ({
-                  ...prev,
-                  startDate: undefined,
-                  endDate: undefined,
-                }));
-              }}
-              className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
-            >
-              <span>
-                Date: {filters.startDate} → {filters.endDate}
-              </span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
+            {filters.preset !== ReportPreset.THIS_MONTH && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    preset: ReportPreset.THIS_MONTH,
+                    startDate: undefined,
+                    endDate: undefined,
+                  }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-800 shadow-sm hover:bg-gray-50"
+              >
+                <span>
+                  Preset: {getPresetLabel(filters.preset ?? ReportPreset.THIS_MONTH)}
+                </span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
 
-          {filters.serviceType && (
-            <button
-              type="button"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  serviceType: undefined,
-                }))
-              }
-              className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 hover:bg-emerald-100"
-            >
-              <span>Service: {filters.serviceType}</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
+            {filters.preset === ReportPreset.CUSTOM &&
+              filters.startDate &&
+              filters.endDate && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      preset: ReportPreset.THIS_MONTH,
+                      startDate: undefined,
+                      endDate: undefined,
+                    }))
+                  }
+                  className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-800 shadow-sm hover:bg-blue-100"
+                >
+                  <span>
+                    Date: {filters.startDate} → {filters.endDate}
+                  </span>
+                  <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+                </button>
+              )}
 
-          {filters.fulfillmentType && (
-            <button
-              type="button"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  fulfillmentType: undefined,
-                }))
-              }
-              className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs text-indigo-700 hover:bg-indigo-100"
-            >
-              <span>Fulfillment: {filters.fulfillmentType}</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
+            {filters.serviceType && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, serviceType: undefined }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-800 shadow-sm hover:bg-emerald-100"
+              >
+                <span>Service: {filters.serviceType}</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
 
-          {filters.shippingScope && (
-            <button
-              type="button"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  shippingScope: undefined,
-                }))
-              }
-              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs text-orange-700 hover:bg-orange-100"
-            >
-              <span>Scope: {filters.shippingScope}</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
+            {filters.fulfillmentType && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    fulfillmentType: undefined,
+                  }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs text-indigo-800 shadow-sm hover:bg-indigo-100"
+              >
+                <span>Fulfillment: {filters.fulfillmentType}</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
 
-          {filters.shipmentType && (
-            <button
-              type="button"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  shipmentType: undefined,
-                }))
-              }
-              className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs text-teal-700 hover:bg-teal-100"
-            >
-              <span>Shipment: {filters.shipmentType}</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
+            {filters.shippingScope && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    shippingScope: undefined,
+                  }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs text-orange-800 shadow-sm hover:bg-orange-100"
+              >
+                <span>Scope: {filters.shippingScope}</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
 
-          {filters.isFragile && (
-            <button
-              type="button"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  isFragile: false,
-                }))
-              }
-              className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs text-rose-700 hover:bg-rose-100"
-            >
-              <span>Fragile only</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
+            {filters.shipmentType && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    shipmentType: undefined,
+                  }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs text-teal-800 shadow-sm hover:bg-teal-100"
+              >
+                <span>Shipment: {filters.shipmentType}</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
 
-          {filters.lateDeliveryOnly && (
-            <button
+            {filters.minPrice != null && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, minPrice: undefined }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs text-violet-800 shadow-sm hover:bg-violet-100"
+              >
+                <span>Min price: {filters.minPrice}</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
+
+            {filters.maxPrice != null && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, maxPrice: undefined }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs text-violet-800 shadow-sm hover:bg-violet-100"
+              >
+                <span>Max price: {filters.maxPrice}</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
+
+            {filters.minWeight != null && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, minWeight: undefined }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-900 shadow-sm hover:bg-amber-100"
+              >
+                <span>Min weight: {filters.minWeight}</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
+
+            {filters.maxWeight != null && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, maxWeight: undefined }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-900 shadow-sm hover:bg-amber-100"
+              >
+                <span>Max weight: {filters.maxWeight}</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
+
+            {filters.isFragile && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, isFragile: undefined }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs text-rose-800 shadow-sm hover:bg-rose-100"
+              >
+                <span>Fragile only</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
+
+            {filters.lateDeliveryOnly && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    lateDeliveryOnly: undefined,
+                  }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs text-red-800 shadow-sm hover:bg-red-100"
+              >
+                <span>Late only</span>
+                <X className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              </button>
+            )}
+            </div>
+
+            <Button
               type="button"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  lateDeliveryOnly: false,
-                }))
-              }
-              className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs text-red-700 hover:bg-red-100"
+              variant="outline"
+              size="sm"
+              className="h-8 shrink-0 border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-100"
+              onClick={() => setFilters(getDefaultOrderReportFilters())}
             >
-              <span>Late only</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
+              Clear all
+            </Button>
+          </div>
         </div>
       )}
 
@@ -550,9 +821,8 @@ export default function OrderReportPage() {
         </Card>
       )}
 
-      {!isLoading && !error && summary && (
+      {!isLoading && !error && (
         <>
-          {/* Summary cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -578,193 +848,161 @@ export default function OrderReportPage() {
                 <div className="text-2xl font-bold text-gray-900">
                   {totalRevenue.toLocaleString()}{" "}
                   <span className="text-sm font-medium text-gray-500">
-                    {summary.data[0]?.currency ?? "ETB"}
+                    ETB
                   </span>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Orders list */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Orders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {summary.data.length === 0 ? (
-                <p className="text-sm text-gray-500">No orders found.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Tracking Code</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="hidden lg:table-cell">
-                          Service
-                        </TableHead>
-                        <TableHead className="hidden lg:table-cell">
-                          Fulfillment
-                        </TableHead>
-                        <TableHead className="hidden xl:table-cell">
-                          Scope
-                        </TableHead>
-                        <TableHead className="hidden xl:table-cell">
-                          Weight (kg)
-                        </TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead className="hidden md:table-cell">
-                          Created At
-                        </TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {summary.data.map((order) => {
-                        const isExpanded = expandedOrderId === order.id;
-                        return (
-                          <>
-                            <TableRow key={order.id}>
-                              <TableCell className="font-medium">
-                                {order.trackingCode ?? order.id}
-                              </TableCell>
-                              <TableCell>
-                                {order.customer?.name ?? "Unknown"}
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-0.5">
-                                  {order.status ?? "—"}
-                                </span>
-                              </TableCell>
-                              <TableCell className="hidden lg:table-cell">
-                                {order.serviceType ?? "—"}
-                              </TableCell>
-                              <TableCell className="hidden lg:table-cell">
-                                {order.fulfillmentType ?? "—"}
-                              </TableCell>
-                              <TableCell className="hidden xl:table-cell">
-                                {order.shippingScope ?? "—"}
-                              </TableCell>
-                              <TableCell className="hidden xl:table-cell">
-                                {order.weight != null ? order.weight : "—"}
-                              </TableCell>
-                              <TableCell>
-                                {(order.finalPrice ?? 0).toLocaleString()}{" "}
-                                {order.currency ?? "ETB"}
-                              </TableCell>
-                              <TableCell className="hidden md:table-cell">
-                                {order.createdAt
-                                  ? new Date(order.createdAt).toLocaleString()
-                                  : "—"}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => toggleExpanded(order.id)}
-                                  className="gap-2"
-                                >
-                                  {isExpanded ? (
-                                    <>
-                                      <ChevronUp className="h-4 w-4" />
-                                      Hide
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ChevronDown className="h-4 w-4" />
-                                      Details
-                                    </>
-                                  )}
-                                </Button>
-                              </TableCell>
+          {groups.length === 0 ? (
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-sm text-gray-500 text-center">
+                  No orders found for the selected filters.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              {groups.map((group) => (
+                <Card key={group.group_key}>
+                  <CardHeader>
+                    <CardTitle>
+                      {formatOrderGroupLabel(
+                        group.group_key,
+                        filters.groupBy,
+                      )}
+                    </CardTitle>
+                    <p className="text-sm text-gray-500 font-normal">
+                      {group.total_orders.toLocaleString()} orders ·{" "}
+                      {group.total_revenue.toLocaleString()} ETB
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    {group.orders.length === 0 ? (
+                      <p className="text-sm text-gray-500">No orders in this group.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Tracking</TableHead>
+                              <TableHead>Customer</TableHead>
+                              <TableHead className="hidden sm:table-cell">
+                                Receiver
+                              </TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="hidden lg:table-cell">
+                                Service
+                              </TableHead>
+                              <TableHead className="hidden lg:table-cell">
+                                Fulfillment
+                              </TableHead>
+                              <TableHead className="hidden xl:table-cell">
+                                Scope
+                              </TableHead>
+                              <TableHead className="hidden xl:table-cell">
+                                Tariff
+                              </TableHead>
+                              <TableHead>Amount (ETB)</TableHead>
+                              <TableHead className="hidden md:table-cell">
+                                Created
+                              </TableHead>
+                              <TableHead className="text-right">
+                                Action
+                              </TableHead>
                             </TableRow>
-                            {isExpanded && (
-                              <TableRow key={`${order.id}-details`}>
-                                <TableCell colSpan={10} className="bg-gray-50">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs text-gray-700">
-                                    <div>
-                                      <span className="font-semibold">
-                                        Service:
-                                      </span>{" "}
-                                      {order.serviceType ?? "—"} ·{" "}
+                          </TableHeader>
+                          <TableBody>
+                            {group.orders.map((order) => {
+                              const isExpanded = expandedOrderId === order.id;
+                              return (
+                                <Fragment key={order.id}>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      {order.trackingCode ?? order.id}
+                                    </TableCell>
+                                    <TableCell>
+                                      {order.customerName || "—"}
+                                    </TableCell>
+                                    <TableCell className="hidden sm:table-cell">
+                                      {order.receiverName || "—"}
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-0.5">
+                                        {order.status ?? "—"}
+                                      </span>
+                                    </TableCell>
+                                    <TableCell className="hidden lg:table-cell">
+                                      {order.serviceType ?? "—"}
+                                    </TableCell>
+                                    <TableCell className="hidden lg:table-cell">
                                       {order.fulfillmentType ?? "—"}
-                                    </div>
-                                    <div>
-                                      <span className="font-semibold">
-                                        Scope:
-                                      </span>{" "}
-                                      {order.shippingScope ?? "—"} ·{" "}
-                                      {order.shipmentType ?? "—"}
-                                    </div>
-                                    <div>
-                                      <span className="font-semibold">
-                                        Route:
-                                      </span>{" "}
-                                      {order.originCityRaw ?? "—"} →{" "}
-                                      {order.destinationCityRaw ?? "—"}
-                                    </div>
-                                    <div>
-                                      <span className="font-semibold">
-                                        Pickup:
-                                      </span>{" "}
-                                      {order.pickupDate
-                                        ? new Date(
-                                            order.pickupDate,
-                                          ).toLocaleString()
+                                    </TableCell>
+                                    <TableCell className="hidden xl:table-cell">
+                                      {order.shippingScope ?? "—"}
+                                    </TableCell>
+                                    <TableCell className="hidden xl:table-cell max-w-[140px] truncate" title={order.tariffName}>
+                                      {order.tariffName ?? "—"}
+                                    </TableCell>
+                                    <TableCell>
+                                      {order.finalPrice != null
+                                        ? order.finalPrice.toLocaleString()
                                         : "—"}
-                                    </div>
-                                    <div>
-                                      <span className="font-semibold">
-                                        Delivery:
-                                      </span>{" "}
-                                      {order.deliveryDate
-                                        ? new Date(
-                                            order.deliveryDate,
-                                          ).toLocaleString()
-                                        : "—"}
-                                    </div>
-                                    <div>
-                                      <span className="font-semibold">
-                                        Created At:
-                                      </span>{" "}
+                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell whitespace-nowrap">
                                       {order.createdAt
                                         ? new Date(
                                             order.createdAt,
                                           ).toLocaleString()
                                         : "—"}
-                                    </div>
-                                    <div className="sm:col-span-2">
-                                      <span className="font-semibold">
-                                        Customer:
-                                      </span>{" "}
-                                      {order.customer?.name ?? "—"}{" "}
-                                      {order.customer?.phone
-                                        ? `(${order.customer.phone})`
-                                        : ""}
-                                    </div>
-                                    <div className="sm:col-span-2">
-                                      <span className="font-semibold">
-                                        Receiver:
-                                      </span>{" "}
-                                      {order.receiver?.name ?? "—"}{" "}
-                                      {order.receiver?.phone
-                                        ? `(${order.receiver.phone})`
-                                        : ""}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          toggleExpanded(order.id)
+                                        }
+                                        className="gap-2"
+                                      >
+                                        {isExpanded ? (
+                                          <>
+                                            <ChevronUp className="h-4 w-4" />
+                                            Hide
+                                          </>
+                                        ) : (
+                                          <>
+                                            <ChevronDown className="h-4 w-4" />
+                                            Details
+                                          </>
+                                        )}
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                  {isExpanded && (
+                                    <TableRow>
+                                      <TableCell
+                                        colSpan={11}
+                                        className="bg-gray-50"
+                                      >
+                                        <OrderRowDetails order={order} />
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </Fragment>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </>
       )}
     </div>
