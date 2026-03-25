@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useRevenueReport } from "@/hooks/useRevenueReport";
-import type { RevenueReportFilters } from "@/lib/api/report";
+import {
+  ReportPreset,
+  exportRevenueReportPdf,
+  type RevenueReportFilters,
+} from "@/lib/api/report";
 import type { RevenueReportGroup } from "@/types/report";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,11 +18,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RefreshCw, DollarSign, Package, Calendar, X } from "lucide-react";
+import {
+  RefreshCw,
+  DollarSign,
+  Package,
+  Calendar,
+  X,
+  Download,
+} from "lucide-react";
 import { format } from "date-fns";
 
-export default function RevenueReportPage() {
-  const [filters, setFilters] = useState<RevenueReportFilters>({
+const getPresetLabel = (preset: ReportPreset) => {
+  switch (preset) {
+    case ReportPreset.TODAY:
+      return "Today";
+    case ReportPreset.YESTERDAY:
+      return "Yesterday";
+    case ReportPreset.THIS_WEEK:
+      return "This Week";
+    case ReportPreset.LAST_WEEK:
+      return "Last Week";
+    case ReportPreset.THIS_MONTH:
+      return "This Month";
+    case ReportPreset.LAST_MONTH:
+      return "Last Month";
+    case ReportPreset.CUSTOM:
+      return "Custom Range";
+    default:
+      return preset;
+  }
+};
+
+function getDefaultRevenueFilters(): RevenueReportFilters {
+  return {
+    preset: ReportPreset.THIS_MONTH,
     page: 1,
     limit: 20,
     groupBy: "month",
@@ -30,9 +63,20 @@ export default function RevenueReportPage() {
     deliveredOnly: false,
     lateOnly: false,
     onTimeOnly: false,
-  });
+  };
+}
+
+export default function RevenueReportPage() {
+  const [filters, setFilters] = useState<RevenueReportFilters>(() =>
+    getDefaultRevenueFilters(),
+  );
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const { data, isLoading, error, refetch } = useRevenueReport(filters);
+
+  const customRangeInvalid =
+    filters.preset === ReportPreset.CUSTOM &&
+    (!filters.startDate || !filters.endDate);
 
   const groups: RevenueReportGroup[] = Array.isArray(data) ? data : [];
   const totalRevenue = groups.reduce(
@@ -53,20 +97,18 @@ export default function RevenueReportPage() {
     refetch();
   };
 
-  const defaultFilters: RevenueReportFilters = {
-    startDate: undefined,
-    endDate: undefined,
-    page: 1,
-    limit: 20,
-    groupBy: "month",
-    revenueType: "gross",
-    currency: "ETB",
-    serviceType: undefined,
-    shippingScope: undefined,
-    fulfillmentType: undefined,
-    deliveredOnly: false,
-    lateOnly: false,
-    onTimeOnly: false,
+  const handleExportPdf = async () => {
+    if (customRangeInvalid) return;
+    setIsExportingPdf(true);
+    try {
+      await exportRevenueReportPdf(filters);
+    } catch (e) {
+      window.alert(
+        e instanceof Error ? e.message : "Failed to export revenue report PDF",
+      );
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   return (
@@ -81,8 +123,9 @@ export default function RevenueReportPage() {
       </div>
 
       {/* Applied Filters */}
-      {(filters.startDate ||
-        filters.endDate ||
+      {(filters.preset !== ReportPreset.THIS_MONTH ||
+        !!filters.startDate ||
+        !!filters.endDate ||
         filters.shippingScope ||
         filters.serviceType ||
         filters.fulfillmentType ||
@@ -94,24 +137,48 @@ export default function RevenueReportPage() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-gray-500">Applied filters:</span>
 
-          {filters.startDate && filters.endDate && (
+          {filters.preset !== ReportPreset.THIS_MONTH && (
             <button
               type="button"
               onClick={() =>
                 setFilters((prev) => ({
                   ...prev,
+                  preset: ReportPreset.THIS_MONTH,
                   startDate: undefined,
                   endDate: undefined,
                 }))
               }
-              className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-700 hover:bg-gray-100"
             >
               <span>
-                Date: {filters.startDate} → {filters.endDate}
+                Preset:{" "}
+                {getPresetLabel(filters.preset ?? ReportPreset.THIS_MONTH)}
               </span>
               <X className="h-3 w-3" />
             </button>
           )}
+
+          {filters.preset === ReportPreset.CUSTOM &&
+            filters.startDate &&
+            filters.endDate && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    preset: ReportPreset.THIS_MONTH,
+                    startDate: undefined,
+                    endDate: undefined,
+                  }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
+              >
+                <span>
+                  Date: {filters.startDate} → {filters.endDate}
+                </span>
+                <X className="h-3 w-3" />
+              </button>
+            )}
 
           {filters.groupBy && filters.groupBy !== "month" && (
             <button
@@ -245,40 +312,77 @@ export default function RevenueReportPage() {
 
       <div className="mb-6 flex flex-col gap-2 items-start">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="space-y-1">
-            <Label htmlFor="startDate" className="text-xs font-medium">
-              From
+          <div className="space-y-1 min-w-[11rem]">
+            <Label htmlFor="revenue-preset" className="text-xs font-medium">
+              Date preset
             </Label>
-            <Input
-              id="startDate"
-              type="date"
-              value={filters.startDate ?? ""}
-              onChange={(e) =>
+            <Select
+              value={filters.preset ?? ReportPreset.THIS_MONTH}
+              onValueChange={(value) => {
+                const preset = value as ReportPreset;
                 setFilters((prev) => ({
                   ...prev,
-                  startDate: e.target.value || undefined,
-                }))
-              }
-              className="h-9 w-40"
-            />
+                  preset,
+                  ...(preset === ReportPreset.CUSTOM
+                    ? {}
+                    : { startDate: undefined, endDate: undefined }),
+                }));
+              }}
+            >
+              <SelectTrigger id="revenue-preset" className="h-9 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ReportPreset.TODAY}>Today</SelectItem>
+                <SelectItem value={ReportPreset.YESTERDAY}>Yesterday</SelectItem>
+                <SelectItem value={ReportPreset.THIS_WEEK}>This Week</SelectItem>
+                <SelectItem value={ReportPreset.LAST_WEEK}>Last Week</SelectItem>
+                <SelectItem value={ReportPreset.THIS_MONTH}>This Month</SelectItem>
+                <SelectItem value={ReportPreset.LAST_MONTH}>Last Month</SelectItem>
+                <SelectItem value={ReportPreset.CUSTOM}>Custom Range</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="endDate" className="text-xs font-medium">
-              To
-            </Label>
-            <Input
-              id="endDate"
-              type="date"
-              value={filters.endDate ?? ""}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  endDate: e.target.value || undefined,
-                }))
-              }
-              className="h-9 w-40"
-            />
-          </div>
+
+          {filters.preset === ReportPreset.CUSTOM && (
+            <>
+              <div className="space-y-1">
+                <Label htmlFor="startDate" className="text-xs font-medium">
+                  From
+                </Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={filters.startDate ?? ""}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      startDate: e.target.value || undefined,
+                    }))
+                  }
+                  className="h-9 w-40"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="endDate" className="text-xs font-medium">
+                  To
+                </Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={filters.endDate ?? ""}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      endDate: e.target.value || undefined,
+                    }))
+                  }
+                  className="h-9 w-40"
+                />
+              </div>
+            </>
+          )}
+
           <div className="space-y-1">
             <Label htmlFor="groupBy" className="text-xs font-medium">
               Group by
@@ -471,7 +575,7 @@ export default function RevenueReportPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setFilters({ ...defaultFilters })}
+            onClick={() => setFilters(getDefaultRevenueFilters())}
             className="cursor-pointer"
           >
             Reset all
@@ -479,7 +583,7 @@ export default function RevenueReportPage() {
           <Button
             size="sm"
             onClick={handleApplyFilters}
-            disabled={isLoading}
+            disabled={isLoading || customRangeInvalid}
             className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white"
           >
             Apply now
@@ -493,6 +597,18 @@ export default function RevenueReportPage() {
               className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
             />
             Refresh Data
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportPdf}
+            disabled={isLoading || isExportingPdf || customRangeInvalid}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Download
+              className={`h-4 w-4 ${isExportingPdf ? "opacity-50" : ""}`}
+            />
+            {isExportingPdf ? "Exporting…" : "Export PDF"}
           </Button>
         </div>
       </div>
