@@ -59,55 +59,38 @@ export interface OrderReportFilters {
   originCityId?: string;
   destinationCityId?: string;
   lateDeliveryOnly?: boolean;
+  preset?: ReportPreset;
 }
 
-export interface OrderReportItem {
+/** Single order row inside a grouped order detailed report. */
+export interface OrderDetailedReportRow {
   id: string;
   trackingCode: string;
   status: string;
-  serviceType: string;
-  fulfillmentType: string;
-  shippingScope: string;
-  shipmentType: string;
-  weight: number;
-  finalPrice: number;
-  currency: string;
-  originCityRaw: string;
-  destinationCityRaw: string;
-  pickupDate: string;
-  deliveryDate: string;
   createdAt: string;
-  customer?: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-  } | null;
-  receiver?: {
-    id: string;
-    name: string;
-    email: string | null;
-    phone: string | null;
-  } | null;
+  serviceType: string;
+  shippingScope: string;
+  fulfillmentType: string;
+  branchName: string | null;
+  customerName: string;
+  receiverName: string;
+  pickupDriverName: string | null;
+  deliveryDriverName: string | null;
+  tariffName: string;
+  batchCode: string | null;
+  finalPrice: number | null;
+  group_key: string;
 }
 
-export interface OrderReportPagination {
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+/** One time bucket from POST /report/orders/detailed (grouped like revenue). */
+export interface OrderReportGroup {
+  group_key: string;
+  total_orders: number;
+  total_revenue: number;
+  orders: OrderDetailedReportRow[];
 }
 
-export interface OrderReportSummary {
-  data: OrderReportItem[];
-  totalRevenue: number;
-  totalOrders?: number;
-}
-
-export interface OrderReportResponse {
-  summary: OrderReportSummary;
-  pagination: OrderReportPagination;
-}
+export type OrderReportResponse = OrderReportGroup[];
 
 export interface DashboardSummary {
   totalOrders: number;
@@ -133,6 +116,13 @@ export interface TopCustomer {
 export interface OrderStatusDistribution {
   status: string;
   count: number;
+}
+
+export interface ServiceTypeDistribution {
+  serviceType: string;
+  orderCount: number;
+  revenue: number;
+  percentage: number;
 }
 
 export interface RevenueTrend {
@@ -191,7 +181,7 @@ export interface RecentOrder {
   createdBy: string;
   batchId: string | null;
   tariffId: string;
-  finalPrice: number;
+  finalPrice: number | null;
   currency: string;
   optimizationJobId: string | null;
   customer: {
@@ -204,13 +194,74 @@ export interface DashboardMetrics {
   topBranches: TopBranch[];
   topCustomers: TopCustomer[];
   orderStatusDistribution: OrderStatusDistribution[];
+  serviceTypeDistribution?: ServiceTypeDistribution[];
   revenueTrend: RevenueTrend[];
   recentOrders: RecentOrder[];
+}
+
+/** Request body for POST /report/dashboard/customers */
+export interface DashboardCustomersReportFilters {
+  preset?: ReportPreset;
+  startDate?: string;
+  endDate?: string;
+  dateField?: string;
+  groupBy?: "day" | "week" | "month";
+  export?: boolean;
+  customer?: "INDIVIDUAL" | "CORPORATE";
+  statuses?: string[];
+  customerId?: string;
+  limit?: number;
+  isAllReport?: boolean;
+}
+
+export interface DashboardCustomerReportRow {
+  customerId: string;
+  name: string;
+  email: string;
+  phone: string;
+  customId: string;
+  faydaFAN: string | null;
+  emailVerified: boolean;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  branchName: string | null;
+  totalOrders: number;
+  totalAmount: number;
+  receivedOrders: number;
+}
+
+export interface DashboardCustomerReportGroup {
+  groupKey: string;
+  customers: DashboardCustomerReportRow[];
+}
+
+export interface DashboardCustomersReportSummary {
+  data: DashboardCustomerReportGroup[];
+}
+
+export interface DashboardCustomersReportAppliedFilter {
+  startDate?: string;
+  endDate?: string;
+  groupBy?: string;
+}
+
+export interface DashboardCustomersReportPagination {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface DashboardCustomersReportResponse {
+  summary: DashboardCustomersReportSummary;
+  filter?: DashboardCustomersReportAppliedFilter;
+  pagination: DashboardCustomersReportPagination;
 }
 
 export interface RevenueReportFilters {
   startDate?: string;
   endDate?: string;
+  preset?: ReportPreset;
   page?: number;
   limit?: number;
   search?: string;
