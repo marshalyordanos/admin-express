@@ -47,115 +47,11 @@ import { useBranches } from "@/hooks/useBranch";
 import { ReportPreset, type ReportFilters } from "@/lib/api/report";
 import { format } from "date-fns";
 
-// Mock data
-const mockMetrics = {
-  totalOrders: 1247,
-  totalRevenue: 245680,
-  totalDeliveries: 1189,
-  activeDrivers: 45,
-  pendingOrders: 58,
-  completedOrders: 1131,
-  revenueChange: 12.5,
-  ordersChange: 8.3,
-  deliveriesChange: 15.2,
-  driversChange: -2.1,
-};
-
-const mockOrderStatus = [
-  { status: "CREATED", count: 45, percentage: 3.6, color: "bg-blue-500" },
-  { status: "APPROVED", count: 123, percentage: 9.9, color: "bg-green-500" },
-  { status: "DISPATCHED", count: 234, percentage: 18.8, color: "bg-purple-500" },
-  { status: "IN_TRANSIT", count: 189, percentage: 15.2, color: "bg-indigo-500" },
-  { status: "DELIVERED", count: 598, percentage: 47.9, color: "bg-teal-500" },
-  { status: "COMPLETED", count: 58, percentage: 4.6, color: "bg-emerald-500" },
-];
-
-const mockTopBranches = [
-  { name: "Addis Ababa Main", orders: 456, revenue: 89234, growth: 15.2 },
-  { name: "Dire Dawa Branch", orders: 234, revenue: 45678, growth: 8.5 },
-  { name: "Hawassa Branch", orders: 189, revenue: 34567, growth: 12.3 },
-  { name: "Mekelle Branch", orders: 156, revenue: 28901, growth: -2.1 },
-  { name: "Bahir Dar Branch", orders: 134, revenue: 23456, growth: 5.7 },
-  { name: "Gondar Branch", orders: 78, revenue: 12345, growth: 3.4 },
-];
-
-const mockTopCustomers = [
-  { name: "Ethio Telecom", orders: 234, revenue: 67890, status: "Active" },
-  { name: "Commercial Bank", orders: 189, revenue: 56789, status: "Active" },
-  { name: "Ethiopian Airlines", orders: 156, revenue: 45678, status: "Active" },
-  { name: "DHL Ethiopia", orders: 123, revenue: 34567, status: "Active" },
-  { name: "FedEx Express", orders: 98, revenue: 23456, status: "Active" },
-];
-
-const mockServiceTypes = [
-  { type: "STANDARD", count: 567, revenue: 123456, percentage: 45.5 },
-  { type: "EXPRESS", count: 456, revenue: 89234, percentage: 36.3 },
-  { type: "SAME_DAY", count: 156, revenue: 23456, percentage: 12.5 },
-  { type: "OVERNIGHT", count: 68, revenue: 9534, percentage: 5.7 },
-];
-
-const mockRecentOrders = [
-  {
-    id: "ORD-2024-001",
-    customer: "Ethio Telecom",
-    status: "DELIVERED",
-    amount: 2340,
-    date: "2024-12-18",
-    serviceType: "EXPRESS",
-  },
-  {
-    id: "ORD-2024-002",
-    customer: "Commercial Bank",
-    status: "IN_TRANSIT",
-    amount: 1890,
-    date: "2024-12-18",
-    serviceType: "STANDARD",
-  },
-  {
-    id: "ORD-2024-003",
-    customer: "Ethiopian Airlines",
-    status: "DISPATCHED",
-    amount: 3456,
-    date: "2024-12-17",
-    serviceType: "SAME_DAY",
-  },
-  {
-    id: "ORD-2024-004",
-    customer: "DHL Ethiopia",
-    status: "APPROVED",
-    amount: 1234,
-    date: "2024-12-17",
-    serviceType: "STANDARD",
-  },
-  {
-    id: "ORD-2024-005",
-    customer: "FedEx Express",
-    status: "CREATED",
-    amount: 890,
-    date: "2024-12-16",
-    serviceType: "EXPRESS",
-  },
-];
-
-const mockRevenueTrend = [
-  { month: "Jan", revenue: 18900 },
-  { month: "Feb", revenue: 21200 },
-  { month: "Mar", revenue: 19800 },
-  { month: "Apr", revenue: 23400 },
-  { month: "May", revenue: 25600 },
-  { month: "Jun", revenue: 28900 },
-  { month: "Jul", revenue: 31200 },
-  { month: "Aug", revenue: 29800 },
-  { month: "Sep", revenue: 32400 },
-  { month: "Oct", revenue: 35600 },
-  { month: "Nov", revenue: 38900 },
-  { month: "Dec", revenue: 24568 },
-];
 
 export default function ReportPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<ReportFilters>({
-    preset: ReportPreset.LAST_MONTH,
+    preset: ReportPreset.THIS_MONTH,
     serviceType: undefined,
     shippingScope: undefined,
     fulfillmentType: undefined,
@@ -247,10 +143,23 @@ export default function ReportPage() {
     refetch();
   };
 
-  const hasApiData = !isLoading && !error && data;
+  const hasApiData = !isLoading && !error && data != null;
+
+  const emptyMetrics = {
+    totalOrders: 0,
+    totalRevenue: 0,
+    totalDeliveries: 0,
+    activeDrivers: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    revenueChange: 0,
+    ordersChange: 0,
+    deliveriesChange: 0,
+    driversChange: 0,
+  };
 
   const hasActiveFilters =
-    filters.preset !== ReportPreset.TODAY ||
+    filters.preset !== ReportPreset.THIS_MONTH ||
     !!filters.serviceType ||
     !!filters.status ||
     !!filters.branchId ||
@@ -291,10 +200,10 @@ export default function ReportPage() {
         deliveriesChange: 0,
         driversChange: 0,
       }
-    : mockMetrics;
+    : emptyMetrics;
 
-  const orderStatus = hasApiData
-    ? data.orderStatusDistribution.length > 0
+  const orderStatus =
+    hasApiData && data.orderStatusDistribution.length > 0
       ? (() => {
           const total = data.orderStatusDistribution.reduce((sum, item) => sum + item.count, 0);
           return data.orderStatusDistribution.map((item) => ({
@@ -304,46 +213,54 @@ export default function ReportPage() {
             color: getStatusColorClass(item.status),
           }));
         })()
-      : []
-    : mockOrderStatus;
+      : [];
 
   const topBranches = hasApiData
     ? data.topBranches.map((branch) => ({
+        id: branch.id,
         name: branch.name || "Unknown",
         orders: branch.orderCount || 0,
         revenue: branch.revenue || 0,
         growth: 0,
       }))
-    : mockTopBranches;
+    : [];
 
   const topCustomers = hasApiData
     ? data.topCustomers.map((customer) => ({
+        id: customer.id,
         name: customer.name || "Unknown",
         orders: customer.orderCount || 0,
         revenue: customer.revenue || 0,
         status: "Active",
       }))
-    : mockTopCustomers;
+    : [];
 
   const recentOrders = hasApiData
     ? data.recentOrders.map((order) => ({
         id: order.trackingCode || order.id,
         customer: order.customer?.name || "Unknown",
         status: order.status,
-        amount: order.finalPrice || order.cost || 0,
+        amount: order.finalPrice ?? order.cost ?? 0,
         date: order.createdAt ? format(new Date(order.createdAt), "PPp") : "N/A",
         serviceType: order.serviceType || "N/A",
       }))
-    : mockRecentOrders;
+    : [];
 
   const revenueTrend = hasApiData
     ? data.revenueTrend.map((item) => ({
         month: item.period ? format(new Date(item.period), "MMM dd") : "Unknown",
         revenue: item.revenue,
       }))
-    : mockRevenueTrend;
+    : [];
 
-  const serviceTypes = hasApiData ? [] : mockServiceTypes;
+  const serviceTypes = hasApiData
+    ? (data.serviceTypeDistribution ?? []).map((item) => ({
+        type: item.serviceType,
+        count: item.orderCount,
+        revenue: item.revenue,
+        percentage: Math.round(item.percentage),
+      }))
+    : [];
 
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8">
@@ -573,7 +490,7 @@ export default function ReportPage() {
                       size="sm"
                       onClick={() => {
                         setFilters({
-                          preset: ReportPreset.LAST_MONTH,
+                          preset: ReportPreset.THIS_MONTH,
                           serviceType: undefined,
                           shippingScope: undefined,
                           fulfillmentType: undefined,
@@ -629,13 +546,13 @@ export default function ReportPage() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-gray-500">Applied filters:</span>
 
-          {filters.preset !== ReportPreset.TODAY && (
+          {filters.preset !== ReportPreset.THIS_MONTH && (
             <button
               type="button"
               onClick={() =>
                 setFilters((prev) => ({
                   ...prev,
-              preset: ReportPreset.LAST_MONTH,
+                  preset: ReportPreset.THIS_MONTH,
                   startDate: undefined,
                   endDate: undefined,
                 }))
@@ -746,7 +663,7 @@ export default function ReportPage() {
       )}
 
       {/* Key Metrics */}
-      {!isLoading && (
+      {hasApiData && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -835,7 +752,7 @@ export default function ReportPage() {
       )}
 
       {/* Charts and Detailed Reports */}
-      {!isLoading && (
+      {hasApiData && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Order Status Distribution */}
           <Card>
@@ -886,30 +803,43 @@ export default function ReportPage() {
             <CardContent>
               {revenueTrend.length > 0 ? (
                 <div className="space-y-2">
-                  {revenueTrend.map((item) => {
-                    const maxRevenue = Math.max(...revenueTrend.map((r) => r.revenue));
-                  const height = (item.revenue / maxRevenue) * 100;
-                  return (
-                    <div key={item.month} className="flex items-end gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-600">{item.month}</span>
-                          <span className="text-xs font-medium">{item.revenue.toLocaleString()}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-8">
-                          <div
-                            className="bg-blue-600 h-8 rounded-full flex items-center justify-end pr-2"
-                            style={{ width: `${height}%` }}
-                          >
-                            <span className="text-xs text-white font-medium">
-                              {item.revenue > maxRevenue * 0.3 ? item.revenue.toLocaleString() : ""}
-                            </span>
+                  {(() => {
+                    const maxRevenue = Math.max(
+                      0,
+                      ...revenueTrend.map((r) => r.revenue)
+                    );
+                    return revenueTrend.map((item, index) => {
+                      const height =
+                        maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
+                      return (
+                        <div
+                          key={`${item.month}-${index}`}
+                          className="flex items-end gap-2"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-gray-600">{item.month}</span>
+                              <span className="text-xs font-medium">
+                                {item.revenue.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-8">
+                              <div
+                                className="bg-blue-600 h-8 rounded-full flex items-center justify-end pr-2"
+                                style={{ width: `${height}%` }}
+                              >
+                                <span className="text-xs text-white font-medium">
+                                  {item.revenue > maxRevenue * 0.3
+                                    ? item.revenue.toLocaleString()
+                                    : ""}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -924,7 +854,7 @@ export default function ReportPage() {
       )}
 
       {/* Service Type Performance */}
-      {!isLoading && (
+      {hasApiData && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -978,7 +908,7 @@ export default function ReportPage() {
       )}
 
       {/* Top Branches and Customers */}
-      {!isLoading && (
+      {hasApiData && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Top Branches */}
           <Card>
@@ -993,7 +923,7 @@ export default function ReportPage() {
                 {topBranches.length > 0 ? (
                   topBranches.map((branch, index) => (
                     <div
-                      key={branch.name}
+                      key={branch.id}
                       className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
@@ -1027,8 +957,10 @@ export default function ReportPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <MapPin className="h-12 w-12 text-gray-300 mb-3" />
-                    <p className="text-sm font-medium text-gray-500">No branch data available</p>
-                    <p className="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+                    <p className="text-sm font-medium text-gray-500">No branch rankings yet</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs">
+                      The API returned no top branches for this period (e.g. orders may have no branch assigned).
+                    </p>
                   </div>
                 )}
             </div>
@@ -1048,7 +980,7 @@ export default function ReportPage() {
                 {topCustomers.length > 0 ? (
                   topCustomers.map((customer, index) => (
                     <div
-                      key={customer.name}
+                      key={customer.id}
                       className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
@@ -1079,7 +1011,7 @@ export default function ReportPage() {
       )}
 
       {/* Recent Orders */}
-      {!isLoading && (
+      {hasApiData && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

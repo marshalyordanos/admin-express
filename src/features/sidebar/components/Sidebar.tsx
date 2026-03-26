@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
-import { FaChevronDown, FaCrown, FaTimes } from "react-icons/fa";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { FaChevronDown, FaCrown, FaTimes, FaCodeBranch } from "react-icons/fa";
 import menuItems from "../../../constants/AdminSidebar";
 import { useAppSelector, useAppDispatch } from "../../../store/hooks";
 import { toggleSidebar } from "../sidebarSlice";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Permission } from "@/config/rolePermissions";
+import { useBranches } from "@/hooks/useBranch";
 
 // Types
 interface SubSubItem {
@@ -18,6 +19,21 @@ interface SubItem {
   path: string;
   icon?: React.ReactNode;
   subsubItems?: SubSubItem[];
+  /** Treat pathname as active under this prefix (e.g. /report/branch for branch reports). */
+  activePathPrefix?: string;
+}
+
+function subSubPathname(fullPath: string): string {
+  const i = fullPath.indexOf("?");
+  return i === -1 ? fullPath : fullPath.slice(0, i);
+}
+
+function pathnameMatchesSubSub(
+  pathname: string,
+  ssPathWithQuery: string,
+): boolean {
+  const p = subSubPathname(ssPathWithQuery);
+  return pathname === p || pathname.startsWith(p + "/");
 }
 
 interface MenuItem {
@@ -36,6 +52,8 @@ export default function Sidebar() {
 
   const [expandedParent, setExpandedParent] = useState<string | null>(null);
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
+  const prevPathnameRef = useRef<string | null>(null);
+  const branchesSubmenuRef = useRef<HTMLDivElement | null>(null);
 
   // Filter menu items based on user permissions
   const filteredMenuItems = useMemo(() => {
@@ -47,6 +65,53 @@ export default function Sidebar() {
     });
   }, [hasPermission]);
 
+  const {
+    data: branchesResponse,
+    isLoading: branchesLoading,
+    isError: branchesError,
+  } = useBranches({ page: 1, pageSize: 500 });
+
+  const menuItemsWithReportBranches = useMemo(() => {
+    return filteredMenuItems.map((item) => {
+      if (item.name !== "Report Generation" || !item.subItems) {
+        return item;
+      }
+
+      const branchRows = branchesResponse?.data ?? [];
+      let subsubItems: SubSubItem[];
+
+      if (branchesLoading) {
+        subsubItems = [{ name: "Loading branches…", path: "/branch" }];
+      } else if (branchesError) {
+        subsubItems = [{ name: "Could not load branches", path: "/branch" }];
+      } else if (branchRows.length === 0) {
+        subsubItems = [{ name: "No branches found", path: "/branch" }];
+      } else {
+        subsubItems = branchRows.map((b) => {
+          const label = b.name?.trim() || b.customId || "Branch";
+          const qs = new URLSearchParams({ branchName: label }).toString();
+          return {
+            name: label,
+            path: `/report/branch/${encodeURIComponent(b.id)}/orders?${qs}`,
+          };
+        });
+      }
+
+      const branchesSubItem: SubItem = {
+        name: "Branches",
+        path: "/branch",
+        icon: <FaCodeBranch />,
+        subsubItems,
+        activePathPrefix: "/report/branch",
+      };
+
+      return {
+        ...item,
+        subItems: [...item.subItems, branchesSubItem],
+      };
+    });
+  }, [filteredMenuItems, branchesResponse, branchesLoading, branchesError]);
+
   useEffect(() => {
     if (isCollapsed) {
       setExpandedParent(null);
@@ -54,45 +119,72 @@ export default function Sidebar() {
     }
   }, [isCollapsed]);
 
-  // Auto-expand parent menus when on sub-routes
+  // Auto-expand parent menus when on sub-routes; keep nested (e.g. Branches) open only when that route is active
   useEffect(() => {
     if (isCollapsed) return;
 
-    filteredMenuItems.forEach((item: MenuItem) => {
+    let nextExpandedSub: string | null = null;
+
+    menuItemsWithReportBranches.forEach((item: MenuItem) => {
       if (item.subItems) {
         const hasActiveSubItem = item.subItems.some(
           (sub: SubItem) =>
             location.pathname === sub.path ||
             location.pathname.startsWith(sub.path + "/") ||
+            (sub.activePathPrefix &&
+              location.pathname.startsWith(sub.activePathPrefix + "/")) ||
             (sub.subsubItems &&
-              sub.subsubItems.some(
-                (ss: SubSubItem) =>
-                  location.pathname === ss.path ||
-                  location.pathname.startsWith(ss.path + "/"),
+              sub.subsubItems.some((ss: SubSubItem) =>
+                pathnameMatchesSubSub(location.pathname, ss.path),
               )),
         );
 
         if (hasActiveSubItem) {
           setExpandedParent(item.name);
 
-          // Also expand sub-items if they have active sub-sub-items
-          item.subItems.forEach((sub: SubItem) => {
-            if (sub.subsubItems) {
-              const hasActiveSubSubItem = sub.subsubItems.some(
-                (ss: SubSubItem) =>
-                  location.pathname === ss.path ||
-                  location.pathname.startsWith(ss.path + "/"),
-              );
-
-              if (hasActiveSubSubItem) {
-                setExpandedSub(`${item.name}-${sub.name}`);
-              }
+          for (const sub of item.subItems) {
+            if (!sub.subsubItems?.length) continue;
+            const hasActiveSubSubItem = sub.subsubItems.some((ss: SubSubItem) =>
+              pathnameMatchesSubSub(location.pathname, ss.path),
+            );
+            if (hasActiveSubSubItem) {
+              nextExpandedSub = `${item.name}-${sub.name}`;
+              break;
             }
-          });
+          }
         }
       }
     });
-  }, [location.pathname, isCollapsed, filteredMenuItems]);
+
+    const pathChanged =
+      prevPathnameRef.current !== null &&
+      prevPathnameRef.current !== location.pathname;
+    prevPathnameRef.current = location.pathname;
+
+    if (nextExpandedSub !== null) {
+      setExpandedSub(nextExpandedSub);
+    } else if (pathChanged) {
+      setExpandedSub(null);
+    }
+  }, [location.pathname, isCollapsed, menuItemsWithReportBranches]);
+
+  // Close the Branches nested list on outside click (stay open on branch report routes)
+  useEffect(() => {
+    if (isCollapsed) return;
+    if (expandedSub !== "Report Generation-Branches") return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const el = branchesSubmenuRef.current;
+      if (!el?.isConnected) return;
+      if (el.contains(e.target as Node)) return;
+      if (location.pathname.startsWith("/report/branch/")) return;
+      setExpandedSub(null);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () =>
+      document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [isCollapsed, expandedSub, location.pathname]);
 
   const toggleParent = (name: string) => {
     setExpandedParent((prev) => (prev === name ? null : name));
@@ -106,7 +198,7 @@ export default function Sidebar() {
 
   const isMenuItemActive = (itemPath: string, subItems?: SubItem[]) => {
     // For items with sub-items: parent is active only on exact path match
-    // (so /report is active on General, but not when on /report/orders or /report/revenue)
+    // (so /report is active on General, but not on /report/orders, /report/revenue, /report/customers)
     if (subItems && subItems.length > 0) {
       return location.pathname === itemPath;
     }
@@ -169,7 +261,7 @@ export default function Sidebar() {
             isCollapsed ? "p-1 sm:p-2" : "p-2 sm:p-4"
           }`}
         >
-          {filteredMenuItems.map((item: MenuItem) => {
+          {menuItemsWithReportBranches.map((item: MenuItem) => {
             const { name, path, icon, subItems } = item;
             const isActive = isMenuItemActive(path, subItems);
             const isExpanded = expandedParent === name;
@@ -224,10 +316,12 @@ export default function Sidebar() {
                 {subItems && !isCollapsed && (
                   <div
                     className={`overflow-hidden transition-all duration-300 ${
-                      isExpanded ? "max-h-105 opacity-100" : "max-h-0 opacity-0"
+                      isExpanded
+                        ? "max-h-[9999px] opacity-100"
+                        : "max-h-0 opacity-0"
                     }`}
                   >
-                    <div className="ml-4 sm:ml-6 mt-1 sm:mt-2 flex flex-col gap-1">
+                    <div className="ml-4 sm:ml-6 mt-1 sm:mt-2 flex flex-col gap-1 pb-1">
                       {subItems.map((sub) => {
                         const hasSubsub =
                           Array.isArray(sub.subsubItems) &&
@@ -242,15 +336,25 @@ export default function Sidebar() {
                           // as active when a deeper sub-route is selected.
                           (sub.path !== path &&
                             location.pathname.startsWith(sub.path + "/")) ||
-                          // Sub-sub-items
-                          sub.subsubItems?.some(
-                            (ss) =>
-                              location.pathname === ss.path ||
-                              location.pathname.startsWith(ss.path + "/"),
+                          (sub.activePathPrefix &&
+                            location.pathname.startsWith(
+                              sub.activePathPrefix + "/",
+                            )) ||
+                          // Sub-sub-items (ignore query string on link targets)
+                          sub.subsubItems?.some((ss) =>
+                            pathnameMatchesSubSub(location.pathname, ss.path),
                           );
 
                         return (
-                          <div key={sub.name}>
+                          <div
+                            key={sub.name}
+                            ref={
+                              name === "Report Generation" &&
+                              sub.name === "Branches"
+                                ? branchesSubmenuRef
+                                : undefined
+                            }
+                          >
                             <div
                               className={`flex items-center justify-between rounded-lg cursor-pointer ${
                                 isSubActive
@@ -299,29 +403,44 @@ export default function Sidebar() {
                               <div
                                 className={`overflow-hidden transition-all duration-300 ${
                                   isSubExpanded
-                                    ? "max-h-96 opacity-100"
+                                    ? "max-h-[9999px] opacity-100"
                                     : "max-h-0 opacity-0"
                                 }`}
                               >
-                                <div className="ml-3 sm:ml-4 mt-1 sm:mt-2 flex flex-col gap-1">
-                                  {sub.subsubItems!.map((ss) => {
-                                    const isSSActive =
-                                      location.pathname === ss.path ||
-                                      location.pathname.startsWith(
-                                        ss.path + "/",
-                                      );
+                                <div
+                                  className="ml-3 sm:ml-4 mt-1 sm:mt-2 flex max-h-[min(70dvh,calc(100dvh-12rem))] flex-col gap-1 overflow-y-auto overflow-x-hidden overscroll-contain p-0.5 pb-2 pr-1 scroll-pb-2"
+                                >
+                                  {sub.subsubItems!.map((ss, index) => {
+                                    const isSSActive = pathnameMatchesSubSub(
+                                      location.pathname,
+                                      ss.path,
+                                    );
+                                    const isLast =
+                                      index === sub.subsubItems!.length - 1;
                                     return (
-                                      <NavLink
-                                        key={ss.name}
-                                        to={ss.path}
-                                        className={`text-xs sm:text-sm rounded-lg h-full w-full p-1 sm:p-2 ${
+                                      <div
+                                        key={`${ss.path}-${ss.name}-${index}`}
+                                        className={`w-full shrink-0 rounded-lg cursor-pointer ${
                                           isSSActive
-                                            ? "bg-blue-500 text-white"
-                                            : "hover:bg-blue-500 hover:text-white"
-                                        }`}
+                                            ? "bg-blue-500"
+                                            : "hover:bg-blue-500 hover:text-white group-hover:text-white"
+                                        } ${isLast ? "mb-0.5" : ""}`}
                                       >
-                                        {ss.name}
-                                      </NavLink>
+                                        <NavLink
+                                          to={ss.path}
+                                          className="flex items-center gap-2 sm:gap-3 h-full w-full p-1 sm:p-2 group"
+                                        >
+                                          <span
+                                            className={`text-xs sm:text-sm ${
+                                              isSSActive
+                                                ? "text-white"
+                                                : "text-black group-hover:text-white"
+                                            }`}
+                                          >
+                                            {ss.name}
+                                          </span>
+                                        </NavLink>
+                                      </div>
                                     );
                                   })}
                                 </div>

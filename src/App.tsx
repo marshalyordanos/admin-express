@@ -49,6 +49,8 @@ import InternationalPricingPage from "./pages/Pricing/InternationalPricingPage";
 import ReportPage from "./pages/Report/ReportPage";
 import OrderReportPage from "./pages/Report/OrderReportPage";
 import RevenueReportPage from "./pages/Report/RevenueReportPage";
+import CustomersReportPage from "./pages/Report/CustomersReportPage";
+import BranchOrderReportPage from "./pages/Report/BranchOrderReportPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoutes from "./components/ProtectedRoutes";
@@ -523,6 +525,22 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredPermission={Permission.REPORT}>
                     <RevenueReportPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/report/customers"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.REPORT}>
+                    <CustomersReportPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/report/branch/:branchId/orders"
+                element={
+                  <ProtectedRoute requiredPermission={Permission.REPORT}>
+                    <BranchOrderReportPage />
                   </ProtectedRoute>
                 }
               />
