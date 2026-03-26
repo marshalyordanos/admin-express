@@ -291,9 +291,10 @@ function DispatchModal({
   const fetchExternalDriver = async () => {
     try {
       setLoadingExternalDriver(true);
+      console.log("order for external drivers", order);
 
       const res = await api.get<any>(
-        `maps/external/nearby-drivers?lat=${order?.pickupAddress?.latitude}&lon=${order?.pickupAddress?.longitude}&radius=1000`
+        `maps/external/nearby-drivers?lat=${order?.pickupAddress?.lat}&lon=${order?.pickupAddress?.long}&radius=1000`
       );
       setExternalDriver(res.data.data);
       setLoadingExternalDriver(false);
